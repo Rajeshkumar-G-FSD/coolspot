@@ -70,10 +70,10 @@ export default function Navbar({
           >
             <span className="font-headline-md text-xl md:text-2xl italic font-bold tracking-tight group-hover:opacity-80 transition-opacity flex gap-1">
               <span className="text-[#001a52] dark:text-white">Cool</span>
-              <span className="text-amber-500 dark:text-amber-400">Cottages</span>
+              <span className="text-amber-500 dark:text-amber-400">Spot</span>
             </span>
             <span className="font-sans text-[9px] uppercase tracking-widest text-[#4a607c] dark:text-white/60 -mt-1 font-semibold">
-              Bespoke Luxury Cottage Retreat
+              Cottages
             </span>
           </button>
 
@@ -161,10 +161,10 @@ export default function Navbar({
                 <div className="flex flex-col">
                   <span className="font-headline-md text-lg italic font-bold flex gap-1">
                     <span className="text-[#001a52] dark:text-white">Cool</span>
-                    <span className="text-amber-500 dark:text-amber-400">Cottages</span>
+                    <span className="text-amber-500 dark:text-amber-400">Spot</span>
                   </span>
                   <span className="font-sans text-[8px] uppercase tracking-wider text-[#4a607c] dark:text-white/60 font-semibold">
-                    Luxury Cottage Retreat
+                    Cottages
                   </span>
                 </div>
                 <button

@@ -158,10 +158,13 @@ export default function App() {
         >
           {/* Pulsing Sun Sunrise Mask */}
           <div className="w-[110px] h-[110px] bg-gradient-to-r from-amber-200 to-indigo-100 rounded-full animate-pulse shadow-[0_0_50px_rgba(255,218,214,0.8)] mb-8" />
-          <h1 className="font-headline-md text-3xl italic tracking-widest uppercase mb-2 animate-bounce flex gap-2">
+          <h1 className="font-headline-md text-3xl italic tracking-widest uppercase mb-1 animate-bounce flex gap-2">
             <span className="text-[#819ae7]">COOL</span>
-            <span className="text-amber-300">COTTAGES</span>
+            <span className="text-amber-300">SPOT</span>
           </h1>
+          <span className="font-sans text-sm tracking-widest uppercase text-amber-200/80 font-semibold mb-1">
+            Cottages
+          </span>
           <span className="font-sans text-xs tracking-widest uppercase text-white/70 font-semibold h-4">
             Preparing Your Luxury Escape...
           </span>
@@ -282,10 +285,10 @@ export default function App() {
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             <span className="font-headline-lg text-xl md:text-2xl italic tracking-tight font-bold pb-1 flex gap-1">
               <span className="text-white">Cool</span>
-              <span className="text-amber-400">Cottages</span>
+              <span className="text-amber-400">Spot</span>
             </span>
             <span className="font-sans text-[9px] uppercase tracking-widest text-[#819ae7] font-semibold">
-              Bespoke Luxury Cottage Retreat
+              Cottages
             </span>
           </div>
 
