@@ -22,7 +22,7 @@ import { Room, Experience, Booking } from "../types";
 import { VILLAS_DATA, EXPERIENCES_DATA } from "../data";
 import { motion } from "motion/react";
 import { db, handleFirestoreError, OperationType } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDocs, collection, updateDoc } from "firebase/firestore";
 
 interface BookingFlowTabProps {
   initialRoom?: Room;
@@ -68,20 +68,54 @@ export default function BookingFlowTab({
 
   const [paymentMode, setPaymentMode] = useState<"advance" | "full">("advance");
 
+  // Room availability state (fetched from Firebase)
+  const [bookedRoomNumbers, setBookedRoomNumbers] = useState<string[]>([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityFetched, setAvailabilityFetched] = useState(false);
+
   // Status & Submit values
   const [submitting, setSubmitting] = useState(false);
   const [generatedBooking, setGeneratedBooking] = useState<Booking | null>(null);
 
-  // Auto pre-fill dates if none provided
+  // Check-in must be today or later; check-out always starts blank
   useEffect(() => {
-    if (!checkIn) {
-      const today = new Date();
-      const tomorrow = new Date();
-      tomorrow.setDate(today.getDate() + 2);
-      setCheckIn(today.toISOString().split("T")[0]);
-      setCheckOut(tomorrow.toISOString().split("T")[0]);
-    }
+    const today = new Date().toISOString().split("T")[0];
+    // Force today if empty or if a past date was pre-filled
+    if (!checkIn || checkIn < today) setCheckIn(today);
+    setCheckOut("");
   }, []);
+
+  // RETRIEVE: query Firebase for booked room numbers on selected dates
+  const fetchRoomAvailability = async (ciDate: string, coDate: string) => {
+    if (!ciDate || !coDate || ciDate >= coDate) {
+      setBookedRoomNumbers([]);
+      setAvailabilityFetched(false);
+      return;
+    }
+    setAvailabilityLoading(true);
+    try {
+      const snap = await getDocs(collection(db, "bookings"));
+      const taken: string[] = [];
+      snap.forEach((d) => {
+        const b = d.data();
+        // Overlap: existing.checkIn < requested.checkOut AND existing.checkOut > requested.checkIn
+        if (b.checkIn < coDate && b.checkOut > ciDate && Array.isArray(b.assignedRooms)) {
+          taken.push(...b.assignedRooms);
+        }
+      });
+      setBookedRoomNumbers([...new Set(taken)]);
+      setAvailabilityFetched(true);
+    } catch (err) {
+      console.error("Availability fetch error:", err);
+      setBookedRoomNumbers([]);
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRoomAvailability(checkIn, checkOut);
+  }, [checkIn, checkOut]);
 
   // Calculate reservation metrics
   let nights = 1;
@@ -115,6 +149,26 @@ export default function BookingFlowTab({
 
   const advanceAmount = Math.round(totalCost * 0.4);
   const remainingAmount = totalCost - advanceAmount;
+
+  // Availability derived values (8 rooms total: 101–108)
+  const TOTAL_ROOMS = 8;
+  const availableRoomCount = TOTAL_ROOMS - bookedRoomNumbers.length;
+  const isHighDemand = availabilityFetched && bookedRoomNumbers.length >= 6;
+  const isFullyBooked = availabilityFetched && availableRoomCount <= 0;
+
+  // Returns true if a category has at least one unbooked room
+  const isCategoryAvailable = (r: Room): boolean => {
+    if (!availabilityFetched) return true;
+    const nums = r.roomNumbers || [];
+    if (r.isBundle) return nums.every((n) => !bookedRoomNumbers.includes(n));
+    return nums.some((n) => !bookedRoomNumbers.includes(n));
+  };
+
+  // Count available rooms within a category
+  const categoryAvailableCount = (r: Room): number => {
+    if (!availabilityFetched) return (r.roomNumbers || []).length;
+    return (r.roomNumbers || []).filter((n) => !bookedRoomNumbers.includes(n)).length;
+  };
 
   // Toggle Experiences
   const handleToggleExp = (exp: Experience) => {
@@ -187,7 +241,7 @@ export default function BookingFlowTab({
     }
   };
 
-  const executeWhatsAppLink = () => {
+  const executeWhatsAppLink = async () => {
     if (!generatedBooking) return;
     const phoneNo = "070103 95526".replace(/\s+/g, '');
     const cleanNo = phoneNo.startsWith("0") ? "91" + phoneNo.substring(1) : phoneNo;
@@ -218,6 +272,13 @@ export default function BookingFlowTab({
     const encoded = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNo}&text=${encoded}`;
     window.open(whatsappUrl, "_blank");
+
+    // UPDATE: mark booking Confirmed in Firebase once guest sends WhatsApp
+    try {
+      await updateDoc(doc(db, "bookings", generatedBooking.id), { status: "Confirmed" });
+    } catch (err) {
+      console.error("Status update error:", err);
+    }
   };
 
   return (
@@ -287,50 +348,164 @@ export default function BookingFlowTab({
                   1. Stay & Accommodation Selection
                 </h3>
 
+                {/* Dates first so availability can be checked */}
+                {(() => {
+                  const today = new Date().toISOString().split("T")[0];
+                  const minCheckOut = checkIn
+                    ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
+                    : "";
+                  return (
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
+                          Check-In Date
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          min={today}
+                          value={checkIn}
+                          onChange={(e) => {
+                            setCheckIn(e.target.value);
+                            // Reset checkout if it's no longer valid
+                            if (checkOut && checkOut <= e.target.value) setCheckOut("");
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs md:text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-[11px] font-sans font-bold uppercase tracking-wider mb-2 ${checkIn ? "text-slate-500" : "text-slate-300"}`}>
+                          Check-Out Date
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          disabled={!checkIn}
+                          min={minCheckOut}
+                          value={checkOut}
+                          onChange={(e) => setCheckOut(e.target.value)}
+                          className={`w-full border rounded-lg py-2 px-3 text-xs md:text-sm transition-all ${
+                            checkIn
+                              ? "bg-slate-50 border-slate-200"
+                              : "bg-slate-100 border-slate-100 cursor-not-allowed text-slate-400"
+                          }`}
+                        />
+                        {!checkIn && (
+                          <p className="text-[10px] text-slate-400 mt-1">Select check-in date first</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Live availability banner */}
+                {checkIn && checkOut && checkIn < checkOut && (
+                  <div className={`rounded-xl p-3.5 flex items-center gap-3 border text-xs mb-4 ${
+                    availabilityLoading ? "bg-slate-50 border-slate-200"
+                    : isFullyBooked   ? "bg-red-50 border-red-200"
+                    : isHighDemand    ? "bg-amber-50 border-amber-200"
+                    : availabilityFetched ? "bg-emerald-50 border-emerald-200"
+                    : "bg-slate-50 border-slate-200"
+                  }`}>
+                    {availabilityLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-slate-300 border-t-[#001a52] rounded-full animate-spin shrink-0" />
+                        <span className="text-slate-500 font-medium">Checking room availability…</span>
+                      </>
+                    ) : isFullyBooked ? (
+                      <>
+                        <Info className="w-4 h-4 text-red-500 shrink-0" />
+                        <div>
+                          <span className="font-bold text-red-700 block">Fully Booked</span>
+                          <span className="text-red-600">All 8 rooms are taken for these dates. Please choose different dates.</span>
+                        </div>
+                      </>
+                    ) : isHighDemand ? (
+                      <>
+                        <Info className="w-4 h-4 text-amber-500 shrink-0" />
+                        <div>
+                          <span className="font-bold text-amber-700 block">
+                            Only {availableRoomCount} room{availableRoomCount !== 1 ? "s" : ""} available!
+                          </span>
+                          <span className="text-amber-600">
+                            {bookedRoomNumbers.length} of 8 rooms already booked — book now to secure your stay.
+                          </span>
+                        </div>
+                      </>
+                    ) : availabilityFetched ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <div>
+                          <span className="font-bold text-emerald-700 block">
+                            {availableRoomCount} room{availableRoomCount !== 1 ? "s" : ""} available
+                          </span>
+                          <span className="text-emerald-600">Good availability for these dates.</span>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Room category card selector with live availability */}
                 <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
                   Select Room Category
                 </label>
-                <select
-                  value={room.id}
-                  onChange={(e) => {
-                    const matched = VILLAS_DATA.find((r) => r.id === e.target.value);
-                    if (matched) setRoom(matched);
-                  }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs md:text-sm font-medium"
-                >
-                  {VILLAS_DATA.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name} — ₹{r.ratePerNight.toLocaleString()}/night
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Dates input */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
-                    Check-In Date
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs md:text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
-                    Check-Out Date
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={checkOut}
-                    onChange={(e) => setCheckOut(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs md:text-sm"
-                  />
+                <div className="space-y-2">
+                  {VILLAS_DATA.map((r) => {
+                    const avail = isCategoryAvailable(r);
+                    const availCount = categoryAvailableCount(r);
+                    const isSelected = room.id === r.id;
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        disabled={!avail}
+                        onClick={() => avail && setRoom(r)}
+                        className={`w-full text-left p-3.5 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                          !avail
+                            ? "opacity-50 cursor-not-allowed bg-slate-50 border-slate-200"
+                            : isSelected
+                            ? "border-[#001a52] bg-[#e5eeff] cursor-pointer"
+                            : "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
+                        }`}
+                      >
+                        <img
+                          src={r.imageUrl}
+                          alt={r.name}
+                          className="w-12 h-12 rounded-lg object-cover shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-xs font-bold ${isSelected ? "text-[#001a52]" : "text-slate-800"}`}>
+                              {r.name}
+                            </span>
+                            {!avail ? (
+                              <span className="text-[9px] font-bold uppercase tracking-wider bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full shrink-0">
+                                Fully Booked
+                              </span>
+                            ) : isHighDemand && availabilityFetched ? (
+                              <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full shrink-0">
+                                {availCount} left
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                            <span className="text-[10px] text-slate-500">
+                              Room{(r.roomNumbers?.length || 0) > 1 ? "s" : ""} {r.roomNumbers?.map(n => `#${n}`).join(" + ")}
+                            </span>
+                            <span className="text-[10px] font-bold text-[#001a52]">
+                              ₹{r.ratePerNight.toLocaleString()}/night
+                            </span>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-[#001a52] flex items-center justify-center shrink-0">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
