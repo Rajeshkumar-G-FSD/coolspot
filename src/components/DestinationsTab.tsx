@@ -55,18 +55,31 @@ export default function DestinationsTab({
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#001a52]/40 to-[#f8f9ff]" />
 
         <div className="relative z-10 text-center px-6 md:px-16 max-w-5xl mx-auto flex flex-col items-center mt-12 md:mt-0">
-          <h1 className="font-headline-lg text-4xl md:text-7xl text-white mb-6 text-glow leading-normal md:leading-tight">
+          <motion.h1
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.2, ease: "easeOut" }}
+            className="font-headline-lg text-4xl md:text-7xl text-white mb-6 text-glow leading-normal md:leading-tight"
+          >
             Escape Into Luxury, <br /> Where Nature Meets Comfort
-          </h1>
-          <p className="font-sans text-sm md:text-lg text-white/95 mb-10 max-w-2xl text-center leading-relaxed font-light">
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+            className="font-sans text-sm md:text-lg text-white/95 mb-10 max-w-2xl text-center leading-relaxed font-light"
+          >
             Discover a sanctuary of unparalleled elegance. Experience the perfect harmony of pristine coastal beauty and
             refined modern architecture.
-          </p>
+          </motion.p>
 
           {/* Floating Booking Widget */}
-          <form
+          <motion.form
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.75, ease: "easeOut" }}
             onSubmit={handleSearchSubmit}
-            className="glass-panel text-left rounded-2xl p-5 md:p-6 w-full max-w-5xl shadow-2xl mx-auto flex flex-col md:flex-row gap-4 items-end animate-fade-in-up bg-white/70"
+            className="glass-panel text-left rounded-2xl p-5 md:p-6 w-full max-w-5xl shadow-2xl mx-auto flex flex-col md:flex-row gap-4 items-end bg-white/70"
           >
             <div className="w-full md:w-1/4">
               <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-[#001a52] mb-2">
@@ -127,7 +140,7 @@ export default function DestinationsTab({
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
-          </form>
+          </motion.form>
         </div>
       </section>
 
@@ -186,7 +199,13 @@ export default function DestinationsTab({
       {/* Sub-tab Navigation Selector */}
       <section className="bg-transparent py-4">
         <div className="max-w-7xl mx-auto flex flex-col items-center px-4">
-          <div className="flex bg-[#001a52]/5 dark:bg-white/5 p-1 rounded-full border border-slate-100 dark:border-white/5">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex bg-[#001a52]/5 dark:bg-white/5 p-1 rounded-full border border-slate-100 dark:border-white/5"
+          >
             <button
               onClick={() => setActiveSubTab("rooms")}
               className={`px-5 py-2.5 rounded-full text-[10px] md:text-xs font-sans tracking-widest uppercase font-extrabold transition-all cursor-pointer ${
@@ -207,7 +226,7 @@ export default function DestinationsTab({
             >
               Visual Experience
             </button>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -217,15 +236,30 @@ export default function DestinationsTab({
       ) : (
         <section className="py-12 bg-white dark:bg-[#00174a]/10 overflow-hidden border-t border-slate-100 dark:border-white/5">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <span className="font-sans text-[11px] uppercase tracking-widest text-[#819ae7] font-extrabold block mb-2">
+            <motion.span
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="font-sans text-[11px] uppercase tracking-widest text-[#819ae7] font-extrabold block mb-2"
+            >
               Virtual Lookbook
-            </span>
-            <h2 className="font-headline-lg text-3xl md:text-4xl text-[#001a52] dark:text-[#dbe1ff] mb-4">
+            </motion.span>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+              className="font-headline-lg text-3xl md:text-4xl text-[#001a52] dark:text-[#dbe1ff] mb-4"
+            >
               Immersive Resort Gallery
-            </h2>
-            <p className="font-sans text-sm md:text-base text-slate-500 max-w-2xl mx-auto mb-8">
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+              className="font-sans text-sm md:text-base text-slate-500 max-w-2xl mx-auto mb-8"
+            >
               Explore custom timber designs, starlit campfire areas, and private shorelines in an interactive 3D space.
-            </p>
+            </motion.p>
             <ThreeDHoverGallery />
           </div>
         </section>
@@ -234,14 +268,21 @@ export default function DestinationsTab({
       {/* Brand Value Quote / Editorial Section */}
       <section className="py-20 bg-[#efe4d9]/25 dark:bg-slate-950/40 relative">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <Quote className="w-10 h-10 text-slate-300 dark:text-slate-800 mx-auto mb-6 opacity-80" />
-          <h3 className="font-headline-lg text-2xl md:text-3xl italic text-[#001a52] mb-6">
-            "A masterclass in quiet architectural luxury. Cool Cottages does not merely offer guest villas; it
-            delves into spatial meditation, placing nature in majestic, silent dialogue with refined modern craftsmanship."
-          </h3>
-          <span className="font-sans text-xs uppercase tracking-widest text-[#4a607c] font-black block">
-            — Elite Voyager Journal, June 2026
-          </span>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <Quote className="w-10 h-10 text-slate-300 dark:text-slate-800 mx-auto mb-6 opacity-80" />
+            <h3 className="font-headline-lg text-2xl md:text-3xl italic text-[#001a52] mb-6">
+              "A masterclass in quiet architectural luxury. Cool Cottages does not merely offer guest villas; it
+              delves into spatial meditation, placing nature in majestic, silent dialogue with refined modern craftsmanship."
+            </h3>
+            <span className="font-sans text-xs uppercase tracking-widest text-[#4a607c] font-black block">
+              — Elite Voyager Journal, June 2026
+            </span>
+          </motion.div>
         </div>
       </section>
     </div>

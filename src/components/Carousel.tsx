@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Eye, Grid, Maximize, UserCheck, Waves } from "lucide-react";
+import { motion } from "motion/react";
 import { Room } from "../types";
 
 interface CarouselProps {
@@ -42,12 +43,24 @@ export default function Carousel({ rooms, onSelectRoom }: CarouselProps) {
   return (
     <div className="py-16 bg-white dark:bg-[#00174a]/30 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="font-headline-lg text-3xl md:text-4xl text-[#001a52] dark:text-[#dbe1ff] mb-4">
+        <motion.h2
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="font-headline-lg text-3xl md:text-4xl text-[#001a52] dark:text-[#dbe1ff] mb-4"
+        >
           Exquisite Accommodations
-        </h2>
-        <p className="font-sans text-sm md:text-base text-slate-500 max-w-2xl mx-auto mb-12">
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+          className="font-sans text-sm md:text-base text-slate-500 max-w-2xl mx-auto mb-12"
+        >
           Immerse yourself in hand-crafted spaces designed to elevate your senses and provide ultimate peace of mind.
-        </p>
+        </motion.p>
 
         {/* 3D Container */}
         <div
@@ -142,7 +155,13 @@ export default function Carousel({ rooms, onSelectRoom }: CarouselProps) {
 
         {/* Selected Room Specifications (Fades and updates with state index) */}
         <div className="mt-12 max-w-4xl mx-auto">
-          <div className="glass-panel rounded-2xl p-6 md:p-8 text-left grid md:grid-cols-5 gap-8 shadow-lg bg-[#f8f9ff]/80">
+          <motion.div
+            key={currentRoom.id}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            className="glass-panel rounded-2xl p-6 md:p-8 text-left grid md:grid-cols-5 gap-8 shadow-lg bg-[#f8f9ff]/80"
+          >
             {/* Spec details - Left span */}
             <div className="md:col-span-3 flex flex-col justify-between">
               <div>
@@ -206,7 +225,7 @@ export default function Carousel({ rooms, onSelectRoom }: CarouselProps) {
                 ))}
               </ul>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
