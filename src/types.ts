@@ -19,6 +19,8 @@ export interface Room {
   sizeSquareMeter: number;
   amenities: string[];
   imageUrl: string;
+  roomNumbers?: string[];
+  isBundle?: boolean; // true = ratePerNight covers all roomNumbers together
 }
 
 export interface Experience {
@@ -72,4 +74,9 @@ export interface Booking {
   extraBedRate?: number;
   extraBedTotal?: number;
   arrivalTime?: string;
+  assignedRooms?: string[];
+  roomsBooked?: number;
+  paymentMode?: "advance" | "full";
+  advanceAmount?: number;
+  remainingAmount?: number;
 }

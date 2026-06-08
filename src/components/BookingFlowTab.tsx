@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Calendar as CalendarIcon, 
-  Users, 
-  MapPin, 
-  Check, 
-  Lock, 
+import {
+  Calendar as CalendarIcon,
+  Users,
+  MapPin,
+  Check,
+  Lock,
   ShieldCheck,
-  Compass, 
-  Sparkles, 
-  Clock, 
-  Coffee, 
+  Compass,
+  Sparkles,
+  Clock,
+  Coffee,
   ArrowRight,
   ChevronRight,
-  Coins
+  Coins,
+  Info,
+  BedDouble,
+  Wallet,
+  CreditCard
 } from "lucide-react";
 import { Room, Experience, Booking } from "../types";
 import { VILLAS_DATA, EXPERIENCES_DATA } from "../data";
@@ -62,6 +66,8 @@ export default function BookingFlowTab({
   const [arrivalTime, setArrivalTime] = useState("14:00 - 15:00");
   const [cotRequested, setCotRequested] = useState(false);
 
+  const [paymentMode, setPaymentMode] = useState<"advance" | "full">("advance");
+
   // Status & Submit values
   const [submitting, setSubmitting] = useState(false);
   const [generatedBooking, setGeneratedBooking] = useState<Booking | null>(null);
@@ -88,11 +94,27 @@ export default function BookingFlowTab({
     }
   }
 
-  const roomBaseCost = room.ratePerNight * nights;
+  // 4-adult logic: non-bundle categories need 2 rooms
+  const adultCount = parseInt(guests.split(" Adult")[0]) || 2;
+  const is4Adults = adultCount >= 4;
+  const roomsNeeded = is4Adults && !room.isBundle ? 2 : 1;
+
+  // Derive assigned room numbers
+  const assignedRooms = (() => {
+    const nums = room.roomNumbers || [];
+    if (room.isBundle) return nums;          // deluxe-family: always 102 + 103
+    if (is4Adults) return nums.slice(0, 2);  // pick first 2 available
+    return nums.slice(0, 1);
+  })();
+
+  const roomBaseCost = room.ratePerNight * nights * roomsNeeded;
   const expsCost = selectedExps.reduce((acc, curr) => acc + curr.cost, 0);
   const extraBedRate = 1500;
   const extraBedCost = extraBedRequested ? extraBedRate * extraBedCount * nights : 0;
   const totalCost = roomBaseCost + expsCost + extraBedCost;
+
+  const advanceAmount = Math.round(totalCost * 0.4);
+  const remainingAmount = totalCost - advanceAmount;
 
   // Toggle Experiences
   const handleToggleExp = (exp: Experience) => {
@@ -114,7 +136,8 @@ export default function BookingFlowTab({
       room: {
         id: room.id,
         name: room.name,
-        ratePerNight: room.ratePerNight
+        ratePerNight: room.ratePerNight,
+        roomNumbers: room.roomNumbers,
       },
       checkIn,
       checkOut,
@@ -140,6 +163,11 @@ export default function BookingFlowTab({
       extraBedRate,
       extraBedTotal: extraBedCost,
       arrivalTime,
+      assignedRooms,
+      roomsBooked: roomsNeeded,
+      paymentMode,
+      advanceAmount: paymentMode === "advance" ? advanceAmount : 0,
+      remainingAmount: paymentMode === "advance" ? remainingAmount : totalCost,
       createdTime: new Date().toLocaleString()
     };
 
@@ -164,18 +192,27 @@ export default function BookingFlowTab({
     const phoneNo = "070103 95526".replace(/\s+/g, '');
     const cleanNo = phoneNo.startsWith("0") ? "91" + phoneNo.substring(1) : phoneNo;
     
+    const roomsLabel = generatedBooking.assignedRooms?.length
+      ? `Room ${generatedBooking.assignedRooms.join(" + ")} (${generatedBooking.roomsBooked} room${generatedBooking.roomsBooked > 1 ? "s" : ""})`
+      : generatedBooking.room.name;
+    const paymentLabel = generatedBooking.paymentMode === "advance"
+      ? `40% Advance — ₹${generatedBooking.advanceAmount?.toLocaleString()} (Balance ₹${generatedBooking.remainingAmount?.toLocaleString()} at property)`
+      : `Full Payment at property — ₹${generatedBooking.totalCost.toLocaleString()}`;
+
     const message = `Hello Coolspot Cottage!\n\nI would like to confirm my booking:\n` +
       `- Reference: ${generatedBooking.id}\n` +
       `- Guest: ${generatedBooking.billingName}\n` +
       `- Contact: ${generatedBooking.billingEmail}\n` +
       `- Phone: ${generatedBooking.phonePrefix} ${generatedBooking.phoneNumber}\n` +
-      `- Room: ${generatedBooking.room.name}\n` +
+      `- Category: ${generatedBooking.room.name}\n` +
+      `- Assigned Rooms: ${roomsLabel}\n` +
       `- Dates: ${generatedBooking.checkIn} to ${generatedBooking.checkOut} (${generatedBooking.nightsNum} Nights)\n` +
       `- Guests: ${generatedBooking.guestsText}\n` +
       `- Special Requests: ${generatedBooking.specialRequests}\n` +
       `- Cot Requested: ${generatedBooking.cotRequested ? "Yes" : "No"}\n` +
-      `- Extra Bed(s): ${generatedBooking.extraBedRequested ? `${generatedBooking.extraBedCount} x ${extraBedRate}` : "None"}\n` +
-      `- Total Pricing: ₹${generatedBooking.totalCost.toLocaleString()}\n\n` +
+      `- Extra Bed(s): ${generatedBooking.extraBedRequested ? `${generatedBooking.extraBedCount} x ₹${extraBedRate}` : "None"}\n` +
+      `- Total: ₹${generatedBooking.totalCost.toLocaleString()}\n` +
+      `- Payment Plan: ${paymentLabel}\n\n` +
       `Please register this stay. Thank you!`;
 
     const encoded = encodeURIComponent(message);
@@ -314,6 +351,20 @@ export default function BookingFlowTab({
                   <option>1 Adult, 0 Children</option>
                 </select>
               </div>
+
+              {/* 4-adult room assignment notice */}
+              {is4Adults && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-800">
+                    <span className="font-bold block mb-0.5">2 Rooms Auto-Assigned for 4 Adults</span>
+                    <span className="text-amber-700">
+                      Rooms: <strong>{assignedRooms.length > 0 ? assignedRooms.join(" + ") : "TBD"}</strong>
+                      {room.isBundle ? " (Family Suite Bundle)" : " (2 × same category)"}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Curation inclusions */}
               <div>
@@ -660,6 +711,76 @@ export default function BookingFlowTab({
                 <p className="text-[10px] text-slate-400">By continuing, you are agreeing to these rules.</p>
               </div>
 
+              {/* Payment Option */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <Wallet className="w-4 h-4 text-[#001a52]" />
+                  <h4 className="text-xs font-bold text-slate-800">Payment Option</h4>
+                </div>
+                <p className="text-[10px] text-slate-400">Choose your preferred payment plan. Balance is settled at the property during check-in.</p>
+
+                <div className="space-y-3">
+                  {/* 40% Advance */}
+                  <label
+                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      paymentMode === "advance"
+                        ? "border-[#001a52] bg-[#e5eeff]"
+                        : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMode"
+                      checked={paymentMode === "advance"}
+                      onChange={() => setPaymentMode("advance")}
+                      className="mt-0.5 accent-[#001a52]"
+                    />
+                    <div className="flex-1">
+                      <span className="font-bold text-xs text-slate-800 block">40% Advance Payment</span>
+                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                        Confirm with <strong className="text-[#001a52]">₹{advanceAmount.toLocaleString()}</strong> advance.&nbsp;
+                        Remaining <strong>₹{remainingAmount.toLocaleString()}</strong> paid at property.
+                      </span>
+                    </div>
+                    <CreditCard className="w-4 h-4 text-[#819ae7] shrink-0 mt-0.5" />
+                  </label>
+
+                  {/* Full Payment */}
+                  <label
+                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      paymentMode === "full"
+                        ? "border-[#001a52] bg-[#e5eeff]"
+                        : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMode"
+                      checked={paymentMode === "full"}
+                      onChange={() => setPaymentMode("full")}
+                      className="mt-0.5 accent-[#001a52]"
+                    />
+                    <div className="flex-1">
+                      <span className="font-bold text-xs text-slate-800 block">Full Payment at Property</span>
+                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                        Pay the full amount <strong className="text-[#001a52]">₹{totalCost.toLocaleString()}</strong> upon check-in. No advance required.
+                      </span>
+                    </div>
+                    <Coins className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  </label>
+                </div>
+
+                {/* Payment summary line */}
+                <div className="bg-[#f8f9ff] rounded-xl p-3 text-xs flex justify-between items-center border border-slate-100">
+                  <span className="text-slate-500 font-medium">
+                    {paymentMode === "advance" ? "Advance to pay now:" : "Full amount at check-in:"}
+                  </span>
+                  <span className="font-black text-[#001a52] text-sm">
+                    ₹{(paymentMode === "advance" ? advanceAmount : totalCost).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
               {/* Navigation Actions */}
               <div className="flex gap-4">
                 <button
@@ -701,16 +822,53 @@ export default function BookingFlowTab({
               animate={{ opacity: 1, scale: 1 }}
               className="space-y-6 text-left"
             >
-              {/* No Payment Details Required Card */}
+              {/* Payment Summary Card */}
               <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
                 <div className="absolute right-5 top-5 w-24 h-24 text-amber-500/10 shrink-0">
                   <Coins className="w-full h-full rotate-12" />
                 </div>
-                
-                <h3 className="font-headline-md text-lg text-slate-800 font-extrabold mb-2">No payment details required</h3>
-                <p className="text-xs text-slate-500 max-w-md leading-relaxed">
-                  Your payment will be handled by Coolspot Cottage during check-in, so you don't need to enter any payment details online for this booking.
+
+                <h3 className="font-headline-md text-lg text-slate-800 font-extrabold mb-1">
+                  {generatedBooking.paymentMode === "advance" ? "40% Advance Selected" : "Full Payment at Property"}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-md leading-relaxed mb-4">
+                  {generatedBooking.paymentMode === "advance"
+                    ? "Please arrange the advance payment with the property to confirm your reservation."
+                    : "No advance needed. Pay the full amount upon check-in at Coolspot Cottage."}
                 </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Assigned Rooms */}
+                  <div className="bg-[#f0f4ff] rounded-xl p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <BedDouble className="w-3.5 h-3.5 text-[#001a52]" />
+                      <span className="text-[10px] uppercase font-bold text-[#001a52] tracking-wider">Assigned Room{(generatedBooking.assignedRooms?.length || 0) > 1 ? "s" : ""}</span>
+                    </div>
+                    <span className="text-sm font-black text-[#001a52]">
+                      {generatedBooking.assignedRooms?.map((n: string) => `#${n}`).join(" + ") || "TBD"}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">{generatedBooking.roomsBooked} room{generatedBooking.roomsBooked > 1 ? "s" : ""} · {generatedBooking.guestsText}</span>
+                  </div>
+
+                  {/* Payment breakdown */}
+                  <div className="bg-amber-50 rounded-xl p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Wallet className="w-3.5 h-3.5 text-amber-700" />
+                      <span className="text-[10px] uppercase font-bold text-amber-700 tracking-wider">Payment</span>
+                    </div>
+                    {generatedBooking.paymentMode === "advance" ? (
+                      <>
+                        <span className="text-sm font-black text-amber-700">₹{generatedBooking.advanceAmount?.toLocaleString()}</span>
+                        <span className="text-[10px] text-slate-500 block">advance · ₹{generatedBooking.remainingAmount?.toLocaleString()} at property</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-black text-[#001a52]">₹{generatedBooking.totalCost?.toLocaleString()}</span>
+                        <span className="text-[10px] text-slate-500 block">full amount at check-in</span>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Status Alerting Card */}
@@ -804,45 +962,79 @@ export default function BookingFlowTab({
                 <span className="text-slate-400">Total Guests:</span>
                 <span className="font-semibold text-slate-600">{guests}</span>
               </div>
+              {/* Room assignment */}
+              <div className="flex justify-between items-start">
+                <span className="text-slate-400">Room(s):</span>
+                <span className="font-semibold text-[#001a52] text-right">
+                  {assignedRooms.length > 0 ? assignedRooms.map(n => `#${n}`).join(" + ") : "TBD"}
+                  {roomsNeeded > 1 && <span className="block text-[10px] text-amber-600 font-bold">× 2 rooms</span>}
+                </span>
+              </div>
               {selectedExps.length > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Bespoke Inclusions:</span>
+                  <span className="text-slate-400">Activities:</span>
                   <span className="font-semibold text-slate-600">{selectedExps.length} Selected</span>
                 </div>
               )}
               {cotRequested && (
                 <div className="flex justify-between">
                   <span className="text-slate-400">Extra Cot Bed:</span>
-                  <span className="font-semibold text-[#001a52]">Yes (+ Included)</span>
+                  <span className="font-semibold text-[#001a52]">Yes (Included)</span>
                 </div>
               )}
             </div>
 
             {/* Price breakdown invoice */}
             <div className="bg-[#f8f9ff] p-4 rounded-2xl space-y-2 border border-slate-100 shadow-inner mt-2">
-              <main className="flex justify-between text-xs text-slate-600">
-                <span>Room Charges:</span>
+              <div className="flex justify-between text-xs text-slate-600">
+                <span>Room{roomsNeeded > 1 ? "s" : ""} ({roomsNeeded}× ₹{room.ratePerNight.toLocaleString()}):</span>
                 <span className="font-mono font-bold">₹{roomBaseCost.toLocaleString()}</span>
-              </main>
+              </div>
 
               {selectedExps.length > 0 && (
-                <main className="flex justify-between text-xs text-slate-600">
-                  <span>Curated Exps:</span>
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Activities:</span>
                   <span className="font-mono font-bold">₹{expsCost.toLocaleString()}</span>
-                </main>
+                </div>
               )}
 
               {extraBedRequested && (
-                <main className="flex justify-between text-xs text-slate-600">
-                  <span>Extra Bed Charge:</span>
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Extra Bed:</span>
                   <span className="font-mono font-bold">₹{extraBedCost.toLocaleString()}</span>
-                </main>
+                </div>
               )}
 
-              <footer className="flex justify-between items-baseline pt-2 border-t border-slate-200/40 text-[#001a52]">
-                <span className="text-[10px] font-sans uppercase font-bold tracking-wider">Estimated Total</span>
+              <div className="flex justify-between items-baseline pt-2 border-t border-slate-200/40 text-[#001a52]">
+                <span className="text-[10px] font-sans uppercase font-bold tracking-wider">Total</span>
                 <span className="font-headline-md text-xl font-black">₹{totalCost.toLocaleString()}</span>
-              </footer>
+              </div>
+
+              {/* Payment breakdown */}
+              {step >= 2 && (
+                <div className="pt-2 border-t border-slate-200/40 space-y-1.5">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">
+                    {paymentMode === "advance" ? "40% Advance Plan" : "Full Payment Plan"}
+                  </div>
+                  {paymentMode === "advance" ? (
+                    <>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-amber-700 font-semibold">Advance (40%):</span>
+                        <span className="font-mono font-bold text-amber-700">₹{advanceAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500">Balance at property:</span>
+                        <span className="font-mono text-slate-500">₹{remainingAmount.toLocaleString()}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Pay at property:</span>
+                      <span className="font-mono font-bold text-[#001a52]">₹{totalCost.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

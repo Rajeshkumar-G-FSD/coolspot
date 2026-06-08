@@ -5,180 +5,82 @@
 
 import { Room, Experience, SpecialPackage } from "./types";
 
-// @ts-expect-error - Vite resolves image assets dynamically at build time
-import imgFrontview from "./public/images/frontview.jpg";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
-import imgCottagesFrontview from "./public/images/coolcottages_frontview.png";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
-import imgLivingroom from "./public/images/coolcottage_livingroom.jpg";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
-import imgCampfire from "./public/images/coolcottage_campfirearea.jpg";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
-import imgPlayingArea from "./public/images/coolcottage_playing area.jpg";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
 import imgRoomsview from "./public/images/coolcottage_roomsview.jpg";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
 import imgBedrooms from "./public/images/coolcottage_bedrooms.jpg";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
 import imgBedroom from "./public/images/coolcottage_bedroom.jpg";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
 import imgSingleBed from "./public/images/coolcottage_single bed.jpg";
-// @ts-expect-error - Vite resolves image assets dynamically at build time
-import imgRestroom from "./public/images/coolcottage_restroom.jpg";
 
 export const VILLAS_DATA: Room[] = [
   {
-    id: "ocean-view-suite", // Keep ID to maintain compatibility with booking models and packages
-    name: "The CoolCottages Entrance Canopy",
-    description: "The iconic architectural arrival pavilion. Hand-laid volcanic stone pathways welcome you to Cool Cottages.",
-    ratePerNight: 1100,
-    maxGuests: 2,
-    sizeSquareMeter: 150,
-    amenities: [
-      "24/7 Greeting Concierge",
-      "Valet Shuttle Access",
-      "Welcome Champagne Lounge",
-      "Pristine Landscaped Gardens",
-      "Somatic Welcome Tea Ritual",
-    ],
-    imageUrl: imgFrontview,
-  },
-  {
-    id: "private-villa", // Keep ID to maintain compatibility with booking models and packages
-    name: "CoolCottage Beach Frontview",
-    description: "Tucked inside absolute botanical solitude, featuring spectacular floor-to-ceiling timber framework and a direct gateway to the white sand private beach.",
-    ratePerNight: 1650,
+    id: "mountain-view",
+    name: "Mountain View Room",
+    description: "Wake up to breathtaking panoramic views of the Nilgiri mountains. This cozy room features warm wooden interiors, queen bed, and a private balcony framing misty hilltops at sunrise.",
+    ratePerNight: 3500,
     maxGuests: 4,
-    sizeSquareMeter: 180,
+    sizeSquareMeter: 120,
+    roomNumbers: ["101"],
     amenities: [
-      "Direct Beach Access",
-      "Lush Botanical Privacy",
-      "Sunset Viewing Platform",
-      "Teak Loungers",
-      "Enclosed Coral Sand Garden",
-    ],
-    imageUrl: imgCottagesFrontview,
-  },
-  {
-    id: "lumina-penthouse", // Keep ID to maintain compatibility with booking models and packages
-    name: "CoolCottage Timber Living Room",
-    description: "An expansive, open-concept living pavilion crafted from fine tropical hardwood. Offers plush bespoke seating and grand archways framing ocean breezes.",
-    ratePerNight: 1750,
-    maxGuests: 6,
-    sizeSquareMeter: 220,
-    amenities: [
-      "Curated Organic Furnishings",
-      "B&O Surround Sound",
-      "Private Beverage Bar",
-      "Ambient Integrated Lighting",
-      "Ventilated High-Ceiling Timber Decking",
-    ],
-    imageUrl: imgLivingroom,
-  },
-  {
-    id: "cottage-campfire",
-    name: "Starlit Hearth & Campfire Area",
-    description: "Gather around the bespoke stone-carved fire hearth situated in a serene forest clearing. Enjoy cozy evenings under the brilliant starlit South Pacific sky.",
-    ratePerNight: 1200,
-    maxGuests: 6,
-    sizeSquareMeter: 90,
-    amenities: [
-      "Bespoke Stone Charcoal Pit",
-      "Complimentary S'mores Curation",
-      "Plush Outdoor Seating",
-      "Custom Solar Path Lighting",
-    ],
-    imageUrl: imgCampfire,
-  },
-  {
-    id: "cottage-playing",
-    name: "Garden Play & Leisure Area",
-    description: "A manicured verdant lawn designed for outdoor recreation, yoga sessions, or gentle family sports under the shade of ancient native palms.",
-    ratePerNight: 1300,
-    maxGuests: 8,
-    sizeSquareMeter: 300,
-    amenities: [
-      "Custom Lawn Game Sets",
-      "Yoga & Meditation Mats",
-      "Complimentary Refreshment Cart",
-      "Shaded Relaxation Cabanas",
-    ],
-    imageUrl: imgPlayingArea,
-  },
-  {
-    id: "cottage-scenic-arch",
-    name: "The Archway Scenic Rooms View",
-    description: "Experience structural purity with elegant timber archways that create a fluid transition between inner sanctuaries and outer natural paradise.",
-    ratePerNight: 1900,
-    maxGuests: 4,
-    sizeSquareMeter: 240,
-    amenities: [
-      "Panoramic Open Layout",
-      "Hand-carved Wooden Columns",
-      "Integrated Climate Control",
-      "Bespoke Sculptural Decor",
+      "Panoramic Mountain View Balcony",
+      "Queen Bed with Premium Linen",
+      "Air Conditioning & Heating",
+      "Private Attached Bathroom",
+      "Complimentary Morning Tea",
     ],
     imageUrl: imgRoomsview,
   },
   {
-    id: "cottage-master-bedroom",
-    name: "The CoolCottage Master Bedroom",
-    description: "The premier sleeping sanctuary. Adored with a signature floating king bed, premium linen sheets, and custom warm timber finishes.",
-    ratePerNight: 2200,
-    maxGuests: 2,
-    sizeSquareMeter: 160,
+    id: "deluxe-family",
+    name: "Deluxe Family Room",
+    description: "Spacious family suite spread across two connected rooms (102 + 103) with an extra cot bed — ideal for families of up to 5. Features warm decor, ample storage, and a shared courtyard access.",
+    ratePerNight: 4500,
+    maxGuests: 5,
+    sizeSquareMeter: 200,
+    roomNumbers: ["102", "103"],
+    isBundle: true,
     amenities: [
-      "Signature King Bed",
-      "Pre-set Pillow Selection",
-      "Integrated Sound Control",
-      "Automated Blackout Curtains",
+      "Two Connected Rooms (102 + 103)",
+      "Extra Cot Bed Included",
+      "Family-Sized Living Space",
+      "Air Conditioning",
+      "Private Bathrooms in Each Room",
+      "Courtyard Garden Access",
     ],
     imageUrl: imgBedrooms,
   },
   {
-    id: "cottage-corner-room",
-    name: "Cottage Botanical Corner Room",
-    description: "An intimate secondary bedroom boasting a corner-view overlook of the vibrant orchid garden. Styled in sleek minimalist comfort.",
-    ratePerNight: 1950,
-    maxGuests: 2,
+    id: "extra-cot-room",
+    name: "Extra Cot Bed Room",
+    description: "Comfortable standard rooms equipped with an extra fold-out cot bed. Perfect for small groups or families with a child. Located in the quiet wing with garden views.",
+    ratePerNight: 3000,
+    maxGuests: 3,
     sizeSquareMeter: 140,
+    roomNumbers: ["104", "105"],
     amenities: [
-      "Plush Queen Bedding",
-      "Garden Overlook Balcony",
-      "Premium Bathrobes & Linens",
-      "Organic Local Aromatherapy",
+      "Double Bed + Extra Cot Bed",
+      "Garden View Window",
+      "Air Conditioning",
+      "Private Bathroom",
+      "Wardrobe & Storage",
     ],
     imageUrl: imgBedroom,
   },
   {
-    id: "cottage-single-bed",
-    name: "The Secluded Daybed Studio",
-    description: "A cozy, sun-drenched studio library featuring a premium single memory-foam daybed. Perfect for an enchanting reading stay or a personal retreat.",
-    ratePerNight: 1400,
-    maxGuests: 1,
-    sizeSquareMeter: 80,
+    id: "budget-basement",
+    name: "Budget Double Room (Basement)",
+    description: "Affordable and cozy double rooms on the basement floor, offering a cool natural temperature year-round. Includes optional extra cot bed. Great value for budget-conscious guests.",
+    ratePerNight: 2500,
+    maxGuests: 3,
+    sizeSquareMeter: 100,
+    roomNumbers: ["106", "107", "108"],
     amenities: [
-      "Premium Single Daybed",
-      "Curated Island Book collection",
-      "Bespoke Work Nook Desk",
-      "Nespresso Master Brewer",
+      "Double Bed",
+      "Optional Extra Cot Bed",
+      "Natural Cool Temperature",
+      "Private Bathroom",
+      "Budget Friendly",
+      "Wi-Fi Access",
     ],
     imageUrl: imgSingleBed,
-  },
-  {
-    id: "cottage-stone-restroom",
-    name: "The Somatic Stone Restroom",
-    description: "A spa-inspired sanctuary featuring a master deep-soaking stone bath and an open-concept rainfall shower surrounded by live volcanic ferns.",
-    ratePerNight: 1800,
-    maxGuests: 2,
-    sizeSquareMeter: 110,
-    amenities: [
-      "Custom Stone Soaking Tub",
-      "Twin Organic Rain Showers",
-      "Heated Travertine Floors",
-      "CoolCottages Somatic Bath Salts",
-    ],
-    imageUrl: imgRestroom,
   },
 ];
 
@@ -228,19 +130,19 @@ export const EXPERIENCES_DATA: Experience[] = [
 export const PACKAGES_DATA: SpecialPackage[] = [
   {
     id: "honeymoon-escape",
-    name: "The Honeymoon Sanctuary Escape",
-    tagline: "Unparalleled romance and curated isolated memory building",
-    description: "Combine 5 nights in our gorgeous Private Secluded Villa with a curated itinerary of a luxury Private Yacht Cruising sunset, Starlit Dome Shoreline Dining, and our signature Sanctuary Somatic wellness treatments. Ultimate romantic luxury.",
+    name: "Romantic Getaway Package",
+    tagline: "A tranquil couple's retreat in the Nilgiris",
+    description: "5 nights in the Deluxe Family Room with stunning mountain surroundings, a private campfire evening, somatic spa session, and a starlit outdoor dining experience. Perfect for couples.",
     durationDays: 5,
     discountPercentage: 15,
-    includedExperiences: ["yacht-charter", "somatic-massage", "shoreline-dining"],
+    includedExperiences: ["somatic-massage", "shoreline-dining"],
     costMultiplier: 0.85,
   },
   {
     id: "ultimate-lumina-experience",
-    name: "The Sovereign Ridge & Reef Experience",
-    tagline: "Explore the wild South Pacific heights and ocean depths",
-    description: "The peak of Cool Cottages leisure. Stay 4 nights in our premium master bedroom/suites, featuring panoramic views, the Heli-Ridge picnic, private Yacht charter, and dedicated starlit shoreline dinner.",
+    name: "Mountain View Explorer Package",
+    tagline: "Breathtaking views, adventure & luxury",
+    description: "4 nights in the Mountain View Room with panoramic Nilgiri vistas, a helicopter ridge tour, private yacht charter, and an unforgettable hilltop dining experience.",
     durationDays: 4,
     discountPercentage: 10,
     includedExperiences: ["heli-picnic", "yacht-charter", "shoreline-dining"],

@@ -106,9 +106,9 @@ export default function App() {
   const handleSelectPackageCheckout = (pkg: SpecialPackage) => {
     let targetRoom = VILLAS_DATA[0];
     if (pkg.id === "honeymoon-escape") {
-      targetRoom = VILLAS_DATA.find((r) => r.id === "private-villa") || VILLAS_DATA[0];
+      targetRoom = VILLAS_DATA.find((r) => r.id === "deluxe-family") || VILLAS_DATA[0];
     } else {
-      targetRoom = VILLAS_DATA.find((r) => r.id === "lumina-penthouse") || VILLAS_DATA[0];
+      targetRoom = VILLAS_DATA.find((r) => r.id === "mountain-view") || VILLAS_DATA[0];
     }
 
     const matchedExps = EXPERIENCES_DATA.filter((exp) => pkg.includedExperiences.includes(exp.id));
