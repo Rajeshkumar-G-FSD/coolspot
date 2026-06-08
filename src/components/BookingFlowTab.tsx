@@ -44,6 +44,14 @@ export default function BookingFlowTab({
 
   // Form Fields - Step 1
   const [room, setRoom] = useState<Room>(initialRoom);
+  // Tracks which specific room numbers the guest has chosen
+  const [selectedRoomNumbers, setSelectedRoomNumbers] = useState<string[]>(
+    initialRoom.isBundle
+      ? (initialRoom.roomNumbers || [])
+      : initialRoom.roomNumbers?.[0]
+      ? [initialRoom.roomNumbers[0]]
+      : []
+  );
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [guests, setGuests] = useState(initialGuests);
@@ -73,16 +81,38 @@ export default function BookingFlowTab({
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityFetched, setAvailabilityFetched] = useState(false);
 
+  // Live rates from Firebase rooms collection (set by admin panel)
+  const [roomRates, setRoomRates] = useState<Record<string, number>>({});
+
   // Status & Submit values
   const [submitting, setSubmitting] = useState(false);
   const [generatedBooking, setGeneratedBooking] = useState<Booking | null>(null);
 
-  // Check-in must be today or later; check-out always starts blank
+  // Check-in must be today or later; only clear checkout if it's invalid
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
-    // Force today if empty or if a past date was pre-filled
-    if (!checkIn || checkIn < today) setCheckIn(today);
-    setCheckOut("");
+    const resolvedCheckIn = (!checkIn || checkIn < today) ? today : checkIn;
+    if (resolvedCheckIn !== checkIn) setCheckIn(resolvedCheckIn);
+    // Clear checkout only if it's before or equal to the resolved check-in
+    if (checkOut && checkOut <= resolvedCheckIn) setCheckOut("");
+  }, []);
+
+  // Fetch live room rates set by admin from Firebase rooms collection
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const snap = await getDocs(collection(db, "rooms"));
+        const rates: Record<string, number> = {};
+        snap.forEach((d) => {
+          const data = d.data();
+          if (data.ratePerNight) rates[d.id] = data.ratePerNight;
+        });
+        setRoomRates(rates);
+      } catch (err) {
+        console.error("Room rate fetch error:", err);
+      }
+    };
+    fetchRates();
   }, []);
 
   // RETRIEVE: query Firebase for booked room numbers on selected dates
@@ -99,7 +129,7 @@ export default function BookingFlowTab({
       snap.forEach((d) => {
         const b = d.data();
         // Overlap: existing.checkIn < requested.checkOut AND existing.checkOut > requested.checkIn
-        if (b.checkIn < coDate && b.checkOut > ciDate && Array.isArray(b.assignedRooms)) {
+        if (b.status !== "Cancelled" && b.checkIn < coDate && b.checkOut > ciDate && Array.isArray(b.assignedRooms)) {
           taken.push(...b.assignedRooms);
         }
       });
@@ -117,6 +147,14 @@ export default function BookingFlowTab({
     fetchRoomAvailability(checkIn, checkOut);
   }, [checkIn, checkOut]);
 
+  // When guest count drops back to ≤ 3 adults, trim multi-selection to one room
+  useEffect(() => {
+    const count = parseInt(guests.split(" Adult")[0]) || 2;
+    if (count <= 3 && selectedRoomNumbers.length > 1) {
+      setSelectedRoomNumbers(prev => [prev[0]]);
+    }
+  }, [guests]);
+
   // Calculate reservation metrics
   let nights = 1;
   if (checkIn && checkOut) {
@@ -128,20 +166,33 @@ export default function BookingFlowTab({
     }
   }
 
-  // 4-adult logic: non-bundle categories need 2 rooms
   const adultCount = parseInt(guests.split(" Adult")[0]) || 2;
-  const is4Adults = adultCount >= 4;
-  const roomsNeeded = is4Adults && !room.isBundle ? 2 : 1;
+  // > 3 adults → multi-room selection allowed; ≤ 3 → single room only
+  const isMultiRoomMode = adultCount > 3;
 
-  // Derive assigned room numbers
-  const assignedRooms = (() => {
-    const nums = room.roomNumbers || [];
-    if (room.isBundle) return nums;          // deluxe-family: always 102 + 103
-    if (is4Adults) return nums.slice(0, 2);  // pick first 2 available
-    return nums.slice(0, 1);
-  })();
+  // Assigned rooms: bundle always takes all its numbers; otherwise use explicit selections
+  const assignedRooms = room.isBundle
+    ? (room.roomNumbers || [])
+    : selectedRoomNumbers.filter(Boolean);
 
-  const roomBaseCost = room.ratePerNight * nights * roomsNeeded;
+  const roomsNeeded = assignedRooms.length || 1;
+
+  // Helper: get the rate for any individual room number by looking up its parent category
+  const getRateForNumber = (num: string): number => {
+    const cat = VILLAS_DATA.find(v => (v.roomNumbers || []).includes(num));
+    if (!cat) return 0;
+    return roomRates[cat.id] ?? cat.ratePerNight;
+  };
+
+  // Use admin-set Firebase rate if available, otherwise fall back to static default
+  const effectiveRate = roomRates[room.id] ?? room.ratePerNight;
+
+  // Cost: bundle rate once; individual rooms summed per selected number
+  const roomBaseCost = room.isBundle
+    ? effectiveRate * nights
+    : (selectedRoomNumbers.length > 0
+        ? selectedRoomNumbers.reduce((sum, num) => sum + getRateForNumber(num) * nights, 0)
+        : effectiveRate * nights);
   const expsCost = selectedExps.reduce((acc, curr) => acc + curr.cost, 0);
   const extraBedRate = 1500;
   const extraBedCost = extraBedRequested ? extraBedRate * extraBedCount * nights : 0;
@@ -190,7 +241,7 @@ export default function BookingFlowTab({
       room: {
         id: room.id,
         name: room.name,
-        ratePerNight: room.ratePerNight,
+        ratePerNight: effectiveRate,
         roomNumbers: room.roomNumbers,
       },
       checkIn,
@@ -446,64 +497,105 @@ export default function BookingFlowTab({
                   </div>
                 )}
 
-                {/* Room category card selector with live availability */}
+                {/* Room selector: category header + individual room number items */}
+                {isMultiRoomMode && (
+                  <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
+                    <BedDouble className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span className="text-[11px] text-amber-700 font-semibold">
+                      4+ guests — select multiple rooms below
+                    </span>
+                  </div>
+                )}
                 <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Select Room Category
+                  Select Room
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {VILLAS_DATA.map((r) => {
                     const avail = isCategoryAvailable(r);
                     const availCount = categoryAvailableCount(r);
-                    const isSelected = room.id === r.id;
+                    const isCatSelected = r.isBundle
+                      ? room.id === r.id
+                      : (r.roomNumbers || []).some(n => selectedRoomNumbers.includes(n));
+                    const liveRate = roomRates[r.id] ?? r.ratePerNight;
                     return (
-                      <button
+                      <div
                         key={r.id}
-                        type="button"
-                        disabled={!avail}
-                        onClick={() => avail && setRoom(r)}
-                        className={`w-full text-left p-3.5 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                          !avail
-                            ? "opacity-50 cursor-not-allowed bg-slate-50 border-slate-200"
-                            : isSelected
-                            ? "border-[#001a52] bg-[#e5eeff] cursor-pointer"
-                            : "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
-                        }`}
+                        className={`rounded-xl border-2 overflow-hidden transition-all ${
+                          isCatSelected ? "border-[#001a52]" : "border-slate-200"
+                        } ${!avail ? "opacity-50" : ""}`}
                       >
-                        <img
-                          src={r.imageUrl}
-                          alt={r.name}
-                          className="w-12 h-12 rounded-lg object-cover shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-xs font-bold ${isSelected ? "text-[#001a52]" : "text-slate-800"}`}>
-                              {r.name}
-                            </span>
-                            {!avail ? (
-                              <span className="text-[9px] font-bold uppercase tracking-wider bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full shrink-0">
-                                Fully Booked
+                        {/* Category header row */}
+                        <div className={`flex items-center gap-3 px-3 py-2.5 ${isCatSelected ? "bg-[#e5eeff]" : "bg-white"}`}>
+                          <img src={r.imageUrl} alt={r.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-xs font-bold ${isCatSelected ? "text-[#001a52]" : "text-slate-700"}`}>
+                                {r.name}
                               </span>
-                            ) : isHighDemand && availabilityFetched ? (
-                              <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full shrink-0">
-                                {availCount} left
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                            <span className="text-[10px] text-slate-500">
-                              Room{(r.roomNumbers?.length || 0) > 1 ? "s" : ""} {r.roomNumbers?.map(n => `#${n}`).join(" + ")}
-                            </span>
-                            <span className="text-[10px] font-bold text-[#001a52]">
-                              ₹{r.ratePerNight.toLocaleString()}/night
-                            </span>
+                              {!avail ? (
+                                <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Fully Booked</span>
+                              ) : isHighDemand && availabilityFetched ? (
+                                <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{availCount} left</span>
+                              ) : null}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] font-bold text-[#001a52]">₹{liveRate.toLocaleString()}/night</span>
+                              {r.isBundle && <span className="text-[9px] text-slate-400">· bundle (all rooms included)</span>}
+                            </div>
                           </div>
                         </div>
-                        {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-[#001a52] flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </button>
+
+                        {/* Individual room number buttons — N buttons for N rooms */}
+                        <div className={`px-3 pb-3 pt-2 flex gap-2 flex-wrap border-t ${
+                          isCatSelected ? "bg-[#eef2ff] border-[#c7d4f8]" : "bg-slate-50 border-slate-100"
+                        }`}>
+                          {(r.roomNumbers || []).map((num) => {
+                            const isRoomBooked = availabilityFetched && bookedRoomNumbers.includes(num);
+                            const isRoomSelected = r.isBundle
+                              ? room.id === r.id
+                              : selectedRoomNumbers.includes(num);
+                            return (
+                              <button
+                                key={num}
+                                type="button"
+                                disabled={!avail || isRoomBooked}
+                                onClick={() => {
+                                  if (!avail || isRoomBooked) return;
+                                  if (r.isBundle) {
+                                    setRoom(r);
+                                    setSelectedRoomNumbers(r.roomNumbers || []);
+                                  } else if (isMultiRoomMode) {
+                                    // Toggle: add or remove this room number
+                                    setRoom(r);
+                                    setSelectedRoomNumbers(prev => {
+                                      if (prev.includes(num)) {
+                                        const next = prev.filter(n => n !== num);
+                                        return next.length > 0 ? next : [num];
+                                      }
+                                      return [...prev, num];
+                                    });
+                                  } else {
+                                    // Single-room mode: replace selection
+                                    setRoom(r);
+                                    setSelectedRoomNumbers([num]);
+                                  }
+                                }}
+                                className={`flex-1 min-w-[64px] py-2 px-2 rounded-lg text-xs font-bold border-2 transition-all ${
+                                  isRoomBooked
+                                    ? "cursor-not-allowed bg-slate-100 border-slate-200 text-slate-400"
+                                    : isRoomSelected
+                                    ? "bg-[#001a52] border-[#001a52] text-white shadow-sm"
+                                    : "bg-white border-slate-200 text-slate-700 hover:border-[#001a52] hover:text-[#001a52] cursor-pointer"
+                                }`}
+                              >
+                                Room #{num}
+                                {isRoomBooked && <span className="block text-[9px] font-normal opacity-70">Taken</span>}
+                                {isRoomSelected && !isRoomBooked && <span className="block text-[9px] font-normal opacity-80">Selected</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -527,15 +619,15 @@ export default function BookingFlowTab({
                 </select>
               </div>
 
-              {/* 4-adult room assignment notice */}
-              {is4Adults && (
+              {/* Multi-room assignment notice */}
+              {isMultiRoomMode && assignedRooms.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5">
                   <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div className="text-xs text-amber-800">
-                    <span className="font-bold block mb-0.5">2 Rooms Auto-Assigned for 4 Adults</span>
+                    <span className="font-bold block mb-0.5">Multiple Rooms Selected for 4+ Adults</span>
                     <span className="text-amber-700">
-                      Rooms: <strong>{assignedRooms.length > 0 ? assignedRooms.join(" + ") : "TBD"}</strong>
-                      {room.isBundle ? " (Family Suite Bundle)" : " (2 × same category)"}
+                      Rooms: <strong>{assignedRooms.map(n => `#${n}`).join(" + ")}</strong>
+                      {room.isBundle ? " (Family Suite Bundle)" : ""}
                     </span>
                   </div>
                 </div>
@@ -1119,7 +1211,7 @@ export default function BookingFlowTab({
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#819ae7] block">Selected Suite</span>
                 <span className="text-xs font-bold text-slate-800 block leading-tight">{room.name}</span>
-                <span className="text-[10px] text-slate-400 font-medium block mt-1">₹{room.ratePerNight.toLocaleString()} / Night</span>
+                <span className="text-[10px] text-slate-400 font-medium block mt-1">₹{effectiveRate.toLocaleString()} / Night</span>
               </div>
             </div>
 
@@ -1142,7 +1234,9 @@ export default function BookingFlowTab({
                 <span className="text-slate-400">Room(s):</span>
                 <span className="font-semibold text-[#001a52] text-right">
                   {assignedRooms.length > 0 ? assignedRooms.map(n => `#${n}`).join(" + ") : "TBD"}
-                  {roomsNeeded > 1 && <span className="block text-[10px] text-amber-600 font-bold">× 2 rooms</span>}
+                  {assignedRooms.length > 1 && (
+                    <span className="block text-[10px] text-amber-600 font-bold">{assignedRooms.length} rooms selected</span>
+                  )}
                 </span>
               </div>
               {selectedExps.length > 0 && (
@@ -1161,10 +1255,23 @@ export default function BookingFlowTab({
 
             {/* Price breakdown invoice */}
             <div className="bg-[#f8f9ff] p-4 rounded-2xl space-y-2 border border-slate-100 shadow-inner mt-2">
-              <div className="flex justify-between text-xs text-slate-600">
-                <span>Room{roomsNeeded > 1 ? "s" : ""} ({roomsNeeded}× ₹{room.ratePerNight.toLocaleString()}):</span>
-                <span className="font-mono font-bold">₹{roomBaseCost.toLocaleString()}</span>
-              </div>
+              {room.isBundle || selectedRoomNumbers.length <= 1 ? (
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Room #{assignedRooms[0] ?? "—"} · ₹{effectiveRate.toLocaleString()}/night:</span>
+                  <span className="font-mono font-bold">₹{roomBaseCost.toLocaleString()}</span>
+                </div>
+              ) : (
+                selectedRoomNumbers.map(num => {
+                  const cat = VILLAS_DATA.find(v => (v.roomNumbers || []).includes(num));
+                  const rate = cat ? (roomRates[cat.id] ?? cat.ratePerNight) : 0;
+                  return (
+                    <div key={num} className="flex justify-between text-xs text-slate-600">
+                      <span>Room #{num} · ₹{rate.toLocaleString()}/night:</span>
+                      <span className="font-mono font-bold">₹{(rate * nights).toLocaleString()}</span>
+                    </div>
+                  );
+                })
+              )}
 
               {selectedExps.length > 0 && (
                 <div className="flex justify-between text-xs text-slate-600">

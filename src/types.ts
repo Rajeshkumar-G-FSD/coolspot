@@ -54,7 +54,7 @@ export interface Booking {
   nightsNum: number;
   totalCost: number;
   createdTime: string;
-  status: "Confirmed" | "Completed" | "Pending";
+  status: "Confirmed" | "Completed" | "Pending" | "Cancelled";
   selectedExperiences: Experience[];
   specialRequests?: string;
   billingName: string;

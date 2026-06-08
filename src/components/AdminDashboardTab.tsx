@@ -191,14 +191,15 @@ function ModuleOverview({ bookings }: { bookings: any[] }) {
   const confirmed = bookings.filter(b => b.status === "Confirmed").length;
   const pending = bookings.filter(b => b.status === "Pending").length;
   const completed = bookings.filter(b => b.status === "Completed").length;
+  const cancelled = bookings.filter(b => b.status === "Cancelled").length;
   const today = new Date().toISOString().split("T")[0];
-  const todayArrivals = bookings.filter(b => b.checkIn === today).length;
+  const todayArrivals = bookings.filter(b => b.checkIn === today && b.status !== "Cancelled").length;
   const occupancyPct = bookings.length > 0 ? Math.min(98, Math.round((confirmed / Math.max(1, VILLAS_DATA.length)) * 100)) : 0;
 
   const recentBookings = [...bookings].slice(0, 5);
 
-  const statusPct = { confirmed: confirmed, pending: pending, completed };
-  const total = confirmed + pending + completed || 1;
+  const statusPct = { confirmed, pending, completed, cancelled };
+  const total = confirmed + pending + completed + cancelled || 1;
 
   return (
     <div className="space-y-6">
@@ -300,6 +301,7 @@ function ModuleOverview({ bookings }: { bookings: any[] }) {
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     bk.status === "Confirmed" ? "bg-emerald-500/15 text-emerald-400"
                     : bk.status === "Pending" ? "bg-amber-500/15 text-amber-400"
+                    : bk.status === "Cancelled" ? "bg-red-500/15 text-red-400"
                     : "bg-blue-500/15 text-blue-400"
                   }`}>{bk.status}</span>
                 </div>
@@ -357,78 +359,202 @@ function ModuleOverview({ bookings }: { bookings: any[] }) {
 
 // ─── MODULE: ROOMS ────────────────────────────────────────────────────────────
 function ModuleRooms() {
-  const [rooms, setRooms] = useState(VILLAS_DATA.map(r => ({ ...r, available: true, occupancyPct: [78,92,65,88,73][Math.floor(Math.random()*5)] })));
-  const toggle = (id: string) => setRooms(prev => prev.map(r => r.id === id ? { ...r, available: !r.available } : r));
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRate, setEditRate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const loadRooms = async () => {
+    setLoading(true);
+    try {
+      const snap = await getDocs(collection(db, "rooms"));
+      if (snap.empty) {
+        // Seed Firebase with defaults from VILLAS_DATA on first run
+        await Promise.all(
+          VILLAS_DATA.map(r =>
+            setDoc(doc(db, "rooms", r.id), {
+              id: r.id,
+              name: r.name,
+              ratePerNight: r.ratePerNight,
+              maxGuests: r.maxGuests,
+              roomNumbers: r.roomNumbers || [],
+              isBundle: r.isBundle || false,
+            })
+          )
+        );
+        setRooms(VILLAS_DATA.map(r => ({ ...r })));
+      } else {
+        const list: any[] = [];
+        snap.forEach(d => {
+          const base = VILLAS_DATA.find(v => v.id === d.id) || {};
+          list.push({ ...base, ...d.data() });
+        });
+        // Ensure all 4 categories appear even if missing from Firebase
+        VILLAS_DATA.forEach(v => {
+          if (!list.find(r => r.id === v.id)) list.push({ ...v });
+        });
+        setRooms(list);
+      }
+    } catch (err) {
+      console.error("Failed to load rooms:", err);
+      setRooms(VILLAS_DATA.map(r => ({ ...r })));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadRooms(); }, []);
+
+  const startEdit = (room: any) => {
+    setEditingId(room.id);
+    setEditRate(String(room.ratePerNight));
+  };
+
+  const cancelEdit = () => { setEditingId(null); setEditRate(""); };
+
+  const saveRate = async (roomId: string) => {
+    const newRate = parseInt(editRate);
+    if (!newRate || newRate < 100) { alert("Enter a valid rate (min ₹100)"); return; }
+    setSaving(true);
+    const room = rooms.find(r => r.id === roomId);
+    try {
+      await setDoc(doc(db, "rooms", roomId), {
+        id: roomId,
+        name: room?.name || roomId,
+        ratePerNight: newRate,
+        maxGuests: room?.maxGuests || 2,
+        roomNumbers: room?.roomNumbers || [],
+        isBundle: room?.isBundle || false,
+      }, { merge: true });
+      setRooms(prev => prev.map(r => r.id === roomId ? { ...r, ratePerNight: newRate } : r));
+      setEditingId(null);
+    } catch (err) {
+      alert("Failed to save rate. Please try again.");
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: C.text }}>Room Management</h2>
-          <p className="text-xs mt-0.5" style={{ color: C.muted }}>{rooms.filter(r=>r.available).length} of {rooms.length} rooms available</p>
+          <h2 className="text-xl font-bold" style={{ color: C.text }}>Room Rate Management</h2>
+          <p className="text-xs mt-0.5" style={{ color: C.muted }}>Set per-night rates · Changes apply immediately to new bookings</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider"
-          style={{ background: C.gold, color: "#0a0a0a" }}>
-          <Plus className="w-4 h-4" /> Add Room
+        <button onClick={loadRooms} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border"
+          style={{ borderColor: C.border, color: C.muted }}>
+          <RefreshCcw className="w-3.5 h-3.5" /> Refresh
         </button>
       </div>
-      <div className="grid md:grid-cols-2 gap-4">
-        {rooms.map((room, i) => {
-          const occ = [78, 92, 65, 88][i % 4];
-          return (
-            <motion.div key={room.id} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay: i*0.05 }}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-6 h-6 border-2 rounded-full animate-spin mr-3" style={{ borderColor: C.border, borderTopColor: C.gold }} />
+          <span className="text-sm" style={{ color: C.muted }}>Loading room rates…</span>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-5">
+          {rooms.map((room, i) => (
+            <motion.div key={room.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
               className="rounded-2xl overflow-hidden border" style={{ borderColor: C.border }}>
-              <div className="h-40 relative overflow-hidden">
+
+              {/* Room image with name overlay */}
+              <div className="h-36 relative overflow-hidden">
                 <img src={room.imageUrl} alt={room.name} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
-                  <div>
-                    <div className="text-sm font-bold text-white">{room.name}</div>
-                    <div className="text-xs text-white/60">{room.sizeSquareMeter} m² · Max {room.maxGuests} guests</div>
+                <div className="absolute bottom-3 left-4 right-4">
+                  <div className="text-sm font-bold text-white">{room.name}</div>
+                  <div className="text-xs text-white/60">
+                    {(room.roomNumbers || []).length > 0
+                      ? `Room${(room.roomNumbers || []).length > 1 ? "s" : ""} ${(room.roomNumbers || []).map((n: string) => `#${n}`).join(" + ")} · `
+                      : ""}
+                    Max {room.maxGuests} guests
                   </div>
-                  <button onClick={() => toggle(room.id)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${room.available ? "bg-emerald-500/80 text-white" : "bg-red-500/80 text-white"}`}>
-                    {room.available ? "Available" : "Occupied"}
-                  </button>
                 </div>
               </div>
-              <div className="p-4" style={{ background: C.card }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <span className="text-lg font-black" style={{ color: C.gold }}>₹{room.ratePerNight.toLocaleString()}</span>
-                    <span className="text-xs ml-1" style={{ color: C.muted }}>/night</span>
+
+              {/* Rate management panel */}
+              <div className="p-4 space-y-4" style={{ background: C.card }}>
+                {editingId === room.id ? (
+                  <div className="space-y-3">
+                    <label className="text-[10px] uppercase tracking-widest font-bold block" style={{ color: C.muted }}>
+                      Rate Per Night (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min={100}
+                      step={50}
+                      value={editRate}
+                      onChange={e => setEditRate(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && saveRate(room.id)}
+                      className="w-full px-3 py-2.5 rounded-xl text-sm font-bold border outline-none"
+                      style={{ background: "rgba(255,255,255,0.06)", borderColor: C.gold, color: C.text }}
+                      autoFocus
+                      placeholder="e.g. 3500"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveRate(room.id)}
+                        disabled={saving}
+                        className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5"
+                        style={{ background: C.gold, color: "#0a0a0a", opacity: saving ? 0.6 : 1 }}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        {saving ? "Saving…" : "Save Rate"}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border"
+                        style={{ borderColor: C.border, color: C.muted }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-                      <Edit2 className="w-3.5 h-3.5" style={{ color: C.muted }} />
-                    </button>
-                    <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-                      <Eye className="w-3.5 h-3.5" style={{ color: C.muted }} />
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
+                ) : (
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase tracking-wider" style={{ color: C.muted }}>Occupancy Rate</span>
-                    <span className="text-[10px] font-bold" style={{ color: occ > 80 ? "#4ade80" : C.gold }}>{occ}%</span>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest mb-1" style={{ color: C.muted }}>Per Night Rate</div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black" style={{ color: C.gold }}>
+                          ₹{(room.ratePerNight || 0).toLocaleString()}
+                        </span>
+                        <span className="text-xs" style={{ color: C.muted }}>/night</span>
+                      </div>
+                      {room.isBundle && (
+                        <div className="text-[9px] mt-0.5" style={{ color: C.muted }}>Bundle · covers all rooms in category</div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => startEdit(room)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border hover:bg-white/10 transition-colors"
+                      style={{ borderColor: C.border, color: C.gold }}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit Rate
+                    </button>
                   </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-                    <div className="h-full rounded-full" style={{ width: `${occ}%`, background: occ > 80 ? "#4ade80" : C.gold }} />
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-3">
-                  {room.amenities.slice(0, 3).map(a => (
-                    <span key={a} className="px-2 py-0.5 rounded-full text-[9px] font-medium" style={{ background: "rgba(255,255,255,0.06)", color: C.muted }}>{a}</span>
+                )}
+
+                {/* Quick cost preview: 1, 2, 3 nights */}
+                <div className="grid grid-cols-3 gap-2 pt-3 border-t" style={{ borderColor: C.border }}>
+                  {[1, 2, 3].map(days => (
+                    <div key={days} className="text-center py-2 px-1 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
+                      <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: C.muted }}>{days} Night{days > 1 ? "s" : ""}</div>
+                      <div className="text-xs font-black" style={{ color: C.text }}>
+                        ₹{((room.ratePerNight || 0) * days).toLocaleString()}
+                      </div>
+                    </div>
                   ))}
-                  {room.amenities.length > 3 && (
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-medium" style={{ background: "rgba(255,255,255,0.06)", color: C.muted }}>+{room.amenities.length - 3} more</span>
-                  )}
                 </div>
               </div>
             </motion.div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -474,7 +600,7 @@ function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange,
           />
         </div>
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }}>
-          {["All", "Confirmed", "Pending", "Completed"].map(f => (
+          {["All", "Confirmed", "Pending", "Completed", "Cancelled"].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
               style={{ background: filter === f ? C.gold : "transparent", color: filter === f ? "#0a0a0a" : C.muted }}>
@@ -523,14 +649,17 @@ function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange,
                         style={{
                           background: bk.status === "Confirmed" ? "rgba(74,222,128,0.15)"
                             : bk.status === "Pending" ? "rgba(245,158,11,0.15)"
+                            : bk.status === "Cancelled" ? "rgba(248,113,113,0.15)"
                             : "rgba(96,165,250,0.15)",
                           color: bk.status === "Confirmed" ? "#4ade80"
                             : bk.status === "Pending" ? "#f59e0b"
+                            : bk.status === "Cancelled" ? "#f87171"
                             : "#60a5fa"
                         }}>
                         <option value="Confirmed">Confirmed</option>
                         <option value="Pending">Pending</option>
                         <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
                       </select>
                     </td>
                     <td className="px-5 py-4">

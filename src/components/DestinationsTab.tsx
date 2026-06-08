@@ -24,18 +24,49 @@ export default function DestinationsTab({
   onSelectRoom,
   onInitiateBooking,
 }: DestinationsTabProps) {
-  const [checkIn, setCheckIn] = useState("");
+  const today = new Date().toISOString().split("T")[0];
+  const [checkIn, setCheckIn] = useState(today);
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState("2 Adults, 0 Children");
+  const [errors, setErrors] = useState<{ checkIn?: string; checkOut?: string }>({});
+
+  const minCheckOut = checkIn
+    ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
+    : "";
 
   const [activeSubTab, setActiveSubTab] = useState<"rooms" | "visual">("rooms");
 
+  const handleCheckInChange = (val: string) => {
+    setCheckIn(val);
+    setErrors(prev => ({ ...prev, checkIn: undefined }));
+    // Reset checkout if it's no longer valid after check-in changes
+    if (checkOut && checkOut <= val) {
+      setCheckOut("");
+    }
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkIn || !checkOut) {
-      alert("Please designate check-in and check-out intervals to query availability.");
+    const newErrors: { checkIn?: string; checkOut?: string } = {};
+
+    if (!checkIn) {
+      newErrors.checkIn = "Please select a check-in date.";
+    } else if (checkIn < today) {
+      newErrors.checkIn = "Check-in cannot be a past date.";
+    }
+
+    if (!checkOut) {
+      newErrors.checkOut = "Please select a check-out date.";
+    } else if (checkOut <= checkIn) {
+      newErrors.checkOut = "Check-out must be after check-in.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+
+    setErrors({});
     onInitiateBooking({ checkIn, checkOut, guests });
   };
 
@@ -90,10 +121,18 @@ export default function DestinationsTab({
                 <input
                   type="date"
                   value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
-                  className="w-full bg-white/60 border border-[#001a52]/10 rounded-lg py-2.5 pl-9 pr-3 text-xs md:text-sm text-slate-800 focus:outline-none focus:border-[#001a52]/40 focus:ring-1 focus:ring-[#001a52]/20 transition-all font-medium placeholder-slate-400"
+                  min={today}
+                  onChange={(e) => handleCheckInChange(e.target.value)}
+                  className={`w-full bg-white/60 border rounded-lg py-2.5 pl-9 pr-3 text-xs md:text-sm text-slate-800 focus:outline-none focus:ring-1 transition-all font-medium ${
+                    errors.checkIn
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                      : "border-[#001a52]/10 focus:border-[#001a52]/40 focus:ring-[#001a52]/20"
+                  }`}
                 />
               </div>
+              {errors.checkIn && (
+                <p className="text-[10px] text-red-500 font-medium mt-1">{errors.checkIn}</p>
+              )}
             </div>
 
             <div className="w-full md:w-1/4">
@@ -105,10 +144,26 @@ export default function DestinationsTab({
                 <input
                   type="date"
                   value={checkOut}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                  className="w-full bg-white/60 border border-[#001a52]/10 rounded-lg py-2.5 pl-9 pr-3 text-xs md:text-sm text-slate-800 focus:outline-none focus:border-[#001a52]/40 focus:ring-1 focus:ring-[#001a52]/20 transition-all font-medium placeholder-slate-400"
+                  min={minCheckOut}
+                  disabled={!checkIn}
+                  onChange={(e) => {
+                    setCheckOut(e.target.value);
+                    setErrors(prev => ({ ...prev, checkOut: undefined }));
+                  }}
+                  className={`w-full bg-white/60 border rounded-lg py-2.5 pl-9 pr-3 text-xs md:text-sm text-slate-800 focus:outline-none focus:ring-1 transition-all font-medium ${
+                    !checkIn ? "opacity-50 cursor-not-allowed" : ""
+                  } ${
+                    errors.checkOut
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                      : "border-[#001a52]/10 focus:border-[#001a52]/40 focus:ring-[#001a52]/20"
+                  }`}
                 />
               </div>
+              {!checkIn ? (
+                <p className="text-[10px] text-slate-400 font-medium mt-1">Select check-in first</p>
+              ) : errors.checkOut ? (
+                <p className="text-[10px] text-red-500 font-medium mt-1">{errors.checkOut}</p>
+              ) : null}
             </div>
 
             <div className="w-full md:w-1/4">
