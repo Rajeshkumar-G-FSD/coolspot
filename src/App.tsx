@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Share2, Camera, Compass, Sparkles, AlertCircle } from "lucide-react";
+import coolspotLogo from "./public/images/coolspot.png";
 import Navbar from "./components/Navbar";
 import DestinationsTab from "./components/DestinationsTab";
 import ExperiencesTab from "./components/ExperiencesTab";
@@ -282,14 +283,12 @@ export default function App() {
       {/* 7. Elegant Footer Section */}
       <footer className="bg-[#001a52] text-white w-full py-12 select-none border-t border-white/5">
         <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-16 gap-8 max-w-7xl mx-auto">
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <span className="font-headline-lg text-xl md:text-2xl italic tracking-tight font-bold pb-1 flex gap-1">
-              <span className="text-white">Cool</span>
-              <span className="text-amber-400">Spot</span>
-            </span>
-            <span className="font-sans text-[9px] uppercase tracking-widest text-[#819ae7] font-semibold">
-              Cottages
-            </span>
+          <div className="flex flex-col items-center md:items-start">
+            <img
+              src={coolspotLogo}
+              alt="CoolSpot Cottages"
+              className="h-12 w-auto object-contain"
+            />
           </div>
 
           {/* Quick Footer Links */}

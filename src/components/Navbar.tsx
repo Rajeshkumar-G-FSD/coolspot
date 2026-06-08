@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Menu, X, Sparkles, Compass, Gift, Calendar, HelpCircle, Info, Lock, Moon, Sun } from "lucide-react";
+import coolspotLogo from "../public/images/coolspot.png";
 
 interface NavbarProps {
   activeTab: string;
@@ -58,23 +59,21 @@ export default function Navbar({
         id="main-nav"
         className={`fixed top-0 left-0 w-full z-45 transition-all duration-300 border-b ${
           isScrolled
-            ? "bg-white/90 dark:bg-[#001a52]/90 backdrop-blur-xl border-[#001a52]/10 dark:border-white/10 shadow-md py-4"
-            : "bg-white/10 dark:bg-white/5 backdrop-blur-md border-white/20 dark:border-white/5 shadow-sm py-5"
+            ? "bg-[#001a52] backdrop-blur-xl border-white/10 shadow-md py-4"
+            : "bg-[#001a52]/95 backdrop-blur-md border-white/10 shadow-sm py-5"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Brand Logo */}
           <button
             onClick={() => handleNavClick("destinations")}
-            className="flex flex-col items-start focus:outline-none group text-left cursor-pointer"
+            className="focus:outline-none group cursor-pointer"
           >
-            <span className="font-headline-md text-xl md:text-2xl italic font-bold tracking-tight group-hover:opacity-80 transition-opacity flex gap-1">
-              <span className="text-[#001a52] dark:text-white">Cool</span>
-              <span className="text-amber-500 dark:text-amber-400">Spot</span>
-            </span>
-            <span className="font-sans text-[9px] uppercase tracking-widest text-[#4a607c] dark:text-white/60 -mt-1 font-semibold">
-              Cottages
-            </span>
+            <img
+              src={coolspotLogo}
+              alt="CoolSpot Cottages"
+              className="h-10 md:h-12 w-auto object-contain group-hover:opacity-85 transition-opacity"
+            />
           </button>
 
           {/* Desktop Navigation Links */}
@@ -89,8 +88,8 @@ export default function Navbar({
                     onClick={() => handleNavClick(item.id)}
                     className={`nav-item flex items-center gap-1.5 font-sans text-xs uppercase tracking-widest transition-all pb-1 border-b-2 relative ${
                       isActive
-                        ? "text-[#001a52] dark:text-[#dbe1ff] font-bold border-[#001a52] dark:border-[#dbe1ff] scale-95"
-                        : "text-[#4a607c]/80 dark:text-white/70 font-medium border-transparent hover:text-[#001a52] dark:hover:text-white"
+                        ? "text-white font-bold border-amber-400 scale-95"
+                        : "text-white/70 font-medium border-transparent hover:text-white"
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -109,15 +108,15 @@ export default function Navbar({
             <div className="flex items-center space-x-4">
               <button
                 onClick={openConcierge}
-                className="flex items-center gap-1.5 px-4 py-2 border border-[#001a52]/40 dark:border-white/30 hover:border-[#001a52] dark:hover:border-white rounded font-sans text-xs uppercase tracking-widest text-[#001a52] dark:text-[#dbe1ff] hover:bg-[#001a52]/5 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 border border-white/30 hover:border-white rounded font-sans text-xs uppercase tracking-widest text-white/80 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#819ae7]" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>AI Butler</span>
               </button>
 
               <button
                 onClick={toggleTheme}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs uppercase tracking-widest font-semibold hover:bg-slate-800 transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-xl text-xs uppercase tracking-widest font-semibold hover:bg-white/20 transition-all border border-white/20"
                 title="Toggle light / dark theme"
               >
                 {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -126,7 +125,7 @@ export default function Navbar({
 
               <button
                 onClick={() => handleNavClick("destinations")}
-                className="bg-[#001a52] text-white hover:bg-[#0e2f76] dark:bg-[#dbe1ff] dark:text-[#00174a] dark:hover:bg-[#b3c5ff] px-5 py-2 rounded font-sans text-xs uppercase tracking-widest transition-all btn-glow shadow-sm cursor-pointer"
+                className="bg-amber-400 text-[#001a52] hover:bg-amber-300 px-5 py-2 rounded font-sans text-xs uppercase tracking-widest font-bold transition-all shadow-sm cursor-pointer"
               >
                 Book Room
               </button>
@@ -137,14 +136,14 @@ export default function Navbar({
           <div className="flex md:hidden items-center space-x-3">
             <button
               onClick={openConcierge}
-              className="p-2 text-[#001a52] dark:text-[#dbe1ff] hover:bg-black/5 dark:hover:bg-white/5 rounded-full"
+              className="p-2 text-white hover:bg-white/10 rounded-full"
               title="AI Concierge"
             >
-              <Sparkles className="w-5 h-5 text-amber-500" />
+              <Sparkles className="w-5 h-5 text-amber-400" />
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-[#001a52] dark:text-[#dbe1ff] hover:bg-black/5 dark:hover:bg-white/5 rounded"
+              className="p-2 text-white hover:bg-white/10 rounded"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -158,14 +157,12 @@ export default function Navbar({
           <div className="bg-white dark:bg-[#213145] h-full w-4/5 max-w-xs shadow-2xl p-6 flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-8 border-b pb-4 border-[#001a52]/10 dark:border-white/10">
-                <div className="flex flex-col">
-                  <span className="font-headline-md text-lg italic font-bold flex gap-1">
-                    <span className="text-[#001a52] dark:text-white">Cool</span>
-                    <span className="text-amber-500 dark:text-amber-400">Spot</span>
-                  </span>
-                  <span className="font-sans text-[8px] uppercase tracking-wider text-[#4a607c] dark:text-white/60 font-semibold">
-                    Cottages
-                  </span>
+                <div>
+                  <img
+                    src={coolspotLogo}
+                    alt="CoolSpot Cottages"
+                    className="h-9 w-auto object-contain"
+                  />
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
