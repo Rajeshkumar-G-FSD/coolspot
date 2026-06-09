@@ -79,4 +79,9 @@ export interface Booking {
   paymentMode?: "advance" | "full";
   advanceAmount?: number;
   remainingAmount?: number;
+  paymentProofRef?: string;
+  paymentProofAmount?: number;
+  paymentProofDateTime?: string;
+  paymentProofSubmitted?: boolean;
+  paymentVerified?: boolean;
 }

@@ -129,7 +129,7 @@ const FAQ_LIST: FAQItem[] = [
   },
   {
     q: "What is the closest natural scenic peak?",
-    a: "The famous Ooty Doddabetta Peak is just 4.7 km from our lookout deck, providing a perfect morning hiking trail."
+    a: "The famous Ooty Doddabetta Peak is 5.5 km from Cool Spot Cottages — approximately 12 minutes by vehicle, making it a perfect morning excursion from your room."
   },
   {
     q: "Can I coordinate vehicle rentals directly with the cottage?",
@@ -139,16 +139,20 @@ const FAQ_LIST: FAQItem[] = [
 
 const SURROUNDINGS_DATA = {
   attractions: [
-    { name: "Ooty Rose Garden", dist: "700 m", type: "Park" },
-    { name: "Digital Park", dist: "1.3 km", type: "Park" },
-    { name: "Hadp-Udhagamandalam Municipality Salaiora Poonga", dist: "1.3 km", type: "Park" },
-    { name: "Nethaji Subash Chandrabose Park", dist: "1.5 km", type: "Park" },
-    { name: "Muncipality Park", dist: "2 km", type: "Park" },
-    { name: "Ooty Botanical Gardens", dist: "2.2 km", type: "Park" },
-    { name: "Archaeological Park", dist: "2.5 km", type: "Park" },
-    { name: "Aishwariyaa Gardens", dist: "2.6 km", type: "Park" },
-    { name: "Lake boat house", dist: "3.2 km", type: "Leisure" },
-    { name: "Mudumalai National Park", dist: "9 km", type: "Wildlife Reserve" }
+    { name: "Government Rose Garden", dist: "0.6 km", type: "Park", time: "7–8 min walk" },
+    { name: "Elk Hill Murugan Temple", dist: "0.7 km", type: "Temple", time: "8–9 min walk" },
+    { name: "Government Botanical Garden", dist: "2.2 km", type: "Garden", time: "~5 min drive" },
+    { name: "Thread Garden", dist: "2.5 km", type: "Attraction", time: "~6 min drive" },
+    { name: "Ooty Lake", dist: "3.5 km", type: "Lake", time: "~8 min drive" },
+    { name: "Ketti Valley View Point", dist: "4.3 km", type: "Viewpoint", time: "~10 min drive" },
+    { name: "Tea Factory & Tea Museum", dist: "5.0 km", type: "Museum", time: "~11 min drive" },
+    { name: "Doddabetta Peak", dist: "5.5 km", type: "Mountain Peak", time: "~12 min drive" },
+    { name: "Pykara Lake", dist: "22 km", type: "Lake", time: "~45 min drive" },
+    { name: "Pykara Falls", dist: "23 km", type: "Waterfall", time: "~50 min drive" },
+    { name: "Emerald Lake", dist: "24 km", type: "Lake", time: "~50 min drive" },
+    { name: "Avalanche Lake", dist: "28 km", type: "Lake", time: "~1 hr drive" },
+    { name: "Coonoor", dist: "18 km", type: "Town", time: "~35 min drive" },
+    { name: "Mudumalai National Park", dist: "38 km", type: "Wildlife Reserve", time: "~1.5 hr drive" }
   ],
   food: [
     { name: "Sizzlers Restaurant", dist: "550 m", type: "Dine-in" },
@@ -156,13 +160,14 @@ const SURROUNDINGS_DATA = {
     { name: "Mysore Darbar Restaurant", dist: "700 m", type: "Royal Indian" }
   ],
   nature: [
-    { name: "Ooty Doddabetta Peak", dist: "4.7 km", type: "Mountain Peak" },
-    { name: "Wellington Lake", dist: "12 km", type: "Lake Views" }
+    { name: "Doddabetta Peak", dist: "5.5 km", type: "Mountain Peak" },
+    { name: "Pykara Falls", dist: "23 km", type: "Waterfall" },
+    { name: "Emerald Lake", dist: "24 km", type: "Lake" },
+    { name: "Avalanche Lake", dist: "28 km", type: "Lake" }
   ],
   transit: [
+    { name: "Ooty Railway Station", dist: "2.3 km", type: "Train Station" },
     { name: "Ooty Bus Station", dist: "2.1 km", type: "Bus" },
-    { name: "Ooty Railway Station", dist: "2.2 km", type: "Train Station" },
-    { name: "Lovedale", dist: "3.4 km", type: "Train Station" },
     { name: "Coimbatore International Airport", dist: "83 km", type: "Airport" }
   ]
 };
@@ -321,15 +326,20 @@ export default function CottageInfoTab() {
                         What's nearby
                       </h3>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {SURROUNDINGS_DATA.attractions.map((att, i) => (
-                        <div key={i} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-white/5">
-                          <span className="text-xs font-sans text-slate-700 dark:text-slate-300 font-medium">
-                            {att.name}
-                          </span>
-                          <span className="text-[10px] font-mono font-bold bg-[#001a52]/5 dark:bg-[#819ae7]/10 text-[#001a52] dark:text-[#819ae7] px-2 py-0.5 rounded-full whitespace-nowrap ml-2">
-                            {att.dist}
-                          </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {SURROUNDINGS_DATA.attractions.map((att: any, i: number) => (
+                        <div key={i} className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-white/5">
+                          <div className="flex justify-between items-start gap-2 mb-1">
+                            <span className="text-xs font-sans text-slate-700 dark:text-slate-300 font-semibold leading-tight">
+                              {att.name}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold bg-[#001a52]/5 dark:bg-[#819ae7]/10 text-[#001a52] dark:text-[#819ae7] px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                              {att.dist}
+                            </span>
+                          </div>
+                          {att.time && (
+                            <span className="text-[9px] text-slate-400">{att.time} · {att.type}</span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -495,6 +505,19 @@ export default function CottageInfoTab() {
                         <Compass className="w-4 h-4 text-amber-100" />
                         <span>Navigate on Google Maps</span>
                       </a>
+
+                      {/* Embedded Google Map */}
+                      <div className="rounded-xl overflow-hidden border border-slate-100 dark:border-white/5 shadow-sm h-48">
+                        <iframe
+                          src="https://maps.google.com/maps?q=11.4039116,76.7118485&z=18&output=embed&hl=en"
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                          title="Cool Spot Cottages Map"
+                        />
+                      </div>
                     </div>
                   </div>
 

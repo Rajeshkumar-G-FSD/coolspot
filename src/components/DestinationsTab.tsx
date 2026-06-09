@@ -331,12 +331,142 @@ export default function DestinationsTab({
           >
             <Quote className="w-10 h-10 text-slate-300 dark:text-slate-800 mx-auto mb-6 opacity-80" />
             <h3 className="font-headline-lg text-2xl md:text-3xl italic text-[#001a52] mb-6">
-              "A masterclass in quiet architectural luxury. Cool Cottages does not merely offer guest villas; it
-              delves into spatial meditation, placing nature in majestic, silent dialogue with refined modern craftsmanship."
+              "A peaceful stay with stunning views. Cool Spot Cottages offers warm hospitality, comfortable rooms, and an
+              unforgettable Ooty experience surrounded by the beautiful Nilgiris."
             </h3>
             <span className="font-sans text-xs uppercase tracking-widest text-[#4a607c] font-black block">
-              — Elite Voyager Journal, June 2026
+              — Guest Review, 2026
             </span>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-16 bg-white dark:bg-[#00174a]/10 border-t border-slate-100 dark:border-white/5">
+        <div className="max-w-7xl mx-auto px-6 md:px-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-10"
+          >
+            <span className="text-[11px] uppercase tracking-widest text-[#819ae7] font-extrabold block mb-2">What Guests Say</span>
+            <h2 className="font-headline-lg text-3xl md:text-4xl text-[#001a52] dark:text-[#dbe1ff] mb-3">Guest Reviews</h2>
+            <div className="flex items-center justify-center gap-1 mb-2">
+              {[1,2,3,4,5].map(i => (
+                <span key={i} className="text-amber-400 text-xl">★</span>
+              ))}
+            </div>
+            <p className="text-slate-500 text-sm">Rated 4.9 / 5 by our guests</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            {[
+              {
+                name: "Priya R.",
+                location: "Chennai",
+                rating: 5,
+                date: "May 2026",
+                review: "Absolutely loved our stay! The mountain view room was cozy and peaceful. The owner was very warm and helpful. Highly recommend for families visiting Ooty."
+              },
+              {
+                name: "Arun K.",
+                location: "Bangalore",
+                rating: 5,
+                date: "April 2026",
+                review: "Great value for money. Rooms were clean and comfortable. Hot water available 24/7 which was a huge plus in the cool Ooty weather. Very close to Rose Garden too!"
+              },
+              {
+                name: "Meena S.",
+                location: "Coimbatore",
+                rating: 5,
+                date: "March 2026",
+                review: "We stayed in the deluxe family room. Spacious, well-maintained, and the staff were very attentive. The location is perfect — near all the major attractions. Will definitely come back!"
+              },
+              {
+                name: "Rajesh M.",
+                location: "Hyderabad",
+                rating: 5,
+                date: "February 2026",
+                review: "Peaceful environment, friendly staff, and excellent facilities. The security was great and we felt very safe throughout our stay. Ooty in these cool mountains is magical."
+              },
+              {
+                name: "Divya T.",
+                location: "Mumbai",
+                rating: 4,
+                date: "January 2026",
+                review: "Very comfortable stay. Budget rooms are clean and well-equipped. Parking was free and convenient. Would suggest to all budget-conscious travelers visiting Ooty."
+              },
+              {
+                name: "Karthik N.",
+                location: "Madurai",
+                rating: 5,
+                date: "December 2025",
+                review: "The cottage has a homely feel. Owner was responsive on WhatsApp for booking. The check-in was smooth, and the room was exactly as shown in photos. 10/10!"
+              }
+            ].map((review, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className="bg-[#f8f9ff] dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-100 dark:border-white/5 shadow-sm"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-[#001a52] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                      {review.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{review.name}</div>
+                      <div className="text-[10px] text-slate-400">{review.location} · {review.date}</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-0.5 shrink-0">
+                    {Array.from({ length: review.rating }).map((_, j) => (
+                      <span key={j} className="text-amber-400 text-xs">★</span>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{review.review}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Google Review CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-[#001a52] rounded-2xl p-6 text-white text-center"
+          >
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className="text-2xl">⭐</span>
+              <h3 className="font-headline-md text-lg font-bold">Share Your Experience</h3>
+            </div>
+            <p className="text-white/70 text-sm mb-5 max-w-md mx-auto">
+              Stayed with us? We'd love to hear about your experience. Your review helps other guests and supports our small family-run cottage.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <a
+                href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 bg-white text-[#001a52] rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 transition-all shadow-sm"
+              >
+                <span>⭐</span> Write a Google Review
+              </a>
+              <a
+                href="https://wa.me/919042737424?text=Hello!%20I%20recently%20stayed%20at%20Cool%20Spot%20Cottages%20and%20wanted%20to%20share%20my%20feedback."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 bg-[#25D366] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#20bc5a] transition-all shadow-sm"
+              >
+                <span>💬</span> Send Feedback on WhatsApp
+              </a>
+            </div>
           </motion.div>
         </div>
       </section>

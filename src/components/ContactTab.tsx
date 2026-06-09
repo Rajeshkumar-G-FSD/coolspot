@@ -239,25 +239,36 @@ export default function ContactTab() {
         </motion.div>
       </div>
 
-      {/* Map embed area */}
+      {/* Google Maps Embed */}
       <div className="max-w-5xl mx-auto px-6 md:px-16 pb-14">
-        <div className="rounded-2xl overflow-hidden border border-slate-100 dark:border-white/5 shadow-sm h-64 bg-slate-100 dark:bg-slate-900/40 flex items-center justify-center">
-          <div className="text-center">
-            <MapPin className="w-8 h-8 text-[#001a52] dark:text-[#819ae7] mx-auto mb-3" />
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-              123/L, Vijayanagara Palace Road, Near HMT Gate, Ooty – 643001
-            </p>
-            <a
-              href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#001a52] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#0e2f76] transition-all"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              Open in Google Maps
-            </a>
-          </div>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-[#001a52] dark:text-[#dbe1ff] uppercase tracking-wide flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-amber-500" />
+            Find Us on the Map
+          </h3>
+          <a
+            href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z/data=!4m6!1m5!3m4!2zMTHCsDI0JzE0LjEiTiA3NsKwNDInNDIuNyJF!8m2!3d11.4039167!4d76.7118611?hl=en&entry=ttu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-bold uppercase tracking-widest text-[#001a52] dark:text-[#819ae7] hover:underline flex items-center gap-1"
+          >
+            <MapPin className="w-3 h-3" /> Open in Google Maps
+          </a>
         </div>
+        <div className="rounded-2xl overflow-hidden border border-slate-100 dark:border-white/5 shadow-sm h-80">
+          <iframe
+            src="https://maps.google.com/maps?q=11.4039116,76.7118485&z=18&output=embed&hl=en"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Cool Spot Cottages Location"
+          />
+        </div>
+        <p className="text-[10px] text-slate-400 mt-2 text-center">
+          123/L, Vijayanagara Palace Road, Near HMT Gate, Ooty – 643001, Tamil Nadu
+        </p>
       </div>
     </div>
   );

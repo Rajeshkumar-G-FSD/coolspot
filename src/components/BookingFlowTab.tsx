@@ -88,6 +88,13 @@ export default function BookingFlowTab({
   const [submitting, setSubmitting] = useState(false);
   const [generatedBooking, setGeneratedBooking] = useState<Booking | null>(null);
 
+  // Payment proof upload state
+  const [paymentSubStep, setPaymentSubStep] = useState<"qr" | "proof" | "done">("qr");
+  const [proofRef, setProofRef] = useState("");
+  const [proofAmount, setProofAmount] = useState("");
+  const [proofDateTime, setProofDateTime] = useState("");
+  const [proofSubmitting, setProofSubmitting] = useState(false);
+
   // Check-in must be today or later; only clear checkout if it's invalid
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -324,11 +331,25 @@ export default function BookingFlowTab({
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNo}&text=${encoded}`;
     window.open(whatsappUrl, "_blank");
 
-    // UPDATE: mark booking Confirmed in Firebase once guest sends WhatsApp
+    // Booking remains "Pending" until admin verifies payment — no auto-confirm here
+  };
+
+  const handleProofSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!generatedBooking) return;
+    setProofSubmitting(true);
     try {
-      await updateDoc(doc(db, "bookings", generatedBooking.id), { status: "Confirmed" });
+      await updateDoc(doc(db, "bookings", generatedBooking.id), {
+        paymentProofRef: proofRef.trim(),
+        paymentProofAmount: parseFloat(proofAmount) || 0,
+        paymentProofDateTime: proofDateTime,
+        paymentProofSubmitted: true,
+      });
+      setPaymentSubStep("done");
     } catch (err) {
-      console.error("Status update error:", err);
+      console.error("Proof submit error:", err);
+    } finally {
+      setProofSubmitting(false);
     }
   };
 
@@ -1138,33 +1159,149 @@ export default function BookingFlowTab({
                 </div>
               </div>
 
-              {/* Status Alerting Card */}
-              <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black">
-                    ✓
+              {/* ── Payment Step: QR → Proof → Done ── */}
+              {paymentSubStep === "qr" && (
+                <div className="bg-white p-6 rounded-3xl border-2 border-[#001a52]/20 shadow-sm space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-[#001a52] text-white flex items-center justify-center font-black text-lg">₹</div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800">Complete Your Payment</h4>
+                      <span className="text-[11px] text-slate-500">Scan the QR below to pay via UPI</span>
+                    </div>
+                  </div>
+
+                  {/* Amount to pay */}
+                  <div className="bg-[#e5eeff] rounded-2xl p-4 text-center">
+                    <div className="text-[10px] uppercase tracking-widest font-bold text-[#001a52] mb-1">
+                      {generatedBooking.paymentMode === "advance" ? "Pay 40% Advance Now" : "Pay Full Amount"}
+                    </div>
+                    <div className="text-3xl font-black text-[#001a52]">
+                      ₹{generatedBooking.paymentMode === "advance"
+                        ? generatedBooking.advanceAmount?.toLocaleString()
+                        : generatedBooking.totalCost?.toLocaleString()}
+                    </div>
+                    {generatedBooking.paymentMode === "advance" && (
+                      <div className="text-[10px] text-slate-500 mt-1">
+                        Remaining ₹{generatedBooking.remainingAmount?.toLocaleString()} to be paid at property
+                      </div>
+                    )}
+                  </div>
+
+                  {/* QR Code placeholder */}
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-48 h-48 border-4 border-dashed border-[#001a52]/30 rounded-2xl flex flex-col items-center justify-center bg-slate-50 text-center p-4">
+                      <div className="grid grid-cols-3 gap-1 mb-3 opacity-40">
+                        {Array.from({length:9}).map((_,i) => (
+                          <div key={i} className={`rounded ${i===0||i===2||i===6||i===8?"w-8 h-8 border-4 border-[#001a52]":"w-8 h-8 bg-[#001a52]/60"}`} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-bold text-[#001a52] uppercase tracking-wide">UPI Payment QR</span>
+                      <span className="text-[9px] text-slate-400 mt-1">Admin: upload QR in Settings</span>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-slate-600 font-medium">WhatsApp us to receive the payment QR directly:</p>
+                      <a href="https://wa.me/919042737424" target="_blank" rel="noopener noreferrer"
+                        className="text-sm font-black text-[#25D366] hover:underline">+91 90427 37424</a>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentSubStep("proof")}
+                    className="w-full bg-[#001a52] hover:bg-[#0e2f76] text-white font-sans text-xs uppercase tracking-widest font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow transition-all cursor-pointer"
+                  >
+                    <Compass className="w-4 h-4" />
+                    <span>I've Made the Payment — Submit Proof</span>
+                  </button>
+                  <button type="button" onClick={executeWhatsAppLink}
+                    className="w-full border border-emerald-400 text-emerald-700 text-xs font-bold py-2.5 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer uppercase tracking-wider">
+                    Also Notify via WhatsApp
+                  </button>
+                </div>
+              )}
+
+              {paymentSubStep === "proof" && (
+                <form onSubmit={handleProofSubmit} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                  <h4 className="text-sm font-bold text-slate-800">Upload Payment Proof</h4>
+                  <p className="text-[10px] text-slate-400">Enter your UPI transaction details so we can verify your payment. Your booking will be confirmed once verified by our team.</p>
+
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-slate-500 block mb-1.5">
+                      Transaction / UTR Reference Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={proofRef}
+                      onChange={e => setProofRef(e.target.value)}
+                      placeholder="e.g. 426789123456"
+                      className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-[#001a52]/30 font-mono"
+                    />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-emerald-800">Booking Successfully Authenticated!</h4>
-                    <span className="text-[11px] font-mono uppercase bg-emerald-500/15 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold">
-                       ID Code: {generatedBooking.id}
-                    </span>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-slate-500 block mb-1.5">
+                      Amount Paid (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={proofAmount}
+                      onChange={e => setProofAmount(e.target.value)}
+                      placeholder={String(generatedBooking.paymentMode === "advance"
+                        ? generatedBooking.advanceAmount
+                        : generatedBooking.totalCost)}
+                      className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-[#001a52]/30"
+                    />
                   </div>
-                </div>
-                <p className="text-xs text-[#20513d] opacity-90 leading-relaxed">
-                  Your resort booking is authenticated and saved in our cloud servers. A representative has been notified of your choice. Please tap below to instantly forward your itinerary via WhatsApp to secure cottage logistics.
-                </p>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-slate-500 block mb-1.5">
+                      Date & Time of Payment *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={proofDateTime}
+                      onChange={e => setProofDateTime(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-[#001a52]/30"
+                    />
+                  </div>
 
-                {/* WhatsApp message forwarder */}
-                <button
-                  type="button"
-                  onClick={executeWhatsAppLink}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs uppercase tracking-widest font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow transition-all cursor-pointer"
-                >
-                  <Compass className="w-4 h-4 text-emerald-100" />
-                  <span>Send Confirmation WhatsApp (Hotline: 070103 95526)</span>
-                </button>
-              </div>
+                  <button
+                    type="submit"
+                    disabled={proofSubmitting}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-sans text-xs uppercase tracking-widest font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow transition-all cursor-pointer"
+                  >
+                    {proofSubmitting ? "Submitting..." : "Submit Payment Proof"}
+                  </button>
+                  <button type="button" onClick={() => setPaymentSubStep("qr")}
+                    className="w-full text-xs text-slate-400 hover:text-slate-600 py-2 transition-colors cursor-pointer">
+                    ← Back to QR
+                  </button>
+                </form>
+              )}
+
+              {paymentSubStep === "done" && (
+                <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-lg">✓</div>
+                    <div>
+                      <h4 className="text-sm font-bold text-emerald-800">Payment Proof Submitted!</h4>
+                      <span className="text-[11px] font-mono uppercase bg-emerald-500/15 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold">
+                        Booking ID: {generatedBooking.id}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[#20513d] leading-relaxed">
+                    Your payment proof has been submitted. Our team will verify and confirm your booking within 2–4 hours. You'll receive a WhatsApp confirmation once verified.
+                  </p>
+                  <button type="button" onClick={executeWhatsAppLink}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs uppercase tracking-widest font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow transition-all cursor-pointer">
+                    <Compass className="w-4 h-4 text-emerald-100" />
+                    <span>Also Send via WhatsApp (+91 70103 95526)</span>
+                  </button>
+                </div>
+              )}
 
               {/* Success summary terms */}
               <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">

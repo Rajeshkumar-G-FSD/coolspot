@@ -1327,15 +1327,133 @@ function ModuleSettings({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+// ─── MODULE: PAYMENT VERIFICATION ────────────────────────────────────────────
+function ModulePaymentVerify({ bookings, onRefresh }: { bookings: any[]; onRefresh: () => void }) {
+  const pending = bookings.filter(b => b.paymentProofSubmitted && b.status !== "Confirmed" && b.status !== "Cancelled");
+  const [verifying, setVerifying] = useState<string | null>(null);
+
+  const approve = async (id: string) => {
+    setVerifying(id);
+    try {
+      await updateDoc(doc(db, "bookings", id), { status: "Confirmed", paymentVerified: true });
+      onRefresh();
+    } catch (e) { console.error(e); }
+    finally { setVerifying(null); }
+  };
+
+  const reject = async (id: string) => {
+    setVerifying(id);
+    try {
+      await updateDoc(doc(db, "bookings", id), { paymentProofSubmitted: false, status: "Pending" });
+      onRefresh();
+    } catch (e) { console.error(e); }
+    finally { setVerifying(null); }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: C.text }}>Payment Verification</h2>
+        <p className="text-xs mt-0.5" style={{ color: C.muted }}>
+          {pending.length} booking{pending.length !== 1 ? "s" : ""} awaiting payment verification
+        </p>
+      </div>
+
+      {pending.length === 0 ? (
+        <div className="rounded-2xl p-10 border text-center" style={{ background: C.card, borderColor: C.border }}>
+          <CheckCircle className="w-10 h-10 mx-auto mb-3" style={{ color: C.gold }} />
+          <div className="text-sm font-semibold" style={{ color: C.text }}>All payments verified</div>
+          <div className="text-xs mt-1" style={{ color: C.muted }}>No pending payment proofs at this time.</div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {pending.map((b: any) => (
+            <motion.div key={b.id} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+              className="rounded-2xl p-5 border space-y-4" style={{ background: C.card, borderColor: C.border }}>
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="font-bold text-sm" style={{ color: C.text }}>{b.billingName || b.firstName}</div>
+                  <div className="text-[10px] font-mono mt-0.5" style={{ color: C.muted }}>ID: {b.id}</div>
+                  <div className="text-xs mt-1" style={{ color: C.muted }}>
+                    {b.room?.name} · {b.checkIn} → {b.checkOut} · {b.guestsText}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-xs font-bold" style={{ color: C.gold }}>
+                    {b.paymentMode === "advance" ? "40% Advance" : "Full Payment"}
+                  </div>
+                  <div className="text-lg font-black" style={{ color: C.text }}>
+                    ₹{(b.paymentMode === "advance" ? b.advanceAmount : b.totalCost)?.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Proof Details */}
+              <div className="rounded-xl p-4 grid grid-cols-1 md:grid-cols-3 gap-3"
+                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}` }}>
+                <div>
+                  <div className="text-[9px] uppercase tracking-widest font-bold mb-1" style={{ color: C.muted }}>
+                    Transaction Reference / UTR
+                  </div>
+                  <div className="text-sm font-mono font-bold" style={{ color: C.gold }}>
+                    {b.paymentProofRef || "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-widest font-bold mb-1" style={{ color: C.muted }}>
+                    Amount Paid by Customer
+                  </div>
+                  <div className="text-sm font-bold" style={{ color: C.text }}>
+                    ₹{b.paymentProofAmount?.toLocaleString() || "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-widest font-bold mb-1" style={{ color: C.muted }}>
+                    Date & Time
+                  </div>
+                  <div className="text-xs font-medium" style={{ color: C.text }}>
+                    {b.paymentProofDateTime
+                      ? new Date(b.paymentProofDateTime).toLocaleString("en-IN")
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Cross-check note */}
+              <div className="text-[10px] rounded-lg px-3 py-2" style={{ background: `${C.gold}12`, color: C.gold }}>
+                ⚠ Verify this reference number against your UPI / bank statement before approving.
+              </div>
+
+              <div className="flex gap-3 flex-wrap">
+                <button onClick={() => approve(b.id)} disabled={verifying === b.id}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                  style={{ background: "#16a34a", color: "#fff" }}>
+                  {verifying === b.id ? "Processing..." : "✓ Approve & Confirm Booking"}
+                </button>
+                <button onClick={() => reject(b.id)} disabled={verifying === b.id}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                  style={{ background: "rgba(239,68,68,0.15)", color: "#f87171" }}>
+                  ✗ Reject
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id:"overview",   label:"Overview",        icon:LayoutDashboard },
   { id:"rooms",      label:"Rooms",           icon:BedDouble },
   { id:"bookings",   label:"Bookings",        icon:CalendarCheck },
+  { id:"payments",   label:"Verify Payments", icon:CreditCard },
   { id:"customers",  label:"Customers",       icon:Users },
   { id:"food",       label:"Food & Dining",   icon:UtensilsCrossed },
   { id:"campfire",   label:"Campfire",        icon:Flame },
-  { id:"billing",    label:"Billing",         icon:CreditCard },
+  { id:"billing",    label:"Billing",         icon:Zap },
   { id:"cms",        label:"Website CMS",     icon:Globe },
   { id:"gallery",    label:"Gallery",         icon:Image },
   { id:"places",     label:"Tourist Places",  icon:MapPin },
@@ -1765,6 +1883,9 @@ export default function AdminDashboardTab() {
             <motion.div key={activeModule} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }} transition={{ duration:0.2 }}>
               {activeModule === "overview"   && <ModuleOverview bookings={bookings} />}
               {activeModule === "rooms"      && <ModuleRooms />}
+              {activeModule === "payments"   && (
+                <ModulePaymentVerify bookings={bookings} onRefresh={fetchBookings} />
+              )}
               {activeModule === "bookings"   && (
                 <ModuleBookings
                   bookings={bookings}

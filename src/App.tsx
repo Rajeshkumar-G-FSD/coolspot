@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Share2, Camera, Compass, Sparkles, AlertCircle } from "lucide-react";
+import { Share2, Camera, Compass, Sparkles, AlertCircle, Phone, MessageCircle } from "lucide-react";
 import coolspotLogo from "./public/images/coolspot.png";
 import Navbar from "./components/Navbar";
 import DestinationsTab from "./components/DestinationsTab";
@@ -198,6 +198,26 @@ export default function App() {
         >
           <Camera className="w-4 h-4 group-hover:scale-110 transition-transform" />
         </button>
+      </div>
+
+      {/* WhatsApp + Call Floating Buttons (bottom-right) */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40 select-none">
+        <a
+          href="tel:+919042737424"
+          className="w-12 h-12 bg-[#001a52] text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg border border-white/10 group"
+          title="Call Now: +91 90427 37424"
+        >
+          <Phone className="w-5 h-5 group-hover:animate-pulse" />
+        </a>
+        <a
+          href="https://wa.me/919042737424?text=Hello%20Cool%20Spot%20Cottages!%20I%20would%20like%20to%20enquire%20about%20booking."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-12 h-12 bg-[#25D366] text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg shadow-green-500/30 group"
+          title="Chat on WhatsApp"
+        >
+          <MessageCircle className="w-5 h-5 group-hover:animate-pulse" />
+        </a>
       </div>
 
       {/* 3. Global Glass Header/Navbar */}
