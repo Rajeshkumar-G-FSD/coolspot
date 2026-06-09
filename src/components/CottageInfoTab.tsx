@@ -28,7 +28,9 @@ import {
   Droplet,
   Tv,
   Coffee,
-  Check
+  Check,
+  Mail,
+  User
 } from "lucide-react";
 
 interface FAQItem {
@@ -420,7 +422,26 @@ export default function CottageInfoTab() {
                         <MapPin className="w-5 h-5 text-[#819ae7] shrink-0 mt-0.5" />
                         <div className="text-xs text-slate-600 dark:text-slate-300">
                           <span className="font-bold text-[#001a52] dark:text-white block mb-0.5">Physical Address</span>
-                           Elk Hill Rd, Near HMT, Rose Garden, Davisdale, Ooty, Tamil Nadu 643001
+                          123/L, Vijayanagara Palace Road, Near HMT Gate, Ooty – 643001, Tamil Nadu
+                        </div>
+                      </div>
+
+                      {/* Email + Owner */}
+                      <div className="flex items-start gap-3">
+                        <Mail className="w-5 h-5 text-[#819ae7] shrink-0 mt-0.5" />
+                        <div className="text-xs text-slate-600 dark:text-slate-300">
+                          <span className="font-bold text-[#001a52] dark:text-white block mb-0.5">Official Email</span>
+                          <a href="mailto:Coolspotcottage@gmail.com" className="text-indigo-600 dark:text-[#819ae7] hover:underline">
+                            Coolspotcottage@gmail.com
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <User className="w-5 h-5 text-[#819ae7] shrink-0 mt-0.5" />
+                        <div className="text-xs text-slate-600 dark:text-slate-300">
+                          <span className="font-bold text-[#001a52] dark:text-white block mb-0.5">Owner</span>
+                          SARAVANA NAGARAJAN
                         </div>
                       </div>
 
@@ -437,16 +458,17 @@ export default function CottageInfoTab() {
                         {/* Instant phone link */}
                         <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-white/5">
                           <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Direct Hotline</span>
-                          <a href="tel:07010395526" className="text-xs font-mono font-bold text-indigo-600 dark:text-[#819ae7] hover:underline flex items-center gap-1 mt-0.5">
+                          <a href="tel:+917010395526" className="text-xs font-mono font-bold text-indigo-600 dark:text-[#819ae7] hover:underline flex items-center gap-1 mt-0.5">
                             <Coffee className="w-3.5 h-3.5 shrink-0 text-[#819ae7]" />
-                            <span>070103 95526</span>
+                            <span>70103 95526</span>
                           </a>
+                          <a href="tel:+919042737424" className="text-[10px] font-mono text-slate-400 hover:underline block mt-0.5">90427 37424</a>
                         </div>
                       </div>
 
                       {/* Direct External Map Redirect */}
-                      <a 
-                        href="https://google.com/maps/place/Cool+Spot+Cottage/data=!4m2!3m1!1s0x0:0x2eaa6b19c2310355?sa=X&ved=1t:2428&ictx=111"
+                      <a
+                        href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z/data=!4m6!1m5!3m4!2zMTHCsDI0JzE0LjEiTiA3NsKwNDInNDIuNyJF!8m2!3d11.4039167!4d76.7118611!5m1!1e1?hl=en&entry=ttu&g_ep=EgoyMDI2MDYwMS4wIKXMDSoASAFQAw%3D%3D"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full bg-[#001a52] hover:bg-[#0c2c6d] text-white py-3 rounded-xl font-sans text-xs uppercase tracking-widest font-bold text-center block transition-all shadow-md select-none cursor-pointer"
@@ -474,13 +496,13 @@ export default function CottageInfoTab() {
                     {/* Weekly Schedule list */}
                     <div className="space-y-1.5 text-xs">
                       {[
-                        { day: "Monday", hours: "8:30 am–9:45 pm" },
-                        { day: "Tuesday", hours: "8:30 am–9:45 pm" },
-                        { day: "Wednesday", hours: "8:30 am–9:45 pm" },
-                        { day: "Thursday", hours: "8:30 am–9:45 pm" },
-                        { day: "Friday", hours: "8:30 am–9:45 pm" },
-                        { day: "Saturday", hours: "8:30 am–9:45 pm" },
-                        { day: "Sunday", hours: "8:30 am–9:45 pm" }
+                        { day: "Monday", hours: "Open 24 Hours" },
+                        { day: "Tuesday", hours: "Open 24 Hours" },
+                        { day: "Wednesday", hours: "Open 24 Hours" },
+                        { day: "Thursday", hours: "Open 24 Hours" },
+                        { day: "Friday", hours: "Open 24 Hours" },
+                        { day: "Saturday", hours: "Open 24 Hours" },
+                        { day: "Sunday", hours: "Open 24 Hours" }
                       ].map((item, idx) => {
                         const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                         const currentDayName = daysOfWeek[new Date().getDay()];
@@ -698,7 +720,7 @@ export default function CottageInfoTab() {
                           Check-In Term
                         </h4>
                         <p className="font-mono text-xl md:text-2xl font-black text-[#001a52] dark:text-[#819ae7] mt-1">
-                          12:00 - 23:00
+                          12:00 PM
                         </p>
                         <span className="text-xs text-slate-400 block mt-2">
                           Standard early baggage drop available. ID proofs mandatory at arrival desk.
@@ -716,10 +738,10 @@ export default function CottageInfoTab() {
                           Check-Out Term
                         </h4>
                         <p className="font-mono text-xl md:text-2xl font-black text-[#001a52] dark:text-[#819ae7] mt-1">
-                          10:00 - 11:00
+                          11:00 AM
                         </p>
                         <span className="text-xs text-slate-400 block mt-2">
-                          Later checkout is subject to villa clean timelines and package options.
+                          Later checkout is subject to room availability and package options.
                         </span>
                       </div>
                     </div>

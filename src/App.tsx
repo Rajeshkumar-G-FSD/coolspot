@@ -282,51 +282,81 @@ export default function App() {
 
       {/* 7. Elegant Footer Section */}
       <footer className="bg-[#001a52] text-white w-full py-12 select-none border-t border-white/5">
-        <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-16 gap-8 max-w-7xl mx-auto">
-          <div className="flex flex-col items-center md:items-start">
-            <img
-              src={coolspotLogo}
-              alt="CoolSpot Cottages"
-              className="h-12 w-auto object-contain"
-            />
+        <div className="max-w-7xl mx-auto px-6 md:px-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+
+            {/* Brand + Tagline + Owner */}
+            <div className="flex flex-col items-start gap-3">
+              <img src={coolspotLogo} alt="Cool Spot Cottage" className="h-12 w-auto object-contain" />
+              <p className="text-slate-300 text-xs leading-relaxed max-w-xs italic">
+                Relax, Refresh and Reconnect with Nature.
+              </p>
+              <p className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">
+                Owner: SARAVANA NAGARAJAN
+              </p>
+            </div>
+
+            {/* Contact Details */}
+            <div className="space-y-3">
+              <span className="text-[10px] uppercase tracking-widest text-amber-400 font-bold block">Contact Us</span>
+              <div className="space-y-2 text-xs text-slate-300">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span>📞</span>
+                  <a href="tel:+917010395526" className="hover:text-white transition-colors font-mono">+91 70103 95526</a>
+                  <span className="text-slate-500">·</span>
+                  <a href="tel:+919042737424" className="hover:text-white transition-colors font-mono">+91 90427 37424</a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>📞</span>
+                  <span className="text-slate-400 text-[10px]">Alternate:</span>
+                  <a href="tel:+919443364626" className="hover:text-white transition-colors font-mono text-[11px]">+91 94433 64626</a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>💬</span>
+                  <a href="https://wa.me/917010395526" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    WhatsApp: 70103 95526
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>✉️</span>
+                  <a href="mailto:Coolspotcottage@gmail.com" className="hover:text-white transition-colors">
+                    Coolspotcottage@gmail.com
+                  </a>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="shrink-0 mt-0.5">📍</span>
+                  <span className="leading-relaxed">123/L, Vijayanagara palace road, Near HMT gate, Ooty – 643001</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Hours + Quick Links */}
+            <div className="space-y-3">
+              <span className="text-[10px] uppercase tracking-widest text-amber-400 font-bold block">Information</span>
+              <div className="text-xs text-slate-300 space-y-1.5">
+                <div>⏰ Open <span className="font-bold text-white">24/7</span></div>
+                <div>🏨 Check-in: <span className="font-bold text-white">12:00 PM</span></div>
+                <div>🏨 Check-out: <span className="font-bold text-white">11:00 AM</span></div>
+              </div>
+              <div className="flex flex-wrap gap-4 mt-4 font-sans text-[10px] uppercase tracking-widest text-slate-400 font-medium">
+                <a
+                  href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z"
+                  target="_blank" rel="noopener noreferrer"
+                  className="hover:text-amber-300 transition-colors"
+                >
+                  Google Maps
+                </a>
+                <button onClick={() => alert("Privacy Policies available at the cottage guide desk.")} className="hover:text-white transition-colors">Privacy Policy</button>
+                <button onClick={() => alert("Terms of Service governed under Cool Spot Cottage laws.")} className="hover:text-white transition-colors">Terms</button>
+              </div>
+            </div>
           </div>
 
-          {/* Quick Footer Links */}
-          <div className="flex flex-wrap justify-center gap-6 font-sans text-xs uppercase tracking-widest text-slate-300 font-medium">
-            <button
-              onClick={() => alert("Privacy Policies available natively at the cottage guide desk.")}
-              className="hover:text-white hover:opacity-85 transition-opacity"
-            >
-              Privacy Policy
-            </button>
-            <button
-              onClick={() => alert("Terms of Service is governed under Cool Cottages laws.")}
-              className="hover:text-white hover:opacity-85 transition-opacity"
-            >
-              Terms of Service
-            </button>
-            <button
-              onClick={() =>
-                alert(
-                  "Cool Cottages is 100% sustainable, sourcing clean solar and thermal energies directly from volcanic ridges."
-                )
-              }
-              className="hover:text-white hover:opacity-85 transition-opacity"
-            >
-              Sustainability Policy
-            </button>
-            <button
-              onClick={() =>
-                alert("Convene direct satellite transfers: contact desk@coolcottages.io")
-              }
-              className="hover:text-white hover:opacity-85 transition-opacity"
-            >
-              Contact Us
-            </button>
-          </div>
-
-          <div className="text-slate-400 font-sans text-[10px] uppercase font-bold tracking-wider mt-4 md:mt-0">
-            © 2026 Cool Cottages. All rights reserved.
+          <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div className="text-slate-400 font-sans text-[10px] uppercase font-bold tracking-wider">
+              © 2026 Cool Spot Cottage. All rights reserved.
+            </div>
+            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Ooty, Tamil Nadu, India</div>
           </div>
         </div>
       </footer>
