@@ -8,6 +8,8 @@ import { Calendar as CalendarIcon, Users, ArrowRight, Quote, Check, Info } from 
 import Carousel from "./Carousel";
 import { motion } from "motion/react";
 import CountUp from "./CountUp";
+import BlurText from "./BlurText";
+import SplitText from "./SplitText";
 import ThreeDHoverGallery from "./ThreeDHoverGallery";
 import { Room } from "../types";
 // @ts-expect-error - Vite resolves image assets dynamically at build time
@@ -86,23 +88,20 @@ export default function DestinationsTab({
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#001a52]/40 to-[#f8f9ff]" />
 
         <div className="relative z-10 text-center px-6 md:px-16 max-w-5xl mx-auto flex flex-col items-center mt-12 md:mt-0">
-          <motion.h1
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.2, ease: "easeOut" }}
-            className="font-headline-lg text-4xl md:text-7xl text-white mb-6 text-glow leading-normal md:leading-tight"
-          >
-            Escape Into Luxury, <br /> Where Nature Meets Comfort
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-            className="font-sans text-sm md:text-lg text-white/95 mb-10 max-w-2xl text-center leading-relaxed font-light"
-          >
-            Discover a sanctuary of unparalleled elegance. Experience the perfect harmony of pristine coastal beauty and
-            refined modern architecture.
-          </motion.p>
+          <BlurText
+            text="Escape Into Luxury, Where Nature Meets Comfort"
+            className="font-headline-lg text-4xl md:text-7xl text-white mb-6 text-glow leading-normal md:leading-tight justify-center"
+            delay={120}
+            direction="top"
+            stepDuration={0.4}
+          />
+          <BlurText
+            text="Discover a sanctuary of unparalleled elegance. Experience the perfect harmony of pristine mountain beauty and refined modern architecture."
+            className="font-sans text-sm md:text-lg text-white/95 mb-10 max-w-2xl text-center leading-relaxed font-light justify-center"
+            delay={40}
+            direction="bottom"
+            stepDuration={0.3}
+          />
 
           {/* Floating Booking Widget */}
           <motion.form
@@ -222,16 +221,16 @@ export default function DestinationsTab({
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.03 }}
               transition={{ type: "spring", stiffness: 300, damping: 15 }}
               className="p-4 border-b md:border-b-0 md:border-r border-[#001a52]/5 dark:border-white/5 md:last:border-none cursor-default"
             >
               <div className="font-headline-lg text-4xl md:text-6xl font-bold mb-2 text-[#001a52] dark:text-[#819ae7]">
-                <CountUp from={0} to={150} duration={2.2} decimals={0} />+
+                <CountUp from={0} to={50000} duration={2.5} decimals={0} />+
               </div>
               <div className="font-sans text-xs uppercase tracking-widest text-slate-500 font-bold">
-                Luxury Villas
+                Happy Customers
               </div>
             </motion.div>
 
@@ -352,7 +351,14 @@ export default function DestinationsTab({
             className="text-center mb-10"
           >
             <span className="text-[11px] uppercase tracking-widest text-[#819ae7] font-extrabold block mb-2">What Guests Say</span>
-            <h2 className="font-headline-lg text-3xl md:text-4xl text-[#001a52] dark:text-[#dbe1ff] mb-3">Guest Reviews</h2>
+            <SplitText
+              text="Guest Reviews"
+              tag="h2"
+              className="font-headline-lg text-3xl md:text-4xl text-[#001a52] dark:text-[#dbe1ff] mb-3"
+              delay={60}
+              duration={1}
+              splitType="chars"
+            />
             <div className="flex items-center justify-center gap-1 mb-2">
               {[1,2,3,4,5].map(i => (
                 <span key={i} className="text-amber-400 text-xl">★</span>

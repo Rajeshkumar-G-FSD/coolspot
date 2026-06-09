@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, Sparkles, Gift, Calendar, Info, Lock, Moon, Sun, Home, BedDouble, Images, Tag, Phone } from "lucide-react";
+import { Menu, X, Sparkles, Gift, Calendar, Info, Lock, Home, BedDouble, Images, Tag, Phone } from "lucide-react";
 import coolspotLogo from "../public/images/coolspot.png";
 
 interface NavbarProps {
@@ -81,8 +81,8 @@ export default function Navbar({
           </button>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-4 overflow-x-auto scrollbar-hide flex-1 justify-end pr-4">
-            <div className="flex gap-3 flex-nowrap">
+          <div className="hidden md:flex items-center flex-1 justify-end">
+            <div className="flex items-center gap-1 lg:gap-2 flex-wrap justify-end">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -90,16 +90,16 @@ export default function Navbar({
                   <button
                     key={item.id}
                     onClick={() => handleNavClick(item.id)}
-                    className={`nav-item flex items-center gap-1.5 font-sans text-xs uppercase tracking-widest transition-all pb-1 border-b-2 relative ${
+                    className={`nav-item flex items-center gap-1 font-sans text-[10px] lg:text-xs uppercase tracking-wider lg:tracking-widest transition-all pb-1 border-b-2 relative px-1 lg:px-1.5 ${
                       isActive
-                        ? "text-white font-bold border-amber-400 scale-95"
+                        ? "text-white font-bold border-amber-400"
                         : "text-white/70 font-medium border-transparent hover:text-white"
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{item.label}</span>
+                    <Icon className="w-3 h-3 lg:w-3.5 lg:h-3.5 shrink-0" />
+                    <span className="whitespace-nowrap">{item.label}</span>
                     {item.badge !== undefined && item.badge > 0 && (
-                      <span className="absolute -top-2.5 -right-3 px-1.5 py-0.5 text-[9px] font-bold bg-[#ba1a1a] text-white rounded-full leading-none animate-pulse">
+                      <span className="absolute -top-2 -right-2 px-1 py-0.5 text-[8px] font-bold bg-[#ba1a1a] text-white rounded-full leading-none animate-pulse">
                         {item.badge}
                       </span>
                     )}
@@ -108,43 +108,17 @@ export default function Navbar({
               })}
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={openConcierge}
-                className="flex items-center gap-1.5 px-4 py-2 border border-white/30 hover:border-white rounded font-sans text-xs uppercase tracking-widest text-white/80 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>AI Butler</span>
-              </button>
-
-              <button
-                onClick={toggleTheme}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-xl text-xs uppercase tracking-widest font-semibold hover:bg-white/20 transition-all border border-white/20"
-                title="Toggle light / dark theme"
-              >
-                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                <span>{darkMode ? "Light" : "Dark"}</span>
-              </button>
-
-              <button
-                onClick={() => handleNavClick("destinations")}
-                className="bg-amber-400 text-[#001a52] hover:bg-amber-300 px-5 py-2 rounded font-sans text-xs uppercase tracking-widest font-bold transition-all shadow-sm cursor-pointer"
-              >
-                Book Room
-              </button>
-            </div>
+            {/* Book Room CTA */}
+            <button
+              onClick={() => handleNavClick("destinations")}
+              className="ml-3 shrink-0 bg-amber-400 text-[#001a52] hover:bg-amber-300 px-4 py-2 rounded font-sans text-[10px] lg:text-xs uppercase tracking-widest font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap"
+            >
+              Book Room
+            </button>
           </div>
 
           {/* Mobile Action Controls */}
           <div className="flex md:hidden items-center space-x-3">
-            <button
-              onClick={openConcierge}
-              className="p-2 text-white hover:bg-white/10 rounded-full"
-              title="AI Concierge"
-            >
-              <Sparkles className="w-5 h-5 text-amber-400" />
-            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-white hover:bg-white/10 rounded"
@@ -206,17 +180,6 @@ export default function Navbar({
             </div>
 
             <div className="space-y-3 pt-6 border-t border-[#001a52]/10 dark:border-white/10">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openConcierge();
-                }}
-                className="w-full py-3 bg-[#e5eeff] dark:bg-white/10 text-[#001a52] dark:text-white rounded-lg font-sans text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-2 border border-[#bec8c9]/50"
-              >
-                <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-                <span>AI Butler Chat</span>
-              </button>
-
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

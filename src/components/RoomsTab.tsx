@@ -7,6 +7,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { BedDouble, Users, ChevronRight, Layers } from "lucide-react";
 import { Room } from "../types";
+import BlurText from "./BlurText";
 
 interface RoomsTabProps {
   rooms: Room[];
@@ -26,22 +27,21 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
           >
             Accommodations
           </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-headline-lg text-4xl md:text-5xl mb-4"
-          >
-            Our Rooms
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-white/70 text-sm max-w-xl mx-auto leading-relaxed"
-          >
-            9 comfortable rooms across 4 categories — all with KING SIZE beds, 24/7 hot water, and serene Ooty surroundings. Max 3 adults per room.
-          </motion.p>
+          <BlurText
+            text="Our Rooms"
+            tag="h1"
+            className="font-headline-lg text-4xl md:text-5xl mb-4 justify-center"
+            delay={80}
+            direction="top"
+            stepDuration={0.4}
+          />
+          <BlurText
+            text="9 comfortable rooms across 4 categories — all with KING SIZE beds, 24/7 hot water, and serene Ooty surroundings. Max 3 adults per room."
+            className="text-white/70 text-sm max-w-xl mx-auto leading-relaxed justify-center"
+            delay={30}
+            direction="bottom"
+            stepDuration={0.28}
+          />
         </div>
       </section>
 

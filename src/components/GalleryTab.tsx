@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 import ThreeDHoverGallery from "./ThreeDHoverGallery";
+import BlurText from "./BlurText";
 
 // @ts-expect-error - Vite resolves image assets dynamically at build time
 import imgFrontview from "../public/images/frontview.jpg";
@@ -64,22 +65,21 @@ export default function GalleryTab() {
           >
             Visual Tour
           </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-headline-lg text-4xl md:text-5xl mb-4"
-          >
-            Gallery
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-white/70 text-sm max-w-xl mx-auto"
-          >
-            A visual tour of Cool Spot Cottages — from the scenic entrance to every cozy room.
-          </motion.p>
+          <BlurText
+            text="Gallery"
+            tag="h1"
+            className="font-headline-lg text-4xl md:text-5xl mb-4 justify-center"
+            delay={80}
+            direction="top"
+            stepDuration={0.42}
+          />
+          <BlurText
+            text="A visual tour of Cool Spot Cottages — from the scenic entrance to every cozy room."
+            className="text-white/70 text-sm max-w-xl mx-auto justify-center"
+            delay={35}
+            direction="bottom"
+            stepDuration={0.28}
+          />
         </div>
       </section>
 

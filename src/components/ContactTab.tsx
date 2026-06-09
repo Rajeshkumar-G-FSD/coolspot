@@ -6,6 +6,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { MapPin, Phone, Mail, Clock, MessageSquare, Send, User, CheckCircle, Users } from "lucide-react";
+import BlurText from "./BlurText";
 
 export default function ContactTab() {
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
@@ -75,22 +76,21 @@ export default function ContactTab() {
           >
             Get in Touch
           </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-headline-lg text-4xl md:text-5xl mb-4"
-          >
-            Contact Us
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-white/70 text-sm max-w-xl mx-auto"
-          >
-            We're available 24/7. Reach out for bookings, queries, or anything about your stay at Cool Spot Cottages.
-          </motion.p>
+          <BlurText
+            text="Contact Us"
+            tag="h1"
+            className="font-headline-lg text-4xl md:text-5xl mb-4 justify-center"
+            delay={80}
+            direction="top"
+            stepDuration={0.42}
+          />
+          <BlurText
+            text="We're available 24/7. Reach out for bookings, queries, or anything about your stay at Cool Spot Cottages."
+            className="text-white/70 text-sm max-w-xl mx-auto justify-center"
+            delay={30}
+            direction="bottom"
+            stepDuration={0.28}
+          />
         </div>
       </section>
 

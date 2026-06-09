@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { BedDouble, Users, Check, Tag, Info, ArrowRight } from "lucide-react";
+import BlurText from "./BlurText";
 import { VILLAS_DATA } from "../data";
 import { db } from "../firebase";
 import { getDocs, collection } from "firebase/firestore";
@@ -39,22 +40,21 @@ export default function TariffTab({ onBook }: TariffTabProps) {
           >
             Pricing
           </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-headline-lg text-4xl md:text-5xl mb-4"
-          >
-            Tariff & Rates
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-white/70 text-sm max-w-xl mx-auto"
-          >
-            Transparent pricing for all room categories. Rates shown are per night, inclusive of all amenities.
-          </motion.p>
+          <BlurText
+            text="Tariff & Rates"
+            tag="h1"
+            className="font-headline-lg text-4xl md:text-5xl mb-4 justify-center"
+            delay={80}
+            direction="top"
+            stepDuration={0.42}
+          />
+          <BlurText
+            text="Transparent pricing for all room categories. Rates shown are per night, inclusive of all amenities."
+            className="text-white/70 text-sm max-w-xl mx-auto justify-center"
+            delay={30}
+            direction="bottom"
+            stepDuration={0.28}
+          />
         </div>
       </section>
 

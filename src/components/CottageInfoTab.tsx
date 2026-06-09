@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from "react";
+import BlurText from "./BlurText";
 import { motion, AnimatePresence } from "motion/react";
 import {
   MapPin,
@@ -266,12 +267,21 @@ export default function CottageInfoTab() {
           <span className="font-sans text-[11px] uppercase tracking-widest text-[#819ae7] font-extrabold block mb-2">
             Property Exploration
           </span>
-          <h1 className="font-headline-lg text-3xl md:text-5xl text-[#001a52] dark:text-[#dbe1ff] font-medium tracking-tight mb-4">
-            Cottage Surroundings & Resident Guide
-          </h1>
-          <p className="font-sans text-sm md:text-base text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Discover Ooty's natural elegance. Detailed lookbooks, surrounding local transit hubs, high-end guest facilities, check-in terms, and answers to your queries.
-          </p>
+          <BlurText
+            text="Cottage Surroundings & Resident Guide"
+            tag="h1"
+            className="font-headline-lg text-3xl md:text-5xl text-[#001a52] dark:text-[#dbe1ff] font-medium tracking-tight mb-4 justify-center"
+            delay={50}
+            direction="top"
+            stepDuration={0.38}
+          />
+          <BlurText
+            text="Discover Ooty's natural elegance. Detailed lookbooks, surrounding local transit hubs, high-end guest facilities, check-in terms, and answers to your queries."
+            className="font-sans text-sm md:text-base text-slate-500 max-w-2xl mx-auto leading-relaxed justify-center"
+            delay={30}
+            direction="bottom"
+            stepDuration={0.28}
+          />
         </div>
 
         {/* Tab Controls */}
@@ -416,32 +426,18 @@ export default function CottageInfoTab() {
                       </span>
                     </div>
 
-                    {/* Vector Map Preview representation */}
-                    <div className="h-[210px] rounded-2xl relative overflow-hidden bg-slate-200 dark:bg-[#00174a]/30 border border-slate-200/50 dark:border-white/10 flex items-center justify-center">
-                      <div className="absolute inset-x-0 top-0 bottom-0 bg-[radial-gradient(#dfebff_1.5px,transparent_1.5px)] dark:bg-[radial-gradient(#3c59a6_1.5px,transparent_1.5px)] [background-size:16px_16px] opacity-40 animate-pulse" />
-                      
-                      {/* Grid overlay maps details */}
-                      <div className="absolute top-1/4 left-1/4 w-28 h-14 bg-amber-500/5 border border-amber-500/10 rounded-md rotate-12 flex items-center justify-center">
-                        <span className="text-[8px] text-amber-600/50 dark:text-amber-400/30 uppercase tracking-widest font-black">
-                          Rose Garden
-                        </span>
-                      </div>
-                      <div className="absolute bottom-1/4 right-1/4 w-24 h-16 bg-blue-500/5 border border-blue-500/10 rounded-md -rotate-6 flex items-center justify-center">
-                        <span className="text-[8px] text-blue-600/50 dark:text-blue-400/30 uppercase tracking-widest font-black">
-                          Davisdale
-                        </span>
-                      </div>
-
-                      {/* Ripple Center Marker (Coolspot Cottage Location Marker) */}
-                      <div className="relative z-10 flex flex-col items-center">
-                        <span className="absolute -top-7 px-2.5 py-1 bg-[#001a52] text-white text-[8px] uppercase tracking-widest font-black rounded shadow-md border border-white/10 whitespace-nowrap">
-                          Coolspot Cottage
-                        </span>
-                        <div className="w-10 h-10 bg-[#819ae7]/30 rounded-full flex items-center justify-center animate-ping absolute" />
-                        <div className="w-5 h-5 bg-[#001a52] dark:bg-white border-2 border-[#819ae7] rounded-full relative z-20 flex items-center justify-center shadow-lg">
-                          <div className="w-2 h-2 bg-indigo-500 rounded-full" />
-                        </div>
-                      </div>
+                    {/* Real Google Maps Embed */}
+                    <div className="h-[210px] rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 shadow-sm">
+                      <iframe
+                        src="https://maps.google.com/maps?q=11.4039116,76.7118485&z=17&output=embed&hl=en"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Cool Spot Cottages Location"
+                        allowFullScreen
+                      />
                     </div>
 
                     {/* Address Content & Details */}
