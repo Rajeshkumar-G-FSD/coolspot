@@ -164,7 +164,7 @@ export default function BookingsTab({
               </div>
 
               {/* Customized active experiences lists */}
-              {booking.selectedExperiences.length > 0 && (
+              {(booking.selectedExperiences ?? []).length > 0 && (
                 <div className="text-left border-t pt-4 border-slate-200/40">
                   <h5 className="font-sans text-[10px] uppercase font-extrabold tracking-widest text-[#4a607c] mb-3 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />

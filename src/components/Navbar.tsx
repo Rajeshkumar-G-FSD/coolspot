@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, Gift, Calendar, Info, Lock, Home, BedDouble, Images, Tag, Phone } from "lucide-react";
+import { Menu, X, Gift, Info, Lock, Home, BedDouble, Images, Tag, Phone } from "lucide-react";
 import coolspotLogo from "../public/images/coolspot.png";
 
 interface NavbarProps {
@@ -47,7 +47,6 @@ export default function Navbar({
     { id: "tariff", label: "Tariff", icon: Tag },
     { id: "contact", label: "Contact", icon: Phone },
     { id: "packages", label: "Offers", icon: Gift },
-    { id: "bookings", label: "Reservations", icon: Calendar, badge: bookingCount },
     { id: "admin", label: "Admin", icon: Lock },
   ];
 

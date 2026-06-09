@@ -139,12 +139,11 @@ export default function App() {
     setActiveTab("booking-flow");
   };
 
-  // Confirm booking callback
+  // Confirm booking callback — stays on booking-flow so step 3 (payment QR) is shown
   const handleConfirmBooking = (newBooking: Booking) => {
     const updated = [...bookings, newBooking];
     setBookings(updated);
     localStorage.setItem("LUM_BOOKINGS", JSON.stringify(updated));
-    setActiveTab("bookings"); // Navigate to Reservation Ledger immediately to show invoice
   };
 
   // Cancel booking holds

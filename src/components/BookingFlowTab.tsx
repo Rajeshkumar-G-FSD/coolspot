@@ -290,8 +290,8 @@ export default function BookingFlowTab({
       console.log("Booking saved securely in Firebase DB.");
       
       setGeneratedBooking(newBooking);
-      onBookingConfirmed(newBooking);
-      setStep(3); // Go to final Success Screen
+      setStep(3); // Show payment QR screen FIRST
+      onBookingConfirmed(newBooking); // Updates bookings list without navigating away
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, pathForWrite);
     } finally {
