@@ -16,6 +16,12 @@ import BookingModal from "./components/BookingModal";
 import Concierge from "./components/Concierge";
 import BookingFlowTab from "./components/BookingFlowTab";
 import AdminDashboardTab from "./components/AdminDashboardTab";
+import RoomsTab from "./components/RoomsTab";
+import GalleryTab from "./components/GalleryTab";
+import TariffTab from "./components/TariffTab";
+import ContactTab from "./components/ContactTab";
+import PolicyTab from "./components/PolicyTab";
+import type { PolicyType } from "./components/PolicyTab";
 
 import { Room, Experience, Booking, SpecialPackage } from "./types";
 import { VILLAS_DATA, EXPERIENCES_DATA, PACKAGES_DATA } from "./data";
@@ -256,6 +262,26 @@ export default function App() {
         {activeTab === "admin" && (
           <AdminDashboardTab />
         )}
+
+        {activeTab === "rooms" && (
+          <RoomsTab rooms={VILLAS_DATA} onSelectRoom={handleSelectRoomCheckout} />
+        )}
+
+        {activeTab === "gallery" && (
+          <GalleryTab />
+        )}
+
+        {activeTab === "tariff" && (
+          <TariffTab onBook={() => setActiveTab("destinations")} />
+        )}
+
+        {activeTab === "contact" && (
+          <ContactTab />
+        )}
+
+        {(activeTab === "privacy" || activeTab === "terms" || activeTab === "cancellation" || activeTab === "refund") && (
+          <PolicyTab policyType={activeTab as PolicyType} />
+        )}
       </main>
 
       {/* 5. Stay Reservation configuration checkout modal */}
@@ -346,8 +372,16 @@ export default function App() {
                 >
                   Google Maps
                 </a>
-                <button onClick={() => alert("Privacy Policies available at the cottage guide desk.")} className="hover:text-white transition-colors">Privacy Policy</button>
-                <button onClick={() => alert("Terms of Service governed under Cool Spot Cottage laws.")} className="hover:text-white transition-colors">Terms</button>
+                <button onClick={() => setActiveTab("privacy")} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
+                <button onClick={() => setActiveTab("terms")} className="hover:text-white transition-colors cursor-pointer">Terms</button>
+                <button onClick={() => setActiveTab("cancellation")} className="hover:text-white transition-colors cursor-pointer">Cancellation</button>
+                <button onClick={() => setActiveTab("refund")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
+              </div>
+              <div className="flex flex-wrap gap-4 mt-3 font-sans text-[10px] uppercase tracking-widest text-slate-400 font-medium">
+                <button onClick={() => setActiveTab("rooms")} className="hover:text-white transition-colors cursor-pointer">Rooms</button>
+                <button onClick={() => setActiveTab("gallery")} className="hover:text-white transition-colors cursor-pointer">Gallery</button>
+                <button onClick={() => setActiveTab("tariff")} className="hover:text-white transition-colors cursor-pointer">Tariff</button>
+                <button onClick={() => setActiveTab("contact")} className="hover:text-white transition-colors cursor-pointer">Contact Us</button>
               </div>
             </div>
           </div>

@@ -72,8 +72,20 @@ const FAQ_LIST: FAQItem[] = [
     a: "Our guest concierge team speaks fluent English and regional languages, ensuring an incredibly smooth reception and personalized butler care."
   },
   {
-    q: "Can we request cots or extra beds for our children?",
-    a: "Yes, baby cots are available upon request for ₹400 per child, per night (for infants aged 0 to 3 years). Note that there are no extra rollout beds available, so please review room capacities before booking."
+    q: "What is the maximum number of adults allowed per room?",
+    a: "Each room accommodates a maximum of 3 adults. For groups of 4 or more adults, multiple rooms must be booked. Our booking flow will automatically guide you to select multiple rooms when your guest count exceeds 3."
+  },
+  {
+    q: "What type of bed is in each room?",
+    a: "All rooms are furnished with KING SIZE beds, ensuring a spacious and comfortable sleep experience."
+  },
+  {
+    q: "Can we request cots or extra beds?",
+    a: "Yes, extra beds are available upon request. Baby cots are available for infants. Please mention your requirement during booking so we can arrange the setup before your arrival."
+  },
+  {
+    q: "What is the cancellation policy?",
+    a: "If you cancel your booking 20 days or more before your check-in date, you will receive a full refund of the advance or total amount paid. Cancellations within 20 days of check-in may be subject to partial or no refund. Please contact us directly for special circumstances."
   },
   {
     q: "What is the policy regarding smoking inside the cottage?",
@@ -158,17 +170,19 @@ const SURROUNDINGS_DATA = {
 const POPULAR_FACILITIES = [
   { name: "Free WiFi", icon: Wifi },
   { name: "Free parking", icon: Car },
-  { name: "Room service", icon: Droplet },
+  { name: "24/7 Hot Water", icon: Droplet },
+  { name: "TV in room", icon: Tv },
+  { name: "24/7 Security Camera", icon: ShieldCheck },
+  { name: "Guest Attendant (8AM–10PM)", icon: User },
   { name: "Family rooms", icon: Home },
-  { name: "Non-smoking rooms", icon: Sun },
-  { name: "Great for your stay", icon: Heart }
+  { name: "Non-smoking rooms", icon: Sun }
 ];
 
 const FACILITY_CATEGORIES = [
   {
     title: "Bathroom & Spa",
     icon: Droplet,
-    items: ["Bidet", "Bath or shower", "Private bathroom", "Toilet", "Premium Bath tub", "Twin shower"]
+    items: ["24/7 Hot Water", "Bidet", "Bath or shower", "Private bathroom", "Toilet", "Premium Bath tub", "Twin shower"]
   },
   {
     title: "Bedroom comfort",
@@ -201,9 +215,14 @@ const FACILITY_CATEGORIES = [
     items: ["Wake-up service call", "Professional car hire booking", "Daily linen housekeeping", "Invoice provided"]
   },
   {
+    title: "Common Services",
+    icon: User,
+    items: ["Guest Attendant on-site (8AM–10PM)", "Wake-up service call", "Professional car hire booking", "Daily linen housekeeping", "Invoice provided"]
+  },
+  {
     title: "Safety & Gated Security",
     icon: ShieldCheck,
-    items: ["Fire extinguishers on hand", "CCTV outside boundaries", "CCTV in lobbies", "24-Hour security personnel"]
+    items: ["24/7 Security Camera (CCTV)", "Fire extinguishers on hand", "CCTV outside boundaries", "CCTV in lobbies", "Gated secure entry"]
   }
 ];
 

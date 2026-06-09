@@ -201,8 +201,8 @@ export default function BookingFlowTab({
   const advanceAmount = Math.round(totalCost * 0.4);
   const remainingAmount = totalCost - advanceAmount;
 
-  // Availability derived values (8 rooms total: 101–108)
-  const TOTAL_ROOMS = 8;
+  // Availability derived values (9 rooms total: 101–108)
+  const TOTAL_ROOMS = 9;
   const availableRoomCount = TOTAL_ROOMS - bookedRoomNumbers.length;
   const isHighDemand = availabilityFetched && bookedRoomNumbers.length >= 6;
   const isFullyBooked = availabilityFetched && availableRoomCount <= 0;

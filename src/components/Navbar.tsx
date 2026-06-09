@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, Sparkles, Compass, Gift, Calendar, HelpCircle, Info, Lock, Moon, Sun } from "lucide-react";
+import { Menu, X, Sparkles, Gift, Calendar, Info, Lock, Moon, Sun, Home, BedDouble, Images, Tag, Phone } from "lucide-react";
 import coolspotLogo from "../public/images/coolspot.png";
 
 interface NavbarProps {
@@ -40,12 +40,16 @@ export default function Navbar({
   }, []);
 
   const navItems = [
-    { id: "destinations", label: "Destinations", icon: Compass },
+    { id: "destinations", label: "Home", icon: Home },
+    { id: "rooms", label: "Rooms", icon: BedDouble },
+    { id: "gallery", label: "Gallery", icon: Images },
+    { id: "about", label: "About Us", icon: Info },
+    { id: "tariff", label: "Tariff", icon: Tag },
+    { id: "contact", label: "Contact", icon: Phone },
     { id: "experiences", label: "Experiences", icon: Sparkles },
     { id: "packages", label: "Offers", icon: Gift },
-    { id: "about", label: "Cottage Guide", icon: Info },
     { id: "bookings", label: "Reservations", icon: Calendar, badge: bookingCount },
-    { id: "admin", label: "Admin Panel", icon: Lock },
+    { id: "admin", label: "Admin", icon: Lock },
   ];
 
   const handleNavClick = (id: string) => {
@@ -77,8 +81,8 @@ export default function Navbar({
           </button>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            <div className="flex space-x-6">
+          <div className="hidden md:flex items-center gap-4 overflow-x-auto scrollbar-hide flex-1 justify-end pr-4">
+            <div className="flex gap-3 flex-nowrap">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
