@@ -177,28 +177,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 2. Floating Aesthetic Actions Rail bar */}
-      <div className="fixed bottom-6 left-6 flex flex-col gap-3 z-40 select-none">
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href);
-            alert("Resort booking referral link copied to your clipboard!");
-          }}
-          className="w-11 h-11 bg-[#001a52] text-white rounded-full flex items-center justify-center hover:scale-105 transition-all shadow-lg hover:shadow-indigo-900/35 border border-white/10 group cursor-pointer"
-          title="Share Portal with Companions"
-        >
-          <Share2 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-        </button>
-
-        <button
-          onClick={() => setActiveTab("destinations")}
-          className="w-11 h-11 bg-[#001a52] text-white rounded-full flex items-center justify-center hover:scale-105 transition-all shadow-lg hover:shadow-indigo-900/35 border border-white/10 group cursor-pointer"
-          title="Gallery View"
-        >
-          <Camera className="w-4 h-4 group-hover:scale-110 transition-transform" />
-        </button>
-      </div>
-
       {/* WhatsApp + Call Floating Buttons (bottom-right) */}
       <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40 select-none">
         <a

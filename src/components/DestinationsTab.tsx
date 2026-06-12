@@ -87,6 +87,64 @@ export default function DestinationsTab({
         <div className="absolute inset-0 bg-[#001a52]/50 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#001a52]/40 to-[#f8f9ff]" />
 
+        {/* Social Media Sidebar — left bottom of hero */}
+        <div className="absolute left-4 md:left-7 bottom-36 md:bottom-44 z-20 flex flex-col items-center gap-3">
+          {/* Vertical label */}
+          <span
+            className="text-white/30 font-sans font-bold tracking-[0.25em] text-[8px] uppercase"
+            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", marginBottom: 4 }}
+          >
+            Follow Us
+          </span>
+          {/* Thin line above icons */}
+          <div className="w-px h-10 bg-gradient-to-b from-transparent to-white/20" />
+
+          {/* Facebook */}
+          <a
+            href="https://www.facebook.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            className="group w-9 h-9 rounded-full border border-white/15 bg-white/5 hover:bg-[#1877f2] hover:border-[#1877f2] flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-[0_0_16px_rgba(24,119,242,0.55)]"
+          >
+            <svg className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+            </svg>
+          </a>
+
+          {/* Instagram */}
+          <a
+            href="https://www.instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="group w-9 h-9 rounded-full border border-white/15 bg-white/5 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e1306c] hover:to-[#833ab4] hover:border-[#e1306c] flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-[0_0_16px_rgba(225,48,108,0.55)]"
+          >
+            <svg className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </svg>
+          </a>
+
+          {/* WhatsApp */}
+          <a
+            href="https://wa.me/917010395526"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className="group w-9 h-9 rounded-full border border-white/15 bg-white/5 hover:bg-[#25d366] hover:border-[#25d366] flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-[0_0_16px_rgba(37,211,102,0.55)]"
+          >
+            <svg className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" />
+              <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.306A9.96 9.96 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" />
+            </svg>
+          </a>
+
+          {/* Thin line below icons */}
+          <div className="w-px h-8 bg-gradient-to-b from-white/20 to-transparent" />
+        </div>
+
         <div className="relative z-10 text-center px-6 md:px-16 max-w-5xl mx-auto flex flex-col items-center mt-12 md:mt-0">
           <BlurText
             text="Escape Into Luxury, Where Nature Meets Comfort"

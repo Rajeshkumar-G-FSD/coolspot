@@ -336,7 +336,7 @@ function ModuleOverview({ bookings }: { bookings: any[] }) {
       <div className="rounded-2xl p-6 border" style={{ background: C.card, borderColor: C.border }}>
         <div className="text-xs uppercase tracking-widest font-bold mb-5" style={{ color: C.gold }}>Room Occupancy This Month</div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {VILLAS_DATA.map((room, i) => {
+          {VILLAS_DATA.filter(r => r.ratePerNight > 0).map((room, i) => {
             const pct = [78, 92, 65, 88][i % 4];
             return (
               <div key={room.id} className="flex flex-col gap-2">
@@ -372,7 +372,7 @@ function ModuleRooms() {
       if (snap.empty) {
         // Seed Firebase with defaults from VILLAS_DATA on first run
         await Promise.all(
-          VILLAS_DATA.map(r =>
+          VILLAS_DATA.filter(r => r.ratePerNight > 0).map(r =>
             setDoc(doc(db, "rooms", r.id), {
               id: r.id,
               name: r.name,
@@ -383,22 +383,22 @@ function ModuleRooms() {
             })
           )
         );
-        setRooms(VILLAS_DATA.map(r => ({ ...r })));
+        setRooms(VILLAS_DATA.filter(r => r.ratePerNight > 0).map(r => ({ ...r })));
       } else {
         const list: any[] = [];
         snap.forEach(d => {
           const base = VILLAS_DATA.find(v => v.id === d.id) || {};
           list.push({ ...base, ...d.data() });
         });
-        // Ensure all 4 categories appear even if missing from Firebase
-        VILLAS_DATA.forEach(v => {
+        // Ensure all bookable categories appear even if missing from Firebase
+        VILLAS_DATA.filter(r => r.ratePerNight > 0).forEach(v => {
           if (!list.find(r => r.id === v.id)) list.push({ ...v });
         });
-        setRooms(list);
+        setRooms(list.filter(r => r.ratePerNight > 0));
       }
     } catch (err) {
       console.error("Failed to load rooms:", err);
-      setRooms(VILLAS_DATA.map(r => ({ ...r })));
+      setRooms(VILLAS_DATA.filter(r => r.ratePerNight > 0).map(r => ({ ...r })));
     } finally {
       setLoading(false);
     }
