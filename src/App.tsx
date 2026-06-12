@@ -18,7 +18,7 @@ import BookingFlowTab from "./components/BookingFlowTab";
 import AdminDashboardTab from "./components/AdminDashboardTab";
 import RoomsTab from "./components/RoomsTab";
 import GalleryTab from "./components/GalleryTab";
-import TariffTab from "./components/TariffTab";
+
 import ContactTab from "./components/ContactTab";
 import PolicyTab from "./components/PolicyTab";
 import type { PolicyType } from "./components/PolicyTab";
@@ -290,10 +290,6 @@ export default function App() {
           <GalleryTab />
         )}
 
-        {activeTab === "tariff" && (
-          <TariffTab onBook={() => setActiveTab("destinations")} />
-        )}
-
         {activeTab === "contact" && (
           <ContactTab />
         )}
@@ -399,7 +395,7 @@ export default function App() {
               <div className="flex flex-wrap gap-4 mt-3 font-sans text-[10px] uppercase tracking-widest text-slate-400 font-medium">
                 <button onClick={() => setActiveTab("rooms")} className="hover:text-white transition-colors cursor-pointer">Rooms</button>
                 <button onClick={() => setActiveTab("gallery")} className="hover:text-white transition-colors cursor-pointer">Gallery</button>
-                <button onClick={() => setActiveTab("tariff")} className="hover:text-white transition-colors cursor-pointer">Tariff</button>
+
                 <button onClick={() => setActiveTab("contact")} className="hover:text-white transition-colors cursor-pointer">Contact Us</button>
               </div>
             </div>

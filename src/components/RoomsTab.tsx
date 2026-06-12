@@ -5,7 +5,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { BedDouble, Users, ChevronRight, Layers } from "lucide-react";
+import { BedDouble, Users, ChevronRight, Layers, Check, Tag, Info } from "lucide-react";
 import { Room } from "../types";
 import BlurText from "./BlurText";
 
@@ -145,6 +145,80 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Tariff Section */}
+      <div className="max-w-5xl mx-auto px-6 md:px-16 py-14 space-y-8">
+        {/* Common Amenities */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="bg-[#001a52] rounded-2xl p-6 text-white"
+        >
+          <h3 className="text-sm font-bold uppercase tracking-widest text-amber-400 mb-4">
+            Included in All Rooms
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              "24/7 Hot Water",
+              "Free Parking",
+              "24/7 Security Camera",
+              "Guest Attendant (8AM–10PM)",
+              "KING SIZE Bed",
+              "Private Bathroom",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2 text-xs text-white/80">
+                <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-white/40 mt-4">
+            * Free WiFi available in Mountain View and Budget rooms. TV available in selected rooms.
+          </p>
+        </motion.div>
+
+        {/* Additional Charges */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="bg-white dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-100 dark:border-white/5 shadow-sm"
+        >
+          <h3 className="text-sm font-bold text-[#001a52] dark:text-[#dbe1ff] mb-4 flex items-center gap-2 uppercase tracking-wide">
+            <Tag className="w-4 h-4 text-amber-500" />
+            Additional Charges
+          </h3>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-white/5">
+                <th className="text-left py-2 text-slate-400 font-semibold uppercase tracking-wide">Item</th>
+                <th className="text-right py-2 text-slate-400 font-semibold uppercase tracking-wide">Rate</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50 dark:divide-white/5 text-slate-700 dark:text-slate-300">
+              <tr><td className="py-3">Extra Bed (per night)</td><td className="py-3 text-right font-bold">On request</td></tr>
+              <tr><td className="py-3">Baby Cot (per night)</td><td className="py-3 text-right font-bold">₹400</td></tr>
+              <tr><td className="py-3">Early Check-in (before 12 PM)</td><td className="py-3 text-right font-bold">Subject to availability</td></tr>
+              <tr><td className="py-3">Late Check-out (after 11 AM)</td><td className="py-3 text-right font-bold">Subject to availability</td></tr>
+            </tbody>
+          </table>
+        </motion.div>
+
+        {/* Cancellation Policy */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-5 flex items-start gap-3"
+        >
+          <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+            <strong>Cancellation Policy:</strong> Full refund on cancellations made 20 or more days before check-in.
+            Cancellations within 20 days may not be eligible for a refund. All prices are inclusive of applicable taxes.
+          </div>
+        </motion.div>
       </div>
     </div>
   );
