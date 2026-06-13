@@ -39,6 +39,7 @@ export default function DestinationsTab({
   const [calViewYear, setCalViewYear] = useState(() => new Date().getFullYear());
   const [calViewMonth, setCalViewMonth] = useState(() => new Date().getMonth());
   const [hoverDate, setHoverDate] = useState<string | null>(null);
+  const [childAges, setChildAges] = useState<string[]>([]);
 
   const minCheckOut = checkIn
     ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
@@ -82,8 +83,17 @@ export default function DestinationsTab({
 
   // Auto-sync rooms when adults exceed 3
   useEffect(() => {
-    setRoomCount(Math.ceil(adults / 3));
-  }, [adults]);
+    setRoomCount(Math.min(9, Math.ceil((adults + children) / 3)));
+  }, [adults, children]);
+
+  // Sync childAges array length with children count
+  useEffect(() => {
+    setChildAges((prev: string[]) => {
+      const arr = [...prev];
+      while (arr.length < children) arr.push("");
+      return arr.slice(0, children);
+    });
+  }, [children]);
 
   // Close panel on outside click
   useEffect(() => {
@@ -394,8 +404,15 @@ export default function DestinationsTab({
                   </button>
 
                   {/* ── CTA ── */}
-                  <button type="submit"
-                    className="bg-[#001a52] text-white hover:bg-[#0c2560] active:scale-[0.97] rounded-xl px-6 font-sans text-[11px] uppercase tracking-[0.15em] font-extrabold transition-all duration-200 shadow-lg shadow-[#001a52]/25 hover:shadow-[#001a52]/40 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap py-3.5 md:py-0">
+                  <button
+                    type="submit"
+                    disabled={!checkIn || !checkOut}
+                    className={`rounded-xl px-6 font-sans text-[11px] uppercase tracking-[0.15em] font-extrabold transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap py-3.5 md:py-0 ${
+                      checkIn && checkOut
+                        ? "bg-[#001a52] text-white hover:bg-[#0c2560] active:scale-[0.97] shadow-lg shadow-[#001a52]/25 hover:shadow-[#001a52]/40 hover:shadow-xl cursor-pointer"
+                        : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    }`}
+                  >
                     <span>Search</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
@@ -444,7 +461,7 @@ export default function DestinationsTab({
 
             {/* Rooms & Guests Dropdown Panel */}
             {activePanel === "guests" && (
-              <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 z-50 w-80">
+              <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 z-50 w-80 max-h-[80vh] overflow-y-auto">
 
                 {/* Room counter */}
                 <div className="flex items-center justify-between py-3 border-b border-slate-100">
@@ -453,7 +470,7 @@ export default function DestinationsTab({
                     <button type="button" onClick={() => setRoomCount(r => Math.max(1, r - 1))}
                       className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">−</button>
                     <span className="w-5 text-center text-base font-black text-slate-800">{roomCount}</span>
-                    <button type="button" onClick={() => setRoomCount(r => Math.min(4, r + 1))}
+                    <button type="button" onClick={() => setRoomCount(r => Math.min(9, r + 1))}
                       className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">+</button>
                   </div>
                 </div>
@@ -465,7 +482,7 @@ export default function DestinationsTab({
                     <button type="button" onClick={() => setAdults(a => Math.max(1, a - 1))}
                       className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">−</button>
                     <span className="w-5 text-center text-base font-black text-slate-800">{adults}</span>
-                    <button type="button" onClick={() => setAdults(a => Math.min(8, a + 1))}
+                    <button type="button" onClick={() => setAdults(a => Math.min(24, a + 1))}
                       className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">+</button>
                   </div>
                 </div>
@@ -480,14 +497,42 @@ export default function DestinationsTab({
                     <button type="button" onClick={() => setChildren(c => Math.max(0, c - 1))}
                       className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">−</button>
                     <span className="w-5 text-center text-base font-black text-slate-800">{children}</span>
-                    <button type="button" onClick={() => setChildren(c => Math.min(6, c + 1))}
+                    <button type="button" onClick={() => setChildren(c => Math.min(12, c + 1))}
                       className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">+</button>
                   </div>
                 </div>
 
-                <p className="text-[11px] text-slate-400 py-3 border-b border-slate-100 leading-relaxed">
+                <p className="text-[11px] text-slate-400 pt-3 leading-relaxed">
                   Please provide right number of children along with their right age for best options and prices.
                 </p>
+
+                {/* Child age dropdowns */}
+                {children > 0 && (
+                  <div className="mt-3 pb-3 border-b border-slate-100">
+                    <p className="text-xs font-bold text-slate-700 mb-2">Age of Children</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                      {Array.from({ length: children }, (_, i) => (
+                        <div key={i} className="flex flex-col gap-1">
+                          <span className="text-[10px] font-bold text-slate-500">Child {i + 1}</span>
+                          <select
+                            value={childAges[i] || ""}
+                            onChange={(e) => {
+                              const arr = [...childAges];
+                              arr[i] = e.target.value;
+                              setChildAges(arr);
+                            }}
+                            className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 bg-white focus:outline-none focus:border-[#001a52] cursor-pointer"
+                          >
+                            <option value="">Select</option>
+                            {Array.from({ length: 18 }, (_, age) => (
+                              <option key={age} value={String(age)}>{age} yr{age !== 1 ? "s" : ""}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Pets checkbox */}
                 <label className="flex items-start gap-3 py-3 border-b border-slate-100 cursor-pointer group">
@@ -500,16 +545,33 @@ export default function DestinationsTab({
                 </label>
 
                 {/* 2-room notice */}
-                {adults > 3 && (
+                {(adults + children) > 3 && (
                   <div className="mt-3 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 font-semibold text-center">
-                    {Math.ceil(adults / 3)} rooms auto-selected for {adults} adults
+                    {Math.min(9, Math.ceil((adults + children) / 3))} rooms auto-selected for {adults + children} guests
                   </div>
                 )}
 
-                {/* Apply button */}
-                <button type="button" onClick={() => setActivePanel(null)}
-                  className="w-full mt-4 bg-[#001a52] hover:bg-[#0e2f76] text-white rounded-xl py-3 font-sans text-xs uppercase tracking-widest font-extrabold transition-all shadow-md cursor-pointer">
-                  Apply
+                {/* Search button */}
+                {(!checkIn || !checkOut) && (
+                  <p className="text-[10px] text-red-500 font-semibold mt-3 text-center">
+                    {!checkIn ? "Please select a check-in date first." : "Please select a check-out date."}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  disabled={!checkIn || !checkOut}
+                  onClick={() => {
+                    setActivePanel(null);
+                    setErrors({});
+                    onInitiateBooking({ checkIn, checkOut, guests });
+                  }}
+                  className={`w-full mt-2 rounded-xl py-3 font-sans text-xs uppercase tracking-widest font-extrabold transition-all shadow-md ${
+                    checkIn && checkOut
+                      ? "bg-[#001a52] hover:bg-[#0e2f76] text-white cursor-pointer"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  }`}
+                >
+                  Search
                 </button>
               </div>
             )}

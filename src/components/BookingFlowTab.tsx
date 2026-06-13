@@ -56,6 +56,7 @@ export default function BookingFlowTab({
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [guestAdults, setGuestAdults] = useState(() => parseInt(initialGuests.split(" Adult")[0]) || 2);
   const [guestChildren, setGuestChildren] = useState(() => parseInt(initialGuests.split(", ")[1]?.split(" Child")[0] ?? "0") || 0);
+  const [guestChildAges, setGuestChildAges] = useState<string[]>([]);
   const guests = `${guestAdults} Adult${guestAdults !== 1 ? "s" : ""}, ${guestChildren} Child${guestChildren !== 1 ? "ren" : ""}`;
   const [selectedExps, setSelectedExps] = useState<Experience[]>([]);
 
@@ -99,6 +100,15 @@ export default function BookingFlowTab({
   const [proofSubmitting, setProofSubmitting] = useState(false);
 
   // Check-in must be today or later; only clear checkout if it's invalid
+  // Sync guestChildAges array length with guestChildren count
+  useEffect(() => {
+    setGuestChildAges((prev: string[]) => {
+      const arr = [...prev];
+      while (arr.length < guestChildren) arr.push("");
+      return arr.slice(0, guestChildren);
+    });
+  }, [guestChildren]);
+
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     const resolvedCheckIn = (!checkIn || checkIn < today) ? today : checkIn;
@@ -647,7 +657,7 @@ export default function BookingFlowTab({
                       <span className="w-6 text-center text-sm font-black text-[#001a52]">{guestAdults}</span>
                       <button
                         type="button"
-                        onClick={() => setGuestAdults(a => Math.min(8, a + 1))}
+                        onClick={() => setGuestAdults(a => Math.min(24, a + 1))}
                         className="w-7 h-7 rounded-full border-2 border-[#001a52]/30 flex items-center justify-center text-[#001a52] hover:bg-[#001a52] hover:text-white hover:border-[#001a52] transition-all font-bold text-base leading-none cursor-pointer"
                       >+</button>
                     </div>
@@ -667,18 +677,46 @@ export default function BookingFlowTab({
                       <span className="w-6 text-center text-sm font-black text-[#001a52]">{guestChildren}</span>
                       <button
                         type="button"
-                        onClick={() => setGuestChildren(c => Math.min(6, c + 1))}
+                        onClick={() => setGuestChildren(c => Math.min(12, c + 1))}
                         className="w-7 h-7 rounded-full border-2 border-[#001a52]/30 flex items-center justify-center text-[#001a52] hover:bg-[#001a52] hover:text-white hover:border-[#001a52] transition-all font-bold text-base leading-none cursor-pointer"
                       >+</button>
                     </div>
                   </div>
                   {/* rooms notice */}
-                  {guestAdults > 3 && (
+                  {(guestAdults + guestChildren) > 3 && (
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                       <BedDouble className="w-4 h-4 text-amber-600 shrink-0" />
                       <span className="text-[11px] text-amber-700 font-semibold">
-                        {Math.ceil(guestAdults / 3)} rooms required for {guestAdults} adults
+                        {Math.min(9, Math.ceil((guestAdults + guestChildren) / 3))} rooms required for {guestAdults + guestChildren} guests
                       </span>
+                    </div>
+                  )}
+
+                  {/* Child age dropdowns */}
+                  {guestChildren > 0 && (
+                    <div className="pt-2 border-t border-slate-100 mt-1">
+                      <p className="text-xs font-bold text-slate-700 mb-2">Age of Children</p>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                        {Array.from({ length: guestChildren }, (_, i) => (
+                          <div key={i} className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold text-slate-500">Child {i + 1}</span>
+                            <select
+                              value={guestChildAges[i] || ""}
+                              onChange={(e) => {
+                                const arr = [...guestChildAges];
+                                arr[i] = e.target.value;
+                                setGuestChildAges(arr);
+                              }}
+                              className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 bg-white focus:outline-none focus:border-[#001a52] cursor-pointer"
+                            >
+                              <option value="">Select</option>
+                              {Array.from({ length: 18 }, (_, age) => (
+                                <option key={age} value={String(age)}>{age} yr{age !== 1 ? "s" : ""}</option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -697,40 +735,6 @@ export default function BookingFlowTab({
                   </div>
                 </div>
               )}
-
-              {/* Curation inclusions */}
-              <div>
-                <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Include Elite Custom Activities
-                </label>
-                <div className="space-y-2.5">
-                  {EXPERIENCES_DATA.map((exp) => {
-                    const isChecked = selectedExps.some((e) => e.id === exp.id);
-                    return (
-                      <div
-                        key={exp.id}
-                        onClick={() => handleToggleExp(exp)}
-                        className={`flex items-center justify-between p-3 rounded-xl border text-xs cursor-pointer transition-all ${
-                          isChecked
-                            ? "bg-[#e5eeff] dark:bg-white/10 border-indigo-200 font-bold text-[#001a52]"
-                            : "bg-slate-50 border-slate-100 hover:bg-slate-100/60"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            readOnly
-                            className="rounded text-[#001a52] pointer-events-none"
-                          />
-                          <span>{exp.name}</span>
-                        </div>
-                        <span className="font-mono text-slate-500">+₹{exp.cost.toLocaleString()}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
 
               {/* Continue button */}
               <button
@@ -752,11 +756,45 @@ export default function BookingFlowTab({
 
           {/* STEP 2: Your details form (Replicating Screenshot 1) */}
           {step === 2 && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6 text-left"
             >
+              {/* Stay Specifications */}
+              <div className="bg-[#001a52] rounded-2xl p-5 text-white">
+                <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/50 mb-4">Stay Specifications</p>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  <div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-0.5">Check-In</span>
+                    <span className="text-sm font-bold">{checkIn ? new Date(checkIn + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-0.5">Check-Out</span>
+                    <span className="text-sm font-bold">{checkOut ? new Date(checkOut + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-0.5">Duration</span>
+                    <span className="text-sm font-bold">{nights} Night{nights !== 1 ? "s" : ""}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-0.5">Room Type</span>
+                    <span className="text-sm font-bold">{room.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-0.5">Guests</span>
+                    <span className="text-sm font-bold">
+                      {guestAdults} Adult{guestAdults !== 1 ? "s" : ""}
+                      {guestChildren > 0 ? `, ${guestChildren} Child${guestChildren !== 1 ? "ren" : ""}` : ""}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-0.5">Rooms</span>
+                    <span className="text-sm font-bold">{roomsNeeded} Room{roomsNeeded !== 1 ? "s" : ""}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* SignIn Notice Bar */}
               <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm text-xs flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -811,22 +849,20 @@ export default function BookingFlowTab({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Country / Region <span className="text-red-500">*</span></label>
-                    <input 
-                      type="text" 
-                      required
-                      value={countryRegion} 
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Country / Region <span className="text-slate-400 font-normal">(Optional)</span></label>
+                    <input
+                      type="text"
+                      value={countryRegion}
                       onChange={(e) => setCountryRegion(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs font-medium"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">City / Town <span className="text-red-500">*</span></label>
-                    <input 
-                      type="text" 
-                      required
-                      value={city} 
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">City / Town <span className="text-slate-400 font-normal">(Optional)</span></label>
+                    <input
+                      type="text"
+                      value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="Ooty"
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs font-medium"
@@ -988,7 +1024,7 @@ export default function BookingFlowTab({
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Congratulations! You've chosen the cheapest room at Coolspot Cottage. Don't miss out, book now!</span>
+                    <span>Congratulations! You've chosen the Economical room at Coolspot Cottage. Don't miss out, book now!</span>
                   </div>
                 </div>
               </div>
@@ -1006,45 +1042,11 @@ export default function BookingFlowTab({
                 />
               </div>
 
-              {/* Arrival estimated time */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-                <h4 className="text-xs font-bold text-slate-800">Your arrival time</h4>
-                <p className="text-[10px] text-slate-400">You can check in between 12:00 and 23:00</p>
-                <select
-                  value={arrivalTime}
-                  onChange={(e) => setArrivalTime(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs"
-                >
-                  <option>Please select arrival estimate</option>
-                  <option>12:00 - 13:00</option>
-                  <option>13:00 - 14:00</option>
-                  <option>14:00 - 15:00</option>
-                  <option>15:00 - 16:00</option>
-                  <option>17:00 - 18:00</option>
-                  <option>18:00 - 23:00</option>
-                </select>
-              </div>
-
-              {/* Cots card */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-                <h4 className="text-xs font-bold text-slate-800">Cots and extra beds</h4>
-                <p className="text-[10px] text-slate-400">Requests are subject to availability and property confirmation</p>
-                <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={cotRequested} 
-                    onChange={(e) => setCotRequested(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span>Add Extra Cot Bed for Child</span>
-                </label>
-              </div>
-
               {/* Final Review House Rules banner */}
               <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-3.5">
                 <h4 className="text-xs font-bold text-slate-800">Review house rules</h4>
                 <div className="text-xs text-slate-500 space-y-1 bg-slate-50 p-3 rounded-xl">
-                  <p>• No smoking inside cottage rooms</p>
+                  <p>• No smoking / drinking inside cottage rooms</p>
                   <p>• No parties / events unless booked as complete villa</p>
                   <p>• Quiet hours strictly enforced between 23:00 and 06:00</p>
                 </div>
@@ -1133,7 +1135,7 @@ export default function BookingFlowTab({
                 <button
                   type="button"
                   onClick={() => {
-                    if (!firstName || !phoneNumber || !city) {
+                    if (!firstName || !phoneNumber) {
                       alert("Please complete all required fields! (First name, WhatsApp Number, City)");
                       return;
                     }
