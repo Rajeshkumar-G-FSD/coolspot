@@ -65,6 +65,7 @@ export default function BookingFlowTab({
   const [city, setCity] = useState("");
   const [phonePrefix, setPhonePrefix] = useState("IN +91");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [secondaryPhone, setSecondaryPhone] = useState("");
   const [paperlessConfirmation, setPaperlessConfirmation] = useState(true);
   const [bookingForSelf, setBookingForSelf] = useState(true);
   const [extraBedRequested, setExtraBedRequested] = useState(false);
@@ -266,6 +267,7 @@ export default function BookingFlowTab({
       city: city.trim(),
       phonePrefix,
       phoneNumber: phoneNumber.trim(),
+      secondaryPhone: secondaryPhone.trim() || null,
       paperlessConfirmation,
       bookingForSelf,
       workTrip,
@@ -315,7 +317,8 @@ export default function BookingFlowTab({
       `- Reference: ${generatedBooking.id}\n` +
       `- Guest: ${generatedBooking.billingName}\n` +
       `- Contact: ${generatedBooking.billingEmail}\n` +
-      `- Phone: ${generatedBooking.phonePrefix} ${generatedBooking.phoneNumber}\n` +
+      `- Phone (WhatsApp): ${generatedBooking.phonePrefix} ${generatedBooking.phoneNumber}\n` +
+      (generatedBooking.secondaryPhone ? `- Secondary Phone: ${generatedBooking.secondaryPhone}\n` : "") +
       `- Category: ${generatedBooking.room.name}\n` +
       `- Assigned Rooms: ${roomsLabel}\n` +
       `- Dates: ${generatedBooking.checkIn} to ${generatedBooking.checkOut} (${generatedBooking.nightsNum} Nights)\n` +
@@ -732,22 +735,21 @@ export default function BookingFlowTab({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1.5">First name <span className="text-red-500">*</span></label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
-                      value={firstName} 
-                      onChange={(e) => setFirstName(e.target.value)} 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
                       placeholder="e.g. John"
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Last name <span className="text-red-500">*</span></label>
-                    <input 
-                      type="text" 
-                      required
-                      value={lastName} 
-                      onChange={(e) => setLastName(e.target.value)} 
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Last name <span className="text-slate-400 font-normal">(Optional)</span></label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
                       placeholder="e.g. Doe"
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs"
                     />
@@ -755,12 +757,11 @@ export default function BookingFlowTab({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Email address <span className="text-red-500">*</span></label>
-                  <input 
-                    type="email" 
-                    required
-                    value={billingEmail} 
-                    onChange={(e) => setBillingEmail(e.target.value)} 
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Email address <span className="text-slate-400 font-normal">(Optional)</span></label>
+                  <input
+                    type="email"
+                    value={billingEmail}
+                    onChange={(e) => setBillingEmail(e.target.value)}
                     placeholder="e.g. johndoe@gmail.com"
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs"
                   />
@@ -792,12 +793,12 @@ export default function BookingFlowTab({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Phone number <span className="text-red-500">*</span></label>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">WhatsApp Number <span className="text-red-500">*</span></label>
                     <div className="flex gap-2">
-                      <select 
-                        value={phonePrefix} 
+                      <select
+                        value={phonePrefix}
                         onChange={(e) => setPhonePrefix(e.target.value)}
                         className="bg-slate-50 border border-slate-200 rounded-lg px-2 text-xs focus:outline-none"
                       >
@@ -806,16 +807,26 @@ export default function BookingFlowTab({
                         <option>GB +44</option>
                         <option>AE +971</option>
                       </select>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
-                        value={phoneNumber} 
-                        onChange={(e) => setPhoneNumber(e.target.value)} 
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
                         placeholder="070103 95526"
                         className="flex-1 bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs"
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">Needed for the property to connect if required</p>
+                    <p className="text-[10px] text-slate-400 mt-1">We'll send your booking confirmation on WhatsApp</p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Secondary Phone Number <span className="text-slate-400 font-normal">(Optional)</span></label>
+                    <input
+                      type="text"
+                      value={secondaryPhone}
+                      onChange={(e) => setSecondaryPhone(e.target.value)}
+                      placeholder="Alternate contact number"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs"
+                    />
                   </div>
                 </div>
 
@@ -1081,16 +1092,15 @@ export default function BookingFlowTab({
                 <button
                   type="button"
                   onClick={() => {
-                    if (!firstName || !lastName || !billingEmail || !phoneNumber || !city) {
-                      alert("Please complete all required fields! (First name, Last name, Email, Phone, City)");
+                    if (!firstName || !phoneNumber || !city) {
+                      alert("Please complete all required fields! (First name, WhatsApp Number, City)");
                       return;
                     }
-                    // Validate email
-                    if (!billingEmail.includes("@")) {
+                    // Validate email only if provided
+                    if (billingEmail && !billingEmail.includes("@")) {
                       alert("Please enter a valid email address!");
                       return;
                     }
-                    // Move to final submission
                     handleCompleteBooking();
                   }}
                   disabled={submitting}

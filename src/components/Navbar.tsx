@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Menu, X, Gift, Info, Lock, Home, BedDouble, Images, Phone, ChevronDown } from "lucide-react";
-import coolspotLogo from "../public/images/coolspot.png";
+import coolspotLogo from "../public/images/coolspot_roundlogo-removebg-preview.png";
 
 interface NavbarProps {
   activeTab: string;

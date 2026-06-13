@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Share2, Camera, Compass, Sparkles, AlertCircle, Phone, MessageCircle } from "lucide-react";
-import coolspotLogo from "./public/images/coolspot.png";
+import coolspotLogo from "./public/images/coolspot_roundlogo-removebg-preview.png";
 import Navbar from "./components/Navbar";
 import DestinationsTab from "./components/DestinationsTab";
 import ExperiencesTab from "./components/ExperiencesTab";
