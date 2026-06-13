@@ -54,7 +54,9 @@ export default function BookingFlowTab({
   );
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
-  const [guests, setGuests] = useState(initialGuests);
+  const [guestAdults, setGuestAdults] = useState(() => parseInt(initialGuests.split(" Adult")[0]) || 2);
+  const [guestChildren, setGuestChildren] = useState(() => parseInt(initialGuests.split(", ")[1]?.split(" Child")[0] ?? "0") || 0);
+  const guests = `${guestAdults} Adult${guestAdults !== 1 ? "s" : ""}, ${guestChildren} Child${guestChildren !== 1 ? "ren" : ""}`;
   const [selectedExps, setSelectedExps] = useState<Experience[]>([]);
 
   // Form Fields - Step 2 (Replica of Booking.com)
@@ -630,17 +632,56 @@ export default function BookingFlowTab({
                 <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
                   Guests Count
                 </label>
-                <select
-                  value={guests}
-                  onChange={(e) => setGuests(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs md:text-sm font-medium"
-                >
-                  <option>2 Adults, 0 Children</option>
-                  <option>2 Adults, 1 Child</option>
-                  <option>2 Adults, 2 Children</option>
-                  <option>4 Adults, 0 Children</option>
-                  <option>1 Adult, 0 Children</option>
-                </select>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 space-y-3">
+                  {/* Adults row */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-700">Adults</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setGuestAdults(a => Math.max(1, a - 1))}
+                        className="w-7 h-7 rounded-full border-2 border-[#001a52]/30 flex items-center justify-center text-[#001a52] hover:bg-[#001a52] hover:text-white hover:border-[#001a52] transition-all font-bold text-base leading-none cursor-pointer"
+                      >−</button>
+                      <span className="w-6 text-center text-sm font-black text-[#001a52]">{guestAdults}</span>
+                      <button
+                        type="button"
+                        onClick={() => setGuestAdults(a => Math.min(8, a + 1))}
+                        className="w-7 h-7 rounded-full border-2 border-[#001a52]/30 flex items-center justify-center text-[#001a52] hover:bg-[#001a52] hover:text-white hover:border-[#001a52] transition-all font-bold text-base leading-none cursor-pointer"
+                      >+</button>
+                    </div>
+                  </div>
+                  {/* Children row */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-700">Children</span>
+                      <span className="block text-[10px] text-slate-400">Ages 0–12</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setGuestChildren(c => Math.max(0, c - 1))}
+                        className="w-7 h-7 rounded-full border-2 border-[#001a52]/30 flex items-center justify-center text-[#001a52] hover:bg-[#001a52] hover:text-white hover:border-[#001a52] transition-all font-bold text-base leading-none cursor-pointer"
+                      >−</button>
+                      <span className="w-6 text-center text-sm font-black text-[#001a52]">{guestChildren}</span>
+                      <button
+                        type="button"
+                        onClick={() => setGuestChildren(c => Math.min(6, c + 1))}
+                        className="w-7 h-7 rounded-full border-2 border-[#001a52]/30 flex items-center justify-center text-[#001a52] hover:bg-[#001a52] hover:text-white hover:border-[#001a52] transition-all font-bold text-base leading-none cursor-pointer"
+                      >+</button>
+                    </div>
+                  </div>
+                  {/* rooms notice */}
+                  {guestAdults > 3 && (
+                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      <BedDouble className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span className="text-[11px] text-amber-700 font-semibold">
+                        {Math.ceil(guestAdults / 3)} rooms required for {guestAdults} adults
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Multi-room assignment notice */}

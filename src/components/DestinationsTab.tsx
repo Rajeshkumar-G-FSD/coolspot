@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Users, ArrowRight, Quote, Check, Info } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Users, ArrowRight, Quote, Check, ChevronDown } from "lucide-react";
 import Carousel from "./Carousel";
 import { motion } from "motion/react";
 import CountUp from "./CountUp";
@@ -29,8 +29,16 @@ export default function DestinationsTab({
   const today = new Date().toISOString().split("T")[0];
   const [checkIn, setCheckIn] = useState(today);
   const [checkOut, setCheckOut] = useState("");
-  const [guests, setGuests] = useState("2 Adults, 0 Children");
+  const [adults, setAdults] = useState(2);
+  const [children, setChildren] = useState(0);
+  const guests = `${adults} Adult${adults !== 1 ? "s" : ""}, ${children} Child${children !== 1 ? "ren" : ""}`;
   const [errors, setErrors] = useState<{ checkIn?: string; checkOut?: string }>({});
+  const [roomCount, setRoomCount] = useState(1);
+  const [activePanel, setActivePanel] = useState<"checkin" | "checkout" | "guests" | null>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const [calViewYear, setCalViewYear] = useState(() => new Date().getFullYear());
+  const [calViewMonth, setCalViewMonth] = useState(() => new Date().getMonth());
+  const [hoverDate, setHoverDate] = useState<string | null>(null);
 
   const minCheckOut = checkIn
     ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
@@ -72,10 +80,151 @@ export default function DestinationsTab({
     onInitiateBooking({ checkIn, checkOut, guests });
   };
 
+  // Auto-sync rooms when adults exceed 3
+  useEffect(() => {
+    setRoomCount(Math.ceil(adults / 3));
+  }, [adults]);
+
+  // Close panel on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (widgetRef.current && !widgetRef.current.contains(e.target as Node)) {
+        setActivePanel(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const fmtDate = (dateStr: string) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + "T00:00:00");
+    return {
+      day: d.getDate(),
+      monthYear: d.toLocaleString("en", { month: "short" }) + "'" + String(d.getFullYear()).slice(2),
+      weekday: d.toLocaleString("en", { weekday: "long" }),
+    };
+  };
+
+  const fmtDateDisplay = (ds: string) => {
+    const d = new Date(ds + "T00:00:00");
+    return `${d.getDate()} ${d.toLocaleString("en", { month: "short" })} '${String(d.getFullYear()).slice(2)}`;
+  };
+
+  const handleCalDateClick = (ds: string) => {
+    if (!checkIn || (checkIn && checkOut) || activePanel === "checkin") {
+      setCheckIn(ds);
+      setCheckOut("");
+      setHoverDate(null);
+      setErrors({});
+      setActivePanel("checkout");
+    } else {
+      if (ds > checkIn) {
+        setCheckOut(ds);
+        setHoverDate(null);
+        setErrors({});
+        setActivePanel(null);
+      } else {
+        setCheckIn(ds);
+        setCheckOut("");
+        setHoverDate(null);
+      }
+    }
+  };
+
+  const handleCalPrev = () => {
+    if (calViewMonth === 0) { setCalViewMonth(11); setCalViewYear((y: number) => y - 1); }
+    else setCalViewMonth((m: number) => m - 1);
+  };
+
+  const handleCalNext = () => {
+    if (calViewMonth === 11) { setCalViewMonth(0); setCalViewYear((y: number) => y + 1); }
+    else setCalViewMonth((m: number) => m + 1);
+  };
+
+  const renderCalMonth = (baseYear: number, rawMonth: number, showPrev: boolean, showNext: boolean) => {
+    const m = ((rawMonth % 12) + 12) % 12;
+    const y = rawMonth < 0 ? baseYear - 1 : rawMonth > 11 ? baseYear + 1 : baseYear;
+    const firstDay = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const monthName = new Date(y, m, 1).toLocaleString("en", { month: "long" });
+    const rangeEnd = checkOut || hoverDate;
+    const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          {showPrev ? (
+            <button type="button" onClick={handleCalPrev}
+              className="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-[#001a52] transition-all cursor-pointer">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+          ) : <span className="w-7" />}
+          <span className="text-sm font-black text-slate-800">
+            {monthName} <span className="font-normal text-slate-400 text-xs">{y}</span>
+          </span>
+          {showNext ? (
+            <button type="button" onClick={handleCalNext}
+              className="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-[#001a52] transition-all cursor-pointer">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" /></svg>
+            </button>
+          ) : <span className="w-7" />}
+        </div>
+        <div className="grid grid-cols-7 mb-1">
+          {weekdays.map(d => (
+            <div key={d} className="text-[9px] font-bold text-slate-400 text-center py-1">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {Array.from({ length: firstDay }, (_, i) => <div key={`e${i}`} />)}
+          {Array.from({ length: daysInMonth }, (_, i) => {
+            const day = i + 1;
+            const ds = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const isPast = ds < today;
+            const isCi = ds === checkIn;
+            const isCo = ds === checkOut;
+            const isToday = ds === today;
+            const inRange = !!(checkIn && rangeEnd && ds > checkIn && ds < rangeEnd);
+            const isRangeEnd = !!(rangeEnd && ds === rangeEnd && ds !== checkIn);
+            let cls = "relative text-center py-1.5 text-xs transition-all duration-100 select-none ";
+            if (isPast) {
+              cls += "text-slate-200 cursor-not-allowed";
+            } else if (isCi) {
+              cls += `bg-[#001a52] text-white font-black ${rangeEnd ? "rounded-l-full" : "rounded-full"} cursor-pointer`;
+            } else if (isCo || isRangeEnd) {
+              cls += "bg-[#001a52] text-white font-black rounded-r-full cursor-pointer";
+            } else if (inRange) {
+              cls += "bg-[#e8eef8] text-[#001a52] cursor-pointer";
+            } else {
+              cls += `hover:bg-slate-100 hover:rounded-full cursor-pointer ${isToday ? "font-black text-[#001a52]" : "text-slate-700"}`;
+            }
+            return (
+              <button
+                key={ds}
+                type="button"
+                disabled={isPast}
+                onClick={() => !isPast && handleCalDateClick(ds)}
+                onMouseEnter={() => { if (!isPast && checkIn && !checkOut) setHoverDate(ds); }}
+                onMouseLeave={() => setHoverDate(null)}
+                className={cls}
+              >
+                <span className="relative inline-block">
+                  {day}
+                  {isToday && !isCi && !isCo && (
+                    <span className="absolute -bottom-[2px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#001a52]" />
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden pt-20">
+      <section className="relative h-screen w-full flex items-center justify-center pt-20">
         {/* Spectacular Hotlinked Background */}
         <div
           className="absolute inset-0 w-full h-full bg-cover bg-center select-none"
@@ -161,98 +310,210 @@ export default function DestinationsTab({
             stepDuration={0.3}
           />
 
-          {/* Floating Booking Widget */}
-          <motion.form
+          {/* Floating Booking Widget — Tab-style Design */}
+          <motion.div
+            ref={widgetRef}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.75, ease: "easeOut" }}
-            onSubmit={handleSearchSubmit}
-            className="glass-panel text-left rounded-2xl p-5 md:p-6 w-full max-w-5xl shadow-2xl mx-auto flex flex-col md:flex-row gap-4 items-end bg-white/70"
+            className="w-full max-w-4xl mx-auto relative"
           >
-            <div className="w-full md:w-1/4">
-              <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-[#001a52] mb-2">
-                Check In
-              </label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#001a52]/60" />
-                <input
-                  type="date"
-                  value={checkIn}
-                  min={today}
-                  onChange={(e) => handleCheckInChange(e.target.value)}
-                  className={`w-full bg-white/60 border rounded-lg py-2.5 pl-9 pr-3 text-xs md:text-sm text-slate-800 focus:outline-none focus:ring-1 transition-all font-medium ${
-                    errors.checkIn
-                      ? "border-red-400 focus:border-red-400 focus:ring-red-200"
-                      : "border-[#001a52]/10 focus:border-[#001a52]/40 focus:ring-[#001a52]/20"
-                  }`}
-                />
-              </div>
-              {errors.checkIn && (
-                <p className="text-[10px] text-red-500 font-medium mt-1">{errors.checkIn}</p>
-              )}
-            </div>
+            <form onSubmit={handleSearchSubmit}>
+              <div className="bg-white/96 backdrop-blur-xl rounded-2xl shadow-[0_8px_40px_rgba(0,26,82,0.18)] border border-white/60 p-4 md:p-5">
+                <div className="flex flex-col md:flex-row gap-3 items-stretch">
 
-            <div className="w-full md:w-1/4">
-              <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-[#001a52] mb-2">
-                Check Out
-              </label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#001a52]/60" />
-                <input
-                  type="date"
-                  value={checkOut}
-                  min={minCheckOut}
-                  disabled={!checkIn}
-                  onChange={(e) => {
-                    setCheckOut(e.target.value);
-                    setErrors(prev => ({ ...prev, checkOut: undefined }));
-                  }}
-                  className={`w-full bg-white/60 border rounded-lg py-2.5 pl-9 pr-3 text-xs md:text-sm text-slate-800 focus:outline-none focus:ring-1 transition-all font-medium ${
-                    !checkIn ? "opacity-50 cursor-not-allowed" : ""
-                  } ${
-                    errors.checkOut
-                      ? "border-red-400 focus:border-red-400 focus:ring-red-200"
-                      : "border-[#001a52]/10 focus:border-[#001a52]/40 focus:ring-[#001a52]/20"
-                  }`}
-                />
-              </div>
-              {!checkIn ? (
-                <p className="text-[10px] text-slate-400 font-medium mt-1">Select check-in first</p>
-              ) : errors.checkOut ? (
-                <p className="text-[10px] text-red-500 font-medium mt-1">{errors.checkOut}</p>
-              ) : null}
-            </div>
+                  {/* ── Check-In ── */}
+                  <button type="button"
+                    onClick={() => setActivePanel(p => p === "checkin" ? null : "checkin")}
+                    className={`relative flex-1 border rounded-xl px-4 py-3.5 text-left transition-all duration-200 cursor-pointer ${
+                      activePanel === "checkin" ? "border-[#001a52]" : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={`absolute -top-[9px] left-3 px-1 bg-white text-[11px] font-medium transition-colors ${activePanel === "checkin" ? "text-[#001a52]" : "text-slate-500"}`}>
+                      Check-in
+                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        {checkIn ? (
+                          <>
+                            <div className="text-[17px] font-bold text-slate-900 leading-tight">{fmtDateDisplay(checkIn)}</div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">{fmtDate(checkIn)?.weekday}</div>
+                          </>
+                        ) : (
+                          <div className="text-[15px] font-medium text-slate-300">Add date</div>
+                        )}
+                        {errors.checkIn && <p className="text-[9px] text-red-500 font-bold mt-0.5">{errors.checkIn}</p>}
+                      </div>
+                      <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-all duration-200 ${activePanel === "checkin" ? "rotate-180 text-[#001a52]" : "text-[#3b5bdb]"}`} />
+                    </div>
+                  </button>
 
-            <div className="w-full md:w-1/4">
-              <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-[#001a52] mb-2">
-                Guests
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#001a52]/60" />
-                <select
-                  value={guests}
-                  onChange={(e) => setGuests(e.target.value)}
-                  className="w-full bg-white/60 border border-[#001a52]/10 rounded-lg py-2.5 pl-9 pr-8 text-xs md:text-sm text-slate-800 focus:outline-none focus:border-[#001a52]/40 focus:ring-1 focus:ring-[#001a52]/20 transition-all font-medium appearance-none"
-                >
-                  <option>2 Adults, 0 Children</option>
-                  <option>2 Adults, 1 Child</option>
-                  <option>2 Adults, 2 Children</option>
-                  <option>4 Adults, 0 Children</option>
-                  <option>1 Adult, 0 Children</option>
-                </select>
-              </div>
-            </div>
+                  {/* ── Check-Out ── */}
+                  <button type="button"
+                    onClick={() => setActivePanel(p => p === "checkout" ? null : "checkout")}
+                    className={`relative flex-1 border rounded-xl px-4 py-3.5 text-left transition-all duration-200 cursor-pointer ${
+                      activePanel === "checkout" ? "border-[#001a52]" : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={`absolute -top-[9px] left-3 px-1 bg-white text-[11px] font-medium transition-colors ${activePanel === "checkout" ? "text-[#001a52]" : "text-slate-500"}`}>
+                      Check-out
+                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        {checkOut ? (
+                          <>
+                            <div className="text-[17px] font-bold text-slate-900 leading-tight">{fmtDateDisplay(checkOut)}</div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">{fmtDate(checkOut)?.weekday}</div>
+                          </>
+                        ) : (
+                          <div className="text-[15px] font-medium text-slate-300">Add date</div>
+                        )}
+                        {errors.checkOut && <p className="text-[9px] text-red-500 font-bold mt-0.5">{errors.checkOut}</p>}
+                      </div>
+                      <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-all duration-200 ${activePanel === "checkout" ? "rotate-180 text-[#001a52]" : "text-[#3b5bdb]"}`} />
+                    </div>
+                  </button>
 
-            <div className="w-full md:w-1/4">
-              <button
-                type="submit"
-                className="w-full bg-[#001a52] text-white hover:bg-[#0e2f76] rounded-lg py-3 font-sans text-xs uppercase tracking-widest font-extrabold transition-all shadow-md btn-glow flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Check Availability</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </motion.form>
+                  {/* ── Guests & Rooms ── */}
+                  <button type="button"
+                    onClick={() => setActivePanel(p => p === "guests" ? null : "guests")}
+                    className={`relative flex-[1.5] border rounded-xl px-4 py-3.5 text-left transition-all duration-200 cursor-pointer ${
+                      activePanel === "guests" ? "border-[#001a52]" : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={`absolute -top-[9px] left-3 px-1 bg-white text-[11px] font-medium transition-colors ${activePanel === "guests" ? "text-[#001a52]" : "text-slate-500"}`}>
+                      Guests &amp; Rooms
+                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[17px] font-bold text-slate-900 leading-tight">
+                        {adults} Adult{adults > 1 ? "s" : ""} | {roomCount} Room{roomCount > 1 ? "s" : ""}
+                        {children > 0 && <span> | {children} Child{children > 1 ? "ren" : ""}</span>}
+                      </div>
+                      <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-all duration-200 ${activePanel === "guests" ? "rotate-180 text-[#001a52]" : "text-[#3b5bdb]"}`} />
+                    </div>
+                  </button>
+
+                  {/* ── CTA ── */}
+                  <button type="submit"
+                    className="bg-[#001a52] text-white hover:bg-[#0c2560] active:scale-[0.97] rounded-xl px-6 font-sans text-[11px] uppercase tracking-[0.15em] font-extrabold transition-all duration-200 shadow-lg shadow-[#001a52]/25 hover:shadow-[#001a52]/40 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap py-3.5 md:py-0">
+                    <span>Search</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+
+                </div>
+              </div>
+            </form>
+
+            {/* Unified Calendar Date Picker Panel */}
+            {(activePanel === "checkin" || activePanel === "checkout") && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_12px_48px_rgba(0,26,82,0.22)] border border-slate-100 z-50 overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-3 bg-[#001a52]">
+                  <span className="text-[9px] font-bold text-white/50 uppercase tracking-[0.2em]">
+                    {activePanel === "checkin" ? "Select check-in" : "Select check-out"}
+                  </span>
+                  <div className="flex items-center gap-2 text-sm font-black text-white">
+                    {checkIn ? (
+                      <>
+                        <span className="text-white">{fmtDateDisplay(checkIn)}</span>
+                        <span className="text-white/30 font-light">→</span>
+                        {checkOut ? (
+                          <span className="text-amber-300">{fmtDateDisplay(checkOut)}</span>
+                        ) : (
+                          <span className="text-white/35 font-normal text-xs">Check-out</span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-white/40 font-normal text-xs">Select check-in date</span>
+                    )}
+                  </div>
+                </div>
+                {/* Two-month grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-slate-50">
+                  <div className="p-5 md:p-6">{renderCalMonth(calViewYear, calViewMonth, true, false)}</div>
+                  <div className="p-5 md:p-6">{renderCalMonth(calViewYear, calViewMonth + 1, false, true)}</div>
+                </div>
+                {/* Footer hint */}
+                <div className="px-6 py-2 border-t border-slate-50 bg-slate-50/60">
+                  <p className="text-[10px] text-slate-400 text-center">
+                    {!checkIn ? "Click to set check-in date" : !checkOut ? "Click to set check-out date" : "Both dates selected — click Check Availability"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Rooms & Guests Dropdown Panel */}
+            {activePanel === "guests" && (
+              <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 z-50 w-80">
+
+                {/* Room counter */}
+                <div className="flex items-center justify-between py-3 border-b border-slate-100">
+                  <span className="text-sm font-bold text-slate-800">Room</span>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setRoomCount(r => Math.max(1, r - 1))}
+                      className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">−</button>
+                    <span className="w-5 text-center text-base font-black text-slate-800">{roomCount}</span>
+                    <button type="button" onClick={() => setRoomCount(r => Math.min(4, r + 1))}
+                      className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">+</button>
+                  </div>
+                </div>
+
+                {/* Adults counter */}
+                <div className="flex items-center justify-between py-3 border-b border-slate-100">
+                  <span className="text-sm font-bold text-slate-800">Adults</span>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setAdults(a => Math.max(1, a - 1))}
+                      className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">−</button>
+                    <span className="w-5 text-center text-base font-black text-slate-800">{adults}</span>
+                    <button type="button" onClick={() => setAdults(a => Math.min(8, a + 1))}
+                      className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">+</button>
+                  </div>
+                </div>
+
+                {/* Children counter */}
+                <div className="flex items-center justify-between py-3 border-b border-slate-100">
+                  <div>
+                    <span className="text-sm font-bold text-slate-800 block">Children</span>
+                    <span className="text-[11px] text-slate-400">0 - 17 Years Old</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setChildren(c => Math.max(0, c - 1))}
+                      className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">−</button>
+                    <span className="w-5 text-center text-base font-black text-slate-800">{children}</span>
+                    <button type="button" onClick={() => setChildren(c => Math.min(6, c + 1))}
+                      className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:border-[#001a52] hover:text-[#001a52] transition-all font-bold text-lg leading-none cursor-pointer">+</button>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-400 py-3 border-b border-slate-100 leading-relaxed">
+                  Please provide right number of children along with their right age for best options and prices.
+                </p>
+
+                {/* Pets checkbox */}
+                <label className="flex items-start gap-3 py-3 border-b border-slate-100 cursor-pointer group">
+                  <input type="checkbox" className="rounded mt-0.5 accent-[#001a52]" />
+                  <div className="flex-1">
+                    <span className="text-sm font-bold text-slate-800 block group-hover:text-[#001a52] transition-colors">Are you travelling with pets?</span>
+                    <span className="text-[11px] text-slate-400 leading-relaxed">Selecting this option will show only pet-friendly properties. Please review the pet policies & applicable fees, if any.</span>
+                  </div>
+                  <span className="text-2xl select-none">🐾</span>
+                </label>
+
+                {/* 2-room notice */}
+                {adults > 3 && (
+                  <div className="mt-3 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 font-semibold text-center">
+                    {Math.ceil(adults / 3)} rooms auto-selected for {adults} adults
+                  </div>
+                )}
+
+                {/* Apply button */}
+                <button type="button" onClick={() => setActivePanel(null)}
+                  className="w-full mt-4 bg-[#001a52] hover:bg-[#0e2f76] text-white rounded-xl py-3 font-sans text-xs uppercase tracking-widest font-extrabold transition-all shadow-md cursor-pointer">
+                  Apply
+                </button>
+              </div>
+            )}
+          </motion.div>
         </div>
       </section>
 
