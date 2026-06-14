@@ -111,3 +111,25 @@ export async function seedAdminCredentials() {
 }
 // Run seeding instantly
 seedAdminCredentials();
+
+// Seed Glass House room to Firebase rooms collection (only if not already present)
+export async function seedGlassHouseRoom() {
+  try {
+    const roomRef = doc(db, "rooms", "glass-house");
+    const existing = await getDoc(roomRef);
+    if (!existing.exists()) {
+      await setDoc(roomRef, {
+        id: "glass-house",
+        name: "Glass House",
+        ratePerNight: 5500,
+        maxGuests: 2,
+        roomNumbers: ["109"],
+        isBundle: false,
+      });
+      console.log("Glass House room seeded to Firebase rooms collection.");
+    }
+  } catch (error) {
+    console.error("Glass House seed error:", error);
+  }
+}
+seedGlassHouseRoom();

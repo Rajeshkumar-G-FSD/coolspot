@@ -727,7 +727,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                         <Info className="w-4 h-4 text-red-500 shrink-0" />
                         <div>
                           <span className="font-bold text-red-700 block">Fully Booked</span>
-                          <span className="text-red-600">All 8 rooms are taken for these dates. Please choose different dates.</span>
+                          <span className="text-red-600">All 9 rooms are taken for these dates. Please choose different dates.</span>
                         </div>
                       </>
                     ) : isHighDemand ? (
@@ -738,7 +738,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                             Only {availableRoomCount} room{availableRoomCount !== 1 ? "s" : ""} available!
                           </span>
                           <span className="text-amber-600">
-                            {bookedRoomNumbers.length} of 8 rooms already booked — book now to secure your stay.
+                            {bookedRoomNumbers.length} of 9 rooms already booked — book now to secure your stay.
                           </span>
                         </div>
                       </>

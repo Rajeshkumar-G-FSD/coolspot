@@ -82,6 +82,25 @@ export const VILLAS_DATA: Room[] = [
     ],
     imageUrl: imgSingleBed,
   },
+  {
+    id: "glass-house",
+    name: "Glass House",
+    description: "An extraordinary stay in our signature Glass House — a fully transparent retreat offering 270° panoramic views of the Nilgiri hills and starlit night skies. Featuring a king bed, private garden deck, and unobstructed nature immersion from every angle.",
+    ratePerNight: 5500,
+    maxGuests: 2,
+    sizeSquareMeter: 150,
+    roomNumbers: ["109"],
+    amenities: [
+      "270° Panoramic Glass Walls",
+      "King Bed with Premium Linen",
+      "Private Garden Deck",
+      "Stargazing from Your Bed",
+      "Air Conditioning & Heating",
+      "Private Attached Bathroom",
+      "Morning Mist & Mountain Views",
+    ],
+    imageUrl: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=600&q=80",
+  },
 ];
 
 export const EXPERIENCES_DATA: Experience[] = [
