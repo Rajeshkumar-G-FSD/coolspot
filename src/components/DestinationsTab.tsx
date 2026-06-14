@@ -18,7 +18,7 @@ import coolCottagesFrontview from "../public/images/coolcottages_frontview.png";
 interface DestinationsTabProps {
   rooms: Room[];
   onSelectRoom: (room: Room) => void;
-  onInitiateBooking: (search: { checkIn: string; checkOut: string; guests: string }) => void;
+  onInitiateBooking: (search: { checkIn: string; checkOut: string; guests: string; childAges: string[] }) => void;
 }
 
 export default function DestinationsTab({
@@ -78,7 +78,7 @@ export default function DestinationsTab({
     }
 
     setErrors({});
-    onInitiateBooking({ checkIn, checkOut, guests });
+    onInitiateBooking({ checkIn, checkOut, guests, childAges });
   };
 
   // Auto-sync rooms when adults exceed 3
@@ -564,7 +564,7 @@ export default function DestinationsTab({
                   onClick={() => {
                     setActivePanel(null);
                     setErrors({});
-                    onInitiateBooking({ checkIn, checkOut, guests });
+                    onInitiateBooking({ checkIn, checkOut, guests, childAges });
                   }}
                   className={`w-full mt-2 btn-apple py-3 font-sans text-xs uppercase tracking-widest font-semibold shadow-md ${
                     checkIn && checkOut

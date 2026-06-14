@@ -44,6 +44,7 @@ export default function App() {
     checkOut: "",
     guests: "2 Adults, 0 Children",
   });
+  const [prefilledChildAges, setPrefilledChildAges] = useState<string[]>([]);
   const [activePackage, setActivePackage] = useState<SpecialPackage | null>(null);
 
   // Preloader timeout matching HTML sunrise timing
@@ -101,9 +102,12 @@ export default function App() {
     checkIn: string;
     checkOut: string;
     guests: string;
+    childAges: string[];
   }) => {
-    setPrefilledDates(searchArgs);
-    setSelectedRoom(VILLAS_DATA[0]); // Default first villa category
+    const { childAges, ...dates } = searchArgs;
+    setPrefilledDates(dates);
+    setPrefilledChildAges(childAges);
+    setSelectedRoom(VILLAS_DATA[0]);
     setActivePackage(null);
     setActiveTab("booking-flow");
   };
@@ -252,6 +256,7 @@ export default function App() {
             initialCheckIn={prefilledDates.checkIn}
             initialCheckOut={prefilledDates.checkOut}
             initialGuests={prefilledDates.guests}
+            initialChildAges={prefilledChildAges}
             onBookingConfirmed={handleConfirmBooking}
           />
         )}

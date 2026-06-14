@@ -30,6 +30,7 @@ interface BookingFlowTabProps {
   initialCheckIn?: string;
   initialCheckOut?: string;
   initialGuests?: string;
+  initialChildAges?: string[];
   onBookingConfirmed: (booking: Booking) => void;
 }
 
@@ -38,6 +39,7 @@ export default function BookingFlowTab({
   initialCheckIn = "",
   initialCheckOut = "",
   initialGuests = "2 Adults, 0 Children",
+  initialChildAges = [],
   onBookingConfirmed
 }: BookingFlowTabProps) {
   // Current Active Step (1: Stay Info, 2: Guest Details, 3: Success or Submit)
@@ -57,7 +59,7 @@ export default function BookingFlowTab({
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [guestAdults, setGuestAdults] = useState(() => parseInt(initialGuests.split(" Adult")[0]) || 2);
   const [guestChildren, setGuestChildren] = useState(() => parseInt(initialGuests.split(", ")[1]?.split(" Child")[0] ?? "0") || 0);
-  const [guestChildAges, setGuestChildAges] = useState<string[]>([]);
+  const [guestChildAges, setGuestChildAges] = useState<string[]>(initialChildAges);
   const guests = `${guestAdults} Adult${guestAdults !== 1 ? "s" : ""}, ${guestChildren} Child${guestChildren !== 1 ? "ren" : ""}`;
   const [selectedExps, setSelectedExps] = useState<Experience[]>([]);
 
@@ -305,6 +307,7 @@ export default function BookingFlowTab({
       petAllowed,
       campfireRequested,
       parkingRequired,
+      guestChildAges,
       assignedRooms,
       roomsBooked: roomsNeeded,
       paymentMode,
@@ -346,7 +349,7 @@ export default function BookingFlowTab({
       : "TBD";
 
     // Build inclusions list
-    const inclusionLines: string[] = ["• Breakfast"];
+    const inclusionLines: string[] = [];
     if (b.campfireRequested) inclusionLines.push("• Campfire Evening");
     if (b.petAllowed) inclusionLines.push("• Pet Friendly Arrangement");
     if (b.parkingRequired) inclusionLines.push("• Parking Reserved");
@@ -403,7 +406,7 @@ ${sep}
 📅 Check-In        : ${fmtDate(b.checkIn)}
 📅 Check-Out       : ${fmtDate(b.checkOut)}
 🌙 No. of Nights   : ${nightsCount} Night${nightsCount > 1 ? "s" : ""}
-👥 No. of Guests   : ${b.guestsText}${b.arrivalTime ? `\n🕐 Arrival Time    : ${b.arrivalTime}` : ""}
+👥 No. of Guests   : ${b.guestsText}${b.guestChildAges?.length > 0 && b.guestChildAges.some((a: string) => a !== "") ? `\n👶 Children Ages   : ${b.guestChildAges.map((a: string, i: number) => a ? `Child ${i + 1}: ${a} yr${a !== "1" ? "s" : ""}` : "").filter(Boolean).join(", ")}` : ""}${b.arrivalTime ? `\n🕐 Arrival Time    : ${b.arrivalTime}` : ""}
 
 ${sep}
 ✨ *INCLUSIONS & ADD-ONS*
@@ -1158,43 +1161,6 @@ Have a wonderful stay! 🌿
                   </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-800">Add Extra Bed</h4>
-                      <p className="text-[10px] text-slate-400">Choose a premium extra bed for your villa.</p>
-                    </div>
-                    <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">₹{extraBedRate.toLocaleString()}/night</span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={extraBedRequested}
-                        onChange={(e) => setExtraBedRequested(e.target.checked)}
-                        className="rounded"
-                      />
-                      <span>Add premium extra bed</span>
-                    </label>
-                    {extraBedRequested && (
-                      <select
-                        value={extraBedCount}
-                        onChange={(e) => setExtraBedCount(Number(e.target.value))}
-                        className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs"
-                      >
-                        <option value={1}>1 bed</option>
-                        <option value={2}>2 beds</option>
-                      </select>
-                    )}
-                  </div>
-
-                  {extraBedRequested && (
-                    <div className="text-xs text-slate-600">
-                      Extra bed cost: ₹{extraBedCost.toLocaleString()} total for {nights} night{nights > 1 ? "s" : ""}
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* Pet / Campfire / Parking Add-ons */}
@@ -1237,7 +1203,7 @@ Have a wonderful stay! 🌿
                     />
                     <div>
                       <span className="text-xs font-bold text-slate-700 block">🚗 Parking Required</span>
-                      <span className="text-[10px] text-slate-400">We'll reserve a parking spot for your vehicle.</span>
+                      <span className="text-[10px] text-slate-400">A parking space will be reserved for your vehicle. Parking is available on a first-come, first-served basis.</span>
                     </div>
                   </label>
                 </div>
@@ -1253,11 +1219,15 @@ Have a wonderful stay! 🌿
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>No payment needed now. You'll pay at the property.</span>
+                    <span>Your room will be 100% confirmed upon receipt of a 40% advance payment. The remaining amount can be paid directly at the property.</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>Congratulations! You've chosen the Economical room at Coolspot Cottage. Don't miss out, book now!</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Extra cot will be confirmed after arrival at the property.</span>
                   </div>
                 </div>
               </div>
