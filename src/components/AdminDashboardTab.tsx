@@ -599,10 +599,10 @@ function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange,
             style={{ background: "rgba(255,255,255,0.04)", borderColor: C.border, color: C.text }}
           />
         </div>
-        <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }}>
+        <div className="flex gap-1 p-1 rounded-xl overflow-x-auto scrollbar-none" style={{ background: "rgba(255,255,255,0.04)" }}>
           {["All", "Confirmed", "Pending", "Completed", "Cancelled"].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
+              className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap active:scale-95"
               style={{ background: filter === f ? C.gold : "transparent", color: filter === f ? "#0a0a0a" : C.muted }}>
               {f}
             </button>
@@ -610,8 +610,84 @@ function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange,
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="rounded-2xl p-10 border text-center text-sm" style={{ background: C.card, borderColor: C.border, color: C.muted }}>
+            No bookings found
+          </div>
+        ) : filtered.map((bk: any) => (
+          <motion.div key={bk.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl p-4 border space-y-3" style={{ background: C.card, borderColor: C.border }}>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="font-bold text-sm" style={{ color: C.text }}>{bk.billingName || "Guest"}</div>
+                <div className="text-[10px] font-mono mt-0.5" style={{ color: C.gold }}>{bk.id}</div>
+                <div className="text-[10px] mt-0.5 flex items-center gap-1" style={{ color: C.muted }}>
+                  <Mail className="w-3 h-3" />{bk.billingEmail}
+                </div>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 ${
+                bk.status === "Confirmed" ? "bg-emerald-500/15 text-emerald-400"
+                : bk.status === "Pending" ? "bg-amber-500/15 text-amber-400"
+                : bk.status === "Cancelled" ? "bg-red-500/15 text-red-400"
+                : "bg-blue-500/15 text-blue-400"
+              }`}>{bk.status}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
+                <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: C.muted }}>Room</div>
+                <div className="text-xs font-semibold truncate" style={{ color: C.text }}>{bk.room?.name || "Suite"}</div>
+                <div className="text-[10px]" style={{ color: C.muted }}>{bk.guestsText || "2 Guests"}</div>
+              </div>
+              <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
+                <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: C.muted }}>Stay</div>
+                <div className="text-[10px]" style={{ color: C.text }}>{bk.checkIn}</div>
+                <div className="text-[10px]" style={{ color: C.muted }}>→ {bk.checkOut} · <span style={{ color: C.gold }}>{bk.nightsNum || 1}N</span></div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: C.border }}>
+              <div>
+                <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: C.muted }}>Total</div>
+                <div className="text-sm font-bold font-mono" style={{ color: C.gold }}>₹{(bk.totalCost||0).toLocaleString()}</div>
+              </div>
+              <div className="flex items-center gap-1">
+                <select value={bk.status} onChange={e => onStatusChange(bk.id, e.target.value)}
+                  className="px-2 py-1.5 rounded-xl text-[10px] font-bold border-0 outline-none cursor-pointer mr-1"
+                  style={{
+                    background: bk.status === "Confirmed" ? "rgba(74,222,128,0.15)"
+                      : bk.status === "Pending" ? "rgba(245,158,11,0.15)"
+                      : bk.status === "Cancelled" ? "rgba(248,113,113,0.15)"
+                      : "rgba(96,165,250,0.15)",
+                    color: bk.status === "Confirmed" ? "#4ade80"
+                      : bk.status === "Pending" ? "#f59e0b"
+                      : bk.status === "Cancelled" ? "#f87171"
+                      : "#60a5fa"
+                  }}>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+                <button onClick={() => onEdit(bk)} className="p-2 rounded-xl hover:bg-white/10 transition-colors active:scale-95" title="Edit">
+                  <Edit2 className="w-4 h-4" style={{ color: "#60a5fa" }} />
+                </button>
+                <button onClick={() => onWhatsApp(bk)} className="p-2 rounded-xl hover:bg-white/10 transition-colors active:scale-95" title="WhatsApp">
+                  <MessageSquare className="w-4 h-4" style={{ color: "#25D366" }} />
+                </button>
+                <button onClick={() => onDelete(bk.id)} className="p-2 rounded-xl hover:bg-white/10 transition-colors active:scale-95" title="Delete">
+                  <Trash2 className="w-4 h-4" style={{ color: "#f87171" }} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
         {filtered.length === 0 ? (
           <div className="p-12 text-center" style={{ color: C.muted }}>No bookings found</div>
         ) : (
@@ -885,7 +961,7 @@ function ModuleBilling({ bookings }: { bookings: any[] }) {
   return (
     <div className="space-y-5">
       <h2 className="text-xl font-bold" style={{ color: C.text }}>Billing & Payments</h2>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label:"Total Revenue", value:`₹${totalRevenue.toLocaleString()}`, color: C.gold },
           { label:"Collected", value:`₹${collected.toLocaleString()}`, color:"#4ade80" },
@@ -897,6 +973,8 @@ function ModuleBilling({ bookings }: { bookings: any[] }) {
           </div>
         ))}
       </div>
+
+      {/* Invoice Register header */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
         <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: C.border, background: "rgba(255,255,255,0.02)" }}>
           <span className="text-xs uppercase tracking-widest font-bold" style={{ color: C.gold }}>Invoice Register</span>
@@ -904,7 +982,38 @@ function ModuleBilling({ bookings }: { bookings: any[] }) {
             <Download className="w-3.5 h-3.5" /> Export All
           </button>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile card view */}
+        <div className="md:hidden divide-y" style={{ borderColor: C.border }}>
+          {bookings.length === 0 ? (
+            <div className="p-10 text-center text-sm" style={{ color: C.muted }}>No invoices yet</div>
+          ) : bookings.map(bk => (
+            <div key={bk.id} className="p-4 space-y-2 hover:bg-white/[0.02] transition-colors">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-bold text-xs font-mono" style={{ color: C.gold }}>INV-{bk.id?.slice(-6)||"000000"}</div>
+                  <div className="font-semibold text-sm mt-0.5" style={{ color: C.text }}>{bk.billingName||"Guest"}</div>
+                  <div className="text-[10px]" style={{ color: C.muted }}>{bk.room?.name||"Suite"}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold block mb-1 ${bk.status==="Completed"?"bg-emerald-500/15 text-emerald-400":bk.status==="Pending"?"bg-amber-500/15 text-amber-400":"bg-blue-500/15 text-blue-400"}`}>
+                    {bk.status==="Completed"?"Paid":bk.status==="Pending"?"Due":"Active"}
+                  </span>
+                  <div className="text-sm font-bold font-mono" style={{ color: C.text }}>₹{(bk.totalCost||0).toLocaleString()}</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px]" style={{ color: C.muted }}>{bk.createdTime||"-"}</div>
+                <button className="flex items-center gap-1 text-[10px] font-bold active:scale-95 transition-all" style={{ color: C.gold }}>
+                  <Printer className="w-3 h-3" /> Print
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead style={{ background: "rgba(255,255,255,0.02)" }}>
               <tr>{["Invoice","Guest","Room","Amount","Status","Date","Action"].map(h=>(
@@ -1466,7 +1575,7 @@ const NAV_ITEMS = [
 function Sidebar({ active, setActive, onLogout, collapsed, setCollapsed }: any) {
   return (
     <div
-      className="flex flex-col shrink-0 transition-all duration-300 h-screen sticky top-0 overflow-y-auto"
+      className="hidden md:flex md:flex-col shrink-0 transition-all duration-300 h-screen sticky top-0 overflow-y-auto"
       style={{
         width: collapsed ? "64px" : "220px",
         background: C.sidebar,
@@ -1520,6 +1629,102 @@ function Sidebar({ active, setActive, onLogout, collapsed, setCollapsed }: any) 
           {!collapsed && <span className="text-[11px] font-semibold">Sign Out</span>}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─── MOBILE BOTTOM NAV ───────────────────────────────────────────────────────
+const MOBILE_QUICK_NAV = [
+  { id: "overview",  label: "Home",     icon: LayoutDashboard },
+  { id: "bookings",  label: "Bookings", icon: CalendarCheck },
+  { id: "payments",  label: "Payments", icon: CreditCard },
+  { id: "rooms",     label: "Rooms",    icon: BedDouble },
+];
+
+function MobileBottomNav({ active, setActive, onOpenDrawer }: any) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden border-t"
+      style={{ background: C.sidebar, borderColor: C.border }}>
+      <div className="flex items-center justify-around px-1 py-2">
+        {MOBILE_QUICK_NAV.map(item => {
+          const isActive = active === item.id;
+          return (
+            <button key={item.id} onClick={() => setActive(item.id)}
+              className="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all active:scale-95"
+              style={{ color: isActive ? C.gold : C.muted, background: isActive ? `${C.gold}12` : "transparent" }}>
+              <item.icon className="w-5 h-5" />
+              <span className="text-[9px] font-bold uppercase tracking-wider">{item.label}</span>
+            </button>
+          );
+        })}
+        <button onClick={onOpenDrawer}
+          className="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all active:scale-95"
+          style={{ color: C.muted }}>
+          <Menu className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase tracking-wider">More</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── MOBILE DRAWER ────────────────────────────────────────────────────────────
+function MobileDrawer({ active, setActive, onLogout, onClose }: any) {
+  return (
+    <div className="fixed inset-0 z-50 md:hidden" onClick={onClose}>
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.75)" }} />
+      <motion.div
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="absolute bottom-0 left-0 right-0 rounded-t-3xl overflow-hidden"
+        style={{ background: C.sidebar, maxHeight: "82vh" }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: C.border }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${C.gold}20` }}>
+              <Building2 className="w-4 h-4" style={{ color: C.gold }} />
+            </div>
+            <div>
+              <div className="text-xs font-black tracking-wider" style={{ color: C.text }}>COOL COTTAGES</div>
+              <div className="text-[8px] uppercase tracking-widest" style={{ color: C.muted }}>Admin Console</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/10 transition-colors active:scale-95">
+            <X className="w-5 h-5" style={{ color: C.muted }} />
+          </button>
+        </div>
+
+        {/* Nav Grid */}
+        <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+          <div className="grid grid-cols-3 gap-2 p-4">
+            {NAV_ITEMS.map(item => {
+              const isActive = active === item.id;
+              return (
+                <button key={item.id} onClick={() => setActive(item.id)}
+                  className="flex flex-col items-center gap-2 p-4 rounded-2xl transition-all active:scale-95"
+                  style={{ background: isActive ? `${C.gold}18` : "rgba(255,255,255,0.04)", color: isActive ? C.gold : C.muted }}>
+                  <item.icon className="w-5 h-5" />
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-center leading-tight">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="px-4 pb-6">
+            <button onClick={onLogout}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider active:scale-95 transition-all"
+              style={{ background: "rgba(248,113,113,0.12)", color: "#f87171" }}>
+              <LogOut className="w-4 h-4" /> Sign Out of Admin Console
+            </button>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -1595,7 +1800,7 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>First Name *</label>
               <input value={formFirstName} onChange={e=>setFormFirstName(e.target.value)} placeholder="Rajan" className={inputCls} style={inputStyle} required />
@@ -1605,7 +1810,7 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
               <input value={formLastName} onChange={e=>setFormLastName(e.target.value)} placeholder="Kumar" className={inputCls} style={inputStyle} required />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Email *</label>
               <input type="email" value={formEmail} onChange={e=>setFormEmail(e.target.value)} placeholder="guest@email.com" className={inputCls} style={inputStyle} required />
@@ -1622,7 +1827,7 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
               {VILLAS_DATA.map(r => <option key={r.id} value={r.id} style={{ background:"#0d1a10" }}>{r.name} — ₹{r.ratePerNight.toLocaleString()}/night</option>)}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Check-In *</label>
               <input type="date" value={formCheckIn} onChange={e=>setFormCheckIn(e.target.value)} className={inputCls} style={{ ...inputStyle, colorScheme:"dark" }} required />
@@ -1632,7 +1837,7 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
               <input type="date" value={formCheckOut} onChange={e=>setFormCheckOut(e.target.value)} className={inputCls} style={{ ...inputStyle, colorScheme:"dark" }} required />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Guests</label>
               <select value={formGuestsText} onChange={e=>setFormGuestsText(e.target.value)}
@@ -1773,6 +1978,7 @@ export default function AdminDashboardTab() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeModule, setActiveModule] = useState("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -1850,18 +2056,26 @@ export default function AdminDashboardTab() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0"
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b shrink-0"
           style={{ borderColor: C.border, background: "rgba(0,0,0,0.2)", backdropFilter:"blur(12px)" }}>
-          <div>
-            <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.gold }}>Cool Cottages Admin</div>
-            <div className="text-lg font-bold" style={{ color: C.text }}>{moduleTitle}</div>
-          </div>
           <div className="flex items-center gap-3">
-            <button onClick={fetchBookings} className="p-2.5 rounded-xl hover:bg-white/10 transition-colors border" style={{ borderColor: C.border }}>
+            {/* Mobile hamburger */}
+            <button onClick={() => setMobileDrawerOpen(true)}
+              className="md:hidden p-2 rounded-xl hover:bg-white/10 transition-all active:scale-95"
+              style={{ color: C.gold }}>
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="hidden md:block text-[10px] uppercase tracking-widest font-bold" style={{ color: C.gold }}>Cool Cottages Admin</div>
+              <div className="text-base md:text-lg font-bold" style={{ color: C.text }}>{moduleTitle}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 md:gap-3">
+            <button onClick={fetchBookings} className="p-2 md:p-2.5 rounded-xl hover:bg-white/10 transition-colors border" style={{ borderColor: C.border }}>
               <RefreshCcw className="w-4 h-4" style={{ color: C.muted }} />
             </button>
             <div className="relative">
-              <button className="p-2.5 rounded-xl hover:bg-white/10 transition-colors border" style={{ borderColor: C.border }}>
+              <button className="p-2 md:p-2.5 rounded-xl hover:bg-white/10 transition-colors border" style={{ borderColor: C.border }}>
                 <Bell className="w-4 h-4" style={{ color: C.muted }} />
               </button>
               {notifications > 0 && (
@@ -1869,16 +2083,16 @@ export default function AdminDashboardTab() {
                   style={{ background: "#f87171", color:"white" }}>{notifications}</span>
               )}
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border" style={{ borderColor: C.border }}>
+            <div className="flex items-center gap-2 px-2 md:px-3 py-2 rounded-xl border" style={{ borderColor: C.border }}>
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black"
                 style={{ background:`${C.gold}20`, color: C.gold }}>A</div>
-              {!sidebarCollapsed && <span className="text-xs font-semibold" style={{ color: C.text }}>Admin</span>}
+              <span className="hidden md:block text-xs font-semibold" style={{ color: C.text }}>Admin</span>
             </div>
           </div>
         </div>
 
         {/* Module Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
           <AnimatePresence mode="wait">
             <motion.div key={activeModule} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }} transition={{ duration:0.2 }}>
               {activeModule === "overview"   && <ModuleOverview bookings={bookings} />}
@@ -1911,6 +2125,25 @@ export default function AdminDashboardTab() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        active={activeModule}
+        setActive={setActiveModule}
+        onOpenDrawer={() => setMobileDrawerOpen(true)}
+      />
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {mobileDrawerOpen && (
+          <MobileDrawer
+            active={activeModule}
+            setActive={(id: string) => { setActiveModule(id); setMobileDrawerOpen(false); }}
+            onLogout={() => { setIsLoggedIn(false); setMobileDrawerOpen(false); }}
+            onClose={() => setMobileDrawerOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Booking Form Modal */}
       {showFormModal && (
