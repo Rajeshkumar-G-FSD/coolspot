@@ -9,8 +9,6 @@ import imgRoomsview from "./public/images/coolcottage_roomsview.jpg";
 import imgBedrooms from "./public/images/coolcottage_bedrooms.jpg";
 import imgBedroom from "./public/images/coolcottage_bedroom.jpg";
 import imgSingleBed from "./public/images/coolcottage_single bed.jpg";
-import imgLivingRoom from "./public/images/coolcottage_livingroom.jpg";
-import imgRestroom from "./public/images/coolcottage_restroom.jpg";
 
 export const VILLAS_DATA: Room[] = [
   {
@@ -83,40 +81,6 @@ export const VILLAS_DATA: Room[] = [
       "Wi-Fi Access",
     ],
     imageUrl: imgSingleBed,
-  },
-  {
-    id: "living-room",
-    name: "Cozy Living Room",
-    description: "Unwind in our warm and welcoming shared living room — a comfortable lounge space with plush seating, a flat-screen TV, and large windows that fill the room with natural light and mountain ambience.",
-    ratePerNight: 0,
-    maxGuests: 0,
-    sizeSquareMeter: 60,
-    amenities: [
-      "Plush Sofa Seating",
-      "Flat-Screen TV",
-      "Large Picture Windows",
-      "Natural Mountain Light",
-      "Warm Ambient Lighting",
-      "Shared Guest Lounge",
-    ],
-    imageUrl: imgLivingRoom,
-  },
-  {
-    id: "restroom",
-    name: "Premium Restroom",
-    description: "Refreshing and meticulously maintained restrooms with modern fittings, 24/7 hot water, and premium toiletries. Designed for comfort and hygiene to complete your stay experience.",
-    ratePerNight: 0,
-    maxGuests: 0,
-    sizeSquareMeter: 20,
-    amenities: [
-      "24/7 Hot & Cold Water",
-      "Modern Fittings & Fixtures",
-      "Premium Toiletries Provided",
-      "Well-Ventilated Design",
-      "Daily Housekeeping",
-      "Fresh Towels & Linens",
-    ],
-    imageUrl: imgRestroom,
   },
 ];
 

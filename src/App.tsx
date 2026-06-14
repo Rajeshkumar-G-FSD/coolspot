@@ -384,6 +384,18 @@ export default function App() {
               © 2026 Cool Spot Cottage. All rights reserved.
             </div>
             <div className="text-slate-500 text-[10px] uppercase tracking-wider">Ooty, Tamil Nadu, India</div>
+            <div className="text-slate-500 text-[10px] tracking-wider">
+              Developed by{" "}
+              <a
+                href="https://www.datazync.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative inline-block font-semibold text-amber-400/70 hover:text-amber-300 transition-colors duration-300 group"
+              >
+                DataZync
+                <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-amber-300 group-hover:w-full transition-all duration-300" />
+              </a>
+            </div>
           </div>
         </div>
       </footer>

@@ -120,7 +120,7 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
 
               <button
                 onClick={() => onSelectRoom(room)}
-                className="w-full bg-[#001a52] hover:bg-[#0e2f76] text-white py-3 rounded-xl text-xs uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
               >
                 <span>Book This Room</span>
                 <ChevronRight className="w-4 h-4" />
@@ -215,8 +215,8 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
         >
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-            <strong>Cancellation Policy:</strong> Full refund on cancellations made 20 or more days before check-in.
-            Cancellations within 20 days may not be eligible for a refund. All prices are inclusive of applicable taxes.
+            <strong>Cancellation Policy:</strong> Full refund on cancellations made 25 or more days before check-in.
+            Cancellations within 25 days may not be eligible for a refund. All prices are inclusive of applicable taxes.
           </div>
         </motion.div>
       </div>

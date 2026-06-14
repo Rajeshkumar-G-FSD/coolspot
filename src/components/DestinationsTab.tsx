@@ -565,10 +565,10 @@ export default function DestinationsTab({
                     setErrors({});
                     onInitiateBooking({ checkIn, checkOut, guests });
                   }}
-                  className={`w-full mt-2 rounded-xl py-3 font-sans text-xs uppercase tracking-widest font-extrabold transition-all shadow-md ${
+                  className={`w-full mt-2 btn-apple py-3 font-sans text-xs uppercase tracking-widest font-semibold shadow-md ${
                     checkIn && checkOut
-                      ? "bg-[#001a52] hover:bg-[#0e2f76] text-white cursor-pointer"
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                      ? "bg-[#001a52] hover:bg-[#0e2f76] text-white"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed active:scale-100"
                   }`}
                 >
                   Search
@@ -643,7 +643,7 @@ export default function DestinationsTab({
           >
             <button
               onClick={() => setActiveSubTab("rooms")}
-              className={`px-5 py-2.5 rounded-full text-[10px] md:text-xs font-sans tracking-widest uppercase font-extrabold transition-all cursor-pointer ${
+              className={`px-5 py-2.5 rounded-full text-[10px] md:text-xs font-sans tracking-widest uppercase font-semibold transition-all duration-200 active:scale-95 cursor-pointer ${
                 activeSubTab === "rooms"
                   ? "bg-[#001a52] text-white shadow-md"
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"
@@ -653,7 +653,7 @@ export default function DestinationsTab({
             </button>
             <button
               onClick={() => setActiveSubTab("visual")}
-              className={`px-5 py-2.5 rounded-full text-[10px] md:text-xs font-sans tracking-widest uppercase font-extrabold transition-all cursor-pointer ${
+              className={`px-5 py-2.5 rounded-full text-[10px] md:text-xs font-sans tracking-widest uppercase font-semibold transition-all duration-200 active:scale-95 cursor-pointer ${
                 activeSubTab === "visual"
                   ? "bg-[#001a52] text-white shadow-md"
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"

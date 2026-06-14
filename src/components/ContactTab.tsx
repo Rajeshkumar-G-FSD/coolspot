@@ -217,7 +217,7 @@ export default function ContactTab() {
 
             <button
               type="submit"
-              className="w-full bg-[#001a52] hover:bg-[#0e2f76] text-white py-3 rounded-xl text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
             >
               {sent ? (
                 <>

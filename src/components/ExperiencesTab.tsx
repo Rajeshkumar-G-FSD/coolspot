@@ -55,7 +55,7 @@ export default function ExperiencesTab({
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id as any)}
-              className={`px-5 py-2.5 rounded-lg font-sans text-xs uppercase tracking-wider font-semibold border transition-all cursor-pointer ${
+              className={`px-5 py-2.5 btn-apple font-sans text-xs uppercase tracking-wider font-semibold border ${
                 activeCategory === cat.id
                   ? "bg-[#001a52] text-white border-transparent shadow shadow-lg"
                   : "bg-white text-slate-600 border-slate-200/60 hover:bg-slate-50"
@@ -118,7 +118,7 @@ export default function ExperiencesTab({
                     {onSelectExperience && (
                       <button
                         onClick={() => onSelectExperience(exp)}
-                        className={`w-full py-2.5 rounded-lg font-sans text-xs uppercase tracking-widest border font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        className={`w-full py-2.5 btn-apple font-sans text-xs uppercase tracking-widest border font-semibold flex items-center justify-center gap-2 ${
                           isAdded
                             ? "bg-slate-100 text-slate-500 hover:bg-slate-200 border-transparent"
                             : "bg-[#e5eeff] text-[#001a52] hover:bg-[#c5dcfd] border-[#abbbde]"

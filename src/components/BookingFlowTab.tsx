@@ -16,7 +16,8 @@ import {
   Info,
   BedDouble,
   Wallet,
-  CreditCard
+  CreditCard,
+  Search
 } from "lucide-react";
 import { Room, Experience, Booking } from "../types";
 import { VILLAS_DATA, EXPERIENCES_DATA } from "../data";
@@ -79,6 +80,11 @@ export default function BookingFlowTab({
   const [cotRequested, setCotRequested] = useState(false);
 
   const [paymentMode, setPaymentMode] = useState<"advance" | "full">("advance");
+
+  // Inline validation errors
+  const [firstNameError, setFirstNameError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   // Room availability state (fetched from Firebase)
   const [bookedRoomNumbers, setBookedRoomNumbers] = useState<string[]>([]);
@@ -226,6 +232,10 @@ export default function BookingFlowTab({
   const availableRoomCount = TOTAL_ROOMS - bookedRoomNumbers.length;
   const isHighDemand = availabilityFetched && bookedRoomNumbers.length >= 6;
   const isFullyBooked = availabilityFetched && availableRoomCount <= 0;
+
+  // Step 1 is valid when dates are set and all child ages are selected
+  const allChildAgesSelected = guestChildren === 0 || (guestChildAges.length === guestChildren && guestChildAges.every(a => a !== ""));
+  const isStep1Valid = !!(checkIn && checkOut && checkIn < checkOut && allChildAgesSelected);
 
   // Returns true if a category has at least one unbooked room
   const isCategoryAvailable = (r: Room): boolean => {
@@ -408,7 +418,11 @@ export default function BookingFlowTab({
                 {step > s.nr ? <Check className="w-4 h-4" /> : s.nr}
               </div>
               <span className={`text-[11px] uppercase font-bold tracking-wider hidden sm:inline ${
-                step === s.nr ? "text-[#001a52]" : "text-slate-400"
+                step === s.nr
+                  ? "text-[#001a52] dark:text-white"
+                  : step > s.nr
+                    ? "text-slate-700 dark:text-slate-200"
+                    : "text-slate-400 dark:text-slate-500"
               }`}>
                 {s.label}
               </span>
@@ -484,6 +498,29 @@ export default function BookingFlowTab({
                     </div>
                   );
                 })()}
+
+                {/* Search Availability button */}
+                {checkIn && checkOut && checkIn < checkOut && (
+                  <button
+                    type="button"
+                    onClick={() => fetchRoomAvailability(checkIn, checkOut)}
+                    disabled={availabilityLoading}
+                    className="w-full btn-apple-primary py-3 text-sm font-semibold flex items-center justify-center gap-2 shadow-md mb-4 disabled:opacity-60"
+                  >
+                    {availabilityLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        <span>Checking Availability…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4" />
+                        <span>Search Availability</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                )}
 
                 {/* Live availability banner */}
                 {checkIn && checkOut && checkIn < checkOut && (
@@ -695,28 +732,43 @@ export default function BookingFlowTab({
                   {/* Child age dropdowns */}
                   {guestChildren > 0 && (
                     <div className="pt-2 border-t border-slate-100 mt-1">
-                      <p className="text-xs font-bold text-slate-700 mb-2">Age of Children</p>
+                      <p className="text-xs font-bold text-slate-700 mb-2">
+                        Age of Children <span className="text-red-500">*</span>
+                        <span className="text-[10px] font-normal text-slate-400 ml-1">(required to continue)</span>
+                      </p>
                       <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                        {Array.from({ length: guestChildren }, (_, i) => (
-                          <div key={i} className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold text-slate-500">Child {i + 1}</span>
-                            <select
-                              value={guestChildAges[i] || ""}
-                              onChange={(e) => {
-                                const arr = [...guestChildAges];
-                                arr[i] = e.target.value;
-                                setGuestChildAges(arr);
-                              }}
-                              className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 bg-white focus:outline-none focus:border-[#001a52] cursor-pointer"
-                            >
-                              <option value="">Select</option>
-                              {Array.from({ length: 18 }, (_, age) => (
-                                <option key={age} value={String(age)}>{age} yr{age !== 1 ? "s" : ""}</option>
-                              ))}
-                            </select>
-                          </div>
-                        ))}
+                        {Array.from({ length: guestChildren }, (_, i) => {
+                          const isSelected = guestChildAges[i] !== "" && guestChildAges[i] !== undefined;
+                          return (
+                            <div key={i} className="flex flex-col gap-1">
+                              <span className="text-[10px] font-bold text-slate-500">
+                                Child {i + 1} {!isSelected && <span className="text-red-400">*</span>}
+                              </span>
+                              <select
+                                value={guestChildAges[i] || ""}
+                                onChange={(e) => {
+                                  const arr = [...guestChildAges];
+                                  arr[i] = e.target.value;
+                                  setGuestChildAges(arr);
+                                }}
+                                className={`border rounded-lg px-2 py-1.5 text-xs text-slate-700 bg-white focus:outline-none focus:border-[#001a52] cursor-pointer ${
+                                  !isSelected ? "border-red-300" : "border-slate-200"
+                                }`}
+                              >
+                                <option value="">Select age</option>
+                                {Array.from({ length: 18 }, (_, age) => (
+                                  <option key={age} value={String(age)}>{age} yr{age !== 1 ? "s" : ""}</option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        })}
                       </div>
+                      {!allChildAgesSelected && (
+                        <p className="text-[10px] text-red-500 mt-2 flex items-center gap-1">
+                          <span>⚠</span> Please select age for all children to continue
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -736,17 +788,21 @@ export default function BookingFlowTab({
                 </div>
               )}
 
-              {/* Continue button */}
+              {/* Continue button — enabled only when dates set + all child ages selected */}
+              {!isStep1Valid && (
+                <p className="text-[11px] text-slate-400 text-center -mb-2">
+                  {!checkIn || !checkOut
+                    ? "Select check-in & check-out dates to continue"
+                    : !allChildAgesSelected
+                    ? "Select age for all children to continue"
+                    : ""}
+                </p>
+              )}
               <button
                 type="button"
-                onClick={() => {
-                  if (!checkIn || !checkOut) {
-                    alert("Please specify stay dates!");
-                    return;
-                  }
-                  setStep(2);
-                }}
-                className="w-full bg-[#001a52] hover:bg-[#0c2a68] text-white py-3 rounded-xl text-xs uppercase tracking-widest font-black transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                disabled={!isStep1Valid}
+                onClick={() => setStep(2)}
+                className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 <span>Continue to Guest Details</span>
                 <ChevronRight className="w-4 h-4" />
@@ -787,6 +843,11 @@ export default function BookingFlowTab({
                       {guestAdults} Adult{guestAdults !== 1 ? "s" : ""}
                       {guestChildren > 0 ? `, ${guestChildren} Child${guestChildren !== 1 ? "ren" : ""}` : ""}
                     </span>
+                    {guestChildren > 0 && guestChildAges.some(a => a !== "") && (
+                      <span className="text-[10px] text-white/60 block mt-0.5">
+                        Ages: {guestChildAges.map((a, i) => a ? `${a} yr${a !== "1" ? "s" : ""}` : `Child ${i+1}`).join(", ")}
+                      </span>
+                    )}
                   </div>
                   <div>
                     <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-0.5">Rooms</span>
@@ -818,10 +879,15 @@ export default function BookingFlowTab({
                       type="text"
                       required
                       value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
+                      onChange={(e) => {
+                        setFirstName(e.target.value);
+                        setFirstNameError(e.target.value.trim() ? "" : "First name is required");
+                      }}
+                      onBlur={() => setFirstNameError(firstName.trim() ? "" : "First name is required")}
                       placeholder="e.g. John"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs"
+                      className={`w-full bg-slate-50 border rounded-lg py-2.5 px-3 text-xs ${firstNameError ? "border-red-400" : "border-slate-200"}`}
                     />
+                    {firstNameError && <p className="text-[10px] text-red-500 mt-1">{firstNameError}</p>}
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Last name <span className="text-slate-400 font-normal">(Optional)</span></label>
@@ -1128,7 +1194,7 @@ export default function BookingFlowTab({
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="w-1/3 py-3 rounded-xl border border-slate-300 text-slate-500 text-xs font-sans font-bold uppercase tracking-wider text-center"
+                  className="w-1/3 py-3 btn-apple border border-slate-300 text-slate-500 text-xs font-sans font-semibold uppercase tracking-wider text-center"
                 >
                   Go Back
                 </button>
@@ -1147,7 +1213,7 @@ export default function BookingFlowTab({
                     handleCompleteBooking();
                   }}
                   disabled={submitting}
-                  className="flex-1 py-3 bg-[#001a52] hover:bg-[#0c2a68] text-white text-xs font-sans font-black uppercase tracking-widest text-center rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-55"
+                  className="flex-1 py-3 btn-apple-primary text-xs font-sans font-semibold uppercase tracking-widest text-center flex items-center justify-center gap-2 shadow-md disabled:opacity-55"
                 >
                   <span>{submitting ? "Processing Reservation..." : "Next: Final Details"}</span>
                   <ChevronRight className="w-4 h-4" />
@@ -1261,13 +1327,13 @@ export default function BookingFlowTab({
                   <button
                     type="button"
                     onClick={() => setPaymentSubStep("proof")}
-                    className="w-full bg-[#001a52] hover:bg-[#0e2f76] text-white font-sans text-xs uppercase tracking-widest font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow transition-all cursor-pointer"
+                    className="w-full btn-apple-primary font-sans text-xs uppercase tracking-widest font-semibold py-3 flex items-center justify-center gap-2 shadow"
                   >
                     <Compass className="w-4 h-4" />
                     <span>I've Made the Payment — Submit Proof</span>
                   </button>
                   <button type="button" onClick={executeWhatsAppLink}
-                    className="w-full border border-emerald-400 text-emerald-700 text-xs font-bold py-2.5 rounded-xl hover:bg-emerald-50 transition-all cursor-pointer uppercase tracking-wider">
+                    className="w-full btn-apple border border-emerald-400 text-emerald-700 text-xs font-semibold py-2.5 hover:bg-emerald-50 uppercase tracking-wider">
                     Also Notify via WhatsApp
                   </button>
                 </div>
@@ -1323,7 +1389,7 @@ export default function BookingFlowTab({
                   <button
                     type="submit"
                     disabled={proofSubmitting}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-sans text-xs uppercase tracking-widest font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow transition-all cursor-pointer"
+                    className="w-full btn-apple-green font-sans text-xs uppercase tracking-widest font-semibold py-3 flex items-center justify-center gap-2"
                   >
                     {proofSubmitting ? "Submitting..." : "Submit Payment Proof"}
                   </button>
@@ -1375,7 +1441,7 @@ export default function BookingFlowTab({
               <div className="pb-4">
                 <button
                   onClick={() => window.location.reload()}
-                  className="w-full text-center py-3 rounded-xl border border-slate-200 hover:border-[#001a52] text-[#001a52] text-xs font-bold uppercase tracking-wider cursor-pointer font-sans"
+                  className="w-full text-center py-3 btn-apple border border-slate-200 hover:border-[#001a52] text-[#001a52] text-xs font-semibold uppercase tracking-wider font-sans"
                 >
                   Return to Landing Page
                 </button>

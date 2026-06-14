@@ -350,13 +350,13 @@ export default function BookingModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-1/3 py-3 border border-[#4a607c] hover:bg-slate-50 dark:hover:bg-slate-800 text-[#4a607c] rounded-lg font-sans text-xs uppercase tracking-widest font-bold text-center"
+                className="w-1/3 py-3 btn-apple border border-[#4a607c] hover:bg-slate-50 dark:hover:bg-slate-800 text-[#4a607c] font-sans text-xs uppercase tracking-widest font-semibold text-center"
               >
                 Go Back
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3 bg-[#001a52] hover:bg-[#0e2f76] text-white rounded-lg font-sans text-xs uppercase tracking-widest text-center font-extrabold shadow-md transform hover:-translate-y-0.5 active:translate-y-0 transition-transform cursor-pointer"
+                className="flex-1 py-3 btn-apple-primary font-sans text-xs uppercase tracking-widest text-center shadow-md"
               >
                 Confirm Stay Reservation
               </button>

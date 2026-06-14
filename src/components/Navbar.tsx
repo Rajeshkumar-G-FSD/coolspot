@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, Gift, Info, Lock, Home, BedDouble, Images, Phone, ChevronDown } from "lucide-react";
+import { Menu, X, Info, Lock, Home, BedDouble, Images, Phone, ChevronDown } from "lucide-react";
 import coolspotLogo from "../public/images/coolspot_roundlogo-removebg-preview.png";
 
 interface NavbarProps {
@@ -39,7 +39,6 @@ export default function Navbar({
     { id: "gallery", label: "Gallery", icon: Images },
     { id: "about", label: "About Us", icon: Info },
     { id: "contact", label: "Contact", icon: Phone },
-    { id: "packages", label: "Offers", icon: Gift },
     { id: "admin", label: "Admin", icon: Lock },
   ];
 
@@ -125,7 +124,7 @@ export default function Navbar({
             {/* Premium Book Now CTA */}
             <button
               onClick={() => handleNavClick("booking-flow")}
-              className="shrink-0 relative overflow-hidden border border-amber-400/70 text-amber-400 hover:text-[#001a52] px-5 py-2 rounded text-[10px] lg:text-[11px] uppercase tracking-[0.15em] font-bold transition-all duration-300 group shadow-[0_0_14px_rgba(251,191,36,0.15)] hover:shadow-[0_0_22px_rgba(251,191,36,0.35)] cursor-pointer"
+              className="shrink-0 relative overflow-hidden border border-amber-400/70 text-amber-400 hover:text-[#001a52] px-5 py-2 rounded-full text-[10px] lg:text-[11px] uppercase tracking-[0.15em] font-semibold transition-all duration-200 active:scale-95 group shadow-[0_0_14px_rgba(251,191,36,0.15)] hover:shadow-[0_0_22px_rgba(251,191,36,0.35)] cursor-pointer"
             >
               <span className="absolute inset-0 bg-amber-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
               <span className="relative">Book Now</span>
@@ -212,7 +211,7 @@ export default function Navbar({
           <div className="px-4 py-6 border-t border-white/6 space-y-3">
             <button
               onClick={() => handleNavClick("booking-flow")}
-              className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-[#001a52] rounded-xl font-sans text-xs uppercase tracking-[0.15em] font-extrabold transition-all shadow-lg cursor-pointer"
+              className="w-full py-3.5 btn-apple-amber font-sans text-xs uppercase tracking-[0.15em]"
             >
               Book Your Stay
             </button>

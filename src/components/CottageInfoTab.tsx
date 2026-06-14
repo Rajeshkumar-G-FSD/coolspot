@@ -259,7 +259,7 @@ export default function CottageInfoTab() {
   );
 
   return (
-    <div className="py-8 bg-gradient-to-b from-[#f8f9ff] to-white dark:from-[#00174a]/10 dark:to-transparent min-h-screen">
+    <div className="pt-24 pb-8 bg-gradient-to-b from-[#f8f9ff] to-white dark:from-[#00174a]/10 dark:to-transparent min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Sub-Header Branding */}
@@ -637,7 +637,7 @@ export default function CottageInfoTab() {
 
                               <button 
                                 type="submit" 
-                                className="w-full py-2 bg-[#001a52] hover:bg-slate-800 text-white rounded-lg text-[10px] uppercase font-bold tracking-widest cursor-pointer"
+                                className="w-full py-2 btn-apple-primary text-[10px] uppercase font-semibold tracking-widest"
                               >
                                 Submit Suggestion
                               </button>

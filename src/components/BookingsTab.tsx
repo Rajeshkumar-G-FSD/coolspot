@@ -40,7 +40,7 @@ export default function BookingsTab({
           </p>
           <button
             onClick={onExploreRooms}
-            className="w-full bg-[#001a52] hover:bg-[#0e2f76] text-white py-3 rounded-lg font-sans text-xs uppercase tracking-widest font-black transition-all btn-glow cursor-pointer"
+            className="w-full btn-apple-primary py-3 font-sans text-xs uppercase tracking-widest"
           >
             Explore Villas Collection
           </button>
@@ -208,7 +208,7 @@ export default function BookingsTab({
                 <div className="flex gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => handleCancelClick(booking.id)}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 hover:border-red-300 hover:bg-red-50 text-red-500 rounded-lg font-sans text-xs uppercase tracking-wider font-extrabold transition-colors cursor-pointer"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 btn-apple-danger font-sans text-xs uppercase tracking-wider font-semibold"
                   >
                     <Trash className="w-3.5 h-3.5" />
                     <span>Cancel hold</span>

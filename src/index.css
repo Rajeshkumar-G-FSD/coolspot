@@ -1,1 +1,26 @@
 @import "tailwindcss";
+
+@layer components {
+  /* Apple-style button base — pill shape, smooth press, clean weight */
+  .btn-apple {
+    @apply rounded-full font-semibold transition-all duration-200 active:scale-95 cursor-pointer select-none;
+  }
+  .btn-apple-primary {
+    @apply btn-apple bg-[#001a52] hover:bg-[#0e2f76] text-white shadow-md;
+  }
+  .btn-apple-amber {
+    @apply btn-apple bg-amber-400 hover:bg-amber-300 text-[#001a52] shadow-lg;
+  }
+  .btn-apple-outline {
+    @apply btn-apple border border-current hover:opacity-70;
+  }
+  .btn-apple-ghost {
+    @apply btn-apple border border-slate-300 text-slate-500 hover:border-slate-400;
+  }
+  .btn-apple-danger {
+    @apply btn-apple border border-red-200 hover:border-red-300 hover:bg-red-50 text-red-500;
+  }
+  .btn-apple-green {
+    @apply btn-apple bg-emerald-600 hover:bg-emerald-700 text-white shadow-md disabled:opacity-60;
+  }
+}

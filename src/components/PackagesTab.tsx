@@ -159,7 +159,7 @@ export default function PackagesTab({
 
                   <button
                     onClick={() => onSelectPackage(pkg)}
-                    className="w-full bg-[#001a52] hover:bg-[#0e2f76] text-white py-3 rounded-lg font-sans text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 shadow btn-glow cursor-pointer"
+                    className="w-full btn-apple-primary py-3 font-sans text-xs uppercase tracking-widest flex items-center justify-center gap-2"
                   >
                     <span>Pre-configure Program</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -186,7 +186,7 @@ export default function PackagesTab({
               const aiButlerButton = document.querySelector('button[title="AI Concierge"]') as HTMLButtonElement | null;
               if (aiButlerButton) aiButlerButton.click();
             }}
-            className="px-6 py-2.5 border border-[#4a607c] text-[#4a607c] hover:bg-slate-50 rounded-lg font-sans text-xs uppercase tracking-wider font-bold transition-all cursor-pointer"
+            className="px-6 py-2.5 btn-apple border border-[#4a607c] text-[#4a607c] hover:bg-slate-50 font-sans text-xs uppercase tracking-wider"
           >
             Coordinate With Aurelia AI Concierge
           </button>
