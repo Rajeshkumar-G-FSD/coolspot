@@ -832,6 +832,15 @@ export default function CottageInfoTab() {
                           <span className="text-slate-500">Cottage billing services accept cash only at checking desk.</span>
                         </div>
                       </div>
+
+                      {/* Parking */}
+                      <div className="flex items-start gap-2.5">
+                        <span className="p-1 bg-emerald-500/10 text-emerald-600 rounded text-[9px] uppercase font-bold shrink-0">Parking</span>
+                        <div>
+                          <span className="font-bold text-slate-800 dark:text-slate-200 block">Parking (First Come – First Serve)</span>
+                          <span className="text-slate-500">Free on-site parking is available on a first come, first serve basis. No advance reservation required.</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
