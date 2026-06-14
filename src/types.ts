@@ -21,6 +21,7 @@ export interface Room {
   imageUrl: string;
   roomNumbers?: string[];
   isBundle?: boolean; // true = ratePerNight covers all roomNumbers together
+  images?: string[];
 }
 
 export interface Experience {

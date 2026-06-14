@@ -10,6 +10,14 @@ import imgBedrooms from "./public/images/coolcottage_bedrooms.jpg";
 import imgBedroom from "./public/images/coolcottage_bedroom.jpg";
 import imgSingleBed from "./public/images/coolcottage_single bed.jpg";
 
+export const ROOM_GALLERY_IMAGES = [
+  "https://i.postimg.cc/TwszpPZ5/mountview-bedroom.jpg",
+  "https://i.postimg.cc/LXWcnsrY/mountview-bedrooms.jpg",
+  "https://i.postimg.cc/76RFfLpb/mountview-bedroom-balcony.jpg",
+  "https://i.postimg.cc/pTSwpdgp/mountview-campfire.jpg",
+  "https://i.postimg.cc/76RFfLph/mountview-restoom.jpg",
+];
+
 export const VILLAS_DATA: Room[] = [
   {
     id: "mountain-view",
@@ -27,6 +35,7 @@ export const VILLAS_DATA: Room[] = [
       "Complimentary Morning Tea",
     ],
     imageUrl: imgRoomsview,
+    images: ROOM_GALLERY_IMAGES,
   },
   {
     id: "deluxe-family",
@@ -46,6 +55,7 @@ export const VILLAS_DATA: Room[] = [
       "Courtyard Garden Access",
     ],
     imageUrl: imgBedrooms,
+    images: ROOM_GALLERY_IMAGES,
   },
   {
     id: "extra-cot-room",
@@ -63,6 +73,7 @@ export const VILLAS_DATA: Room[] = [
       "Wardrobe & Storage",
     ],
     imageUrl: imgBedroom,
+    images: ROOM_GALLERY_IMAGES,
   },
   {
     id: "budget-basement",
@@ -81,6 +92,7 @@ export const VILLAS_DATA: Room[] = [
       "Wi-Fi Access",
     ],
     imageUrl: imgSingleBed,
+    images: ROOM_GALLERY_IMAGES,
   },
   {
     id: "glass-house",
@@ -100,6 +112,7 @@ export const VILLAS_DATA: Room[] = [
       "Morning Mist & Mountain Views",
     ],
     imageUrl: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=600&q=80",
+    images: ROOM_GALLERY_IMAGES,
   },
 ];
 

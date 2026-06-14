@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from "react";
-import { motion } from "motion/react";
-import { BedDouble, Users, ChevronRight, Layers, Check, Tag, Info } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { BedDouble, Users, ChevronRight, ChevronLeft, Layers, Check, Tag, Info, Eye, X } from "lucide-react";
 import { Room } from "../types";
 import BlurText from "./BlurText";
 
@@ -14,7 +14,39 @@ interface RoomsTabProps {
   onSelectRoom: (room: Room) => void;
 }
 
+interface GalleryState {
+  roomId: string;
+  idx: number;
+}
+
 export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
+  const [gallery, setGallery] = useState<GalleryState | null>(null);
+
+  const getImages = (room: Room) =>
+    room.images && room.images.length > 0 ? room.images : [room.imageUrl];
+
+  // Keyboard navigation + scroll lock when lightbox is open
+  useEffect(() => {
+    if (!gallery) return;
+    const room = rooms.find((r) => r.id === gallery.roomId);
+    if (!room) return;
+    const imgs = getImages(room);
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setGallery(null);
+      if (e.key === "ArrowLeft")
+        setGallery((g) => g ? { ...g, idx: (g.idx - 1 + imgs.length) % imgs.length } : null);
+      if (e.key === "ArrowRight")
+        setGallery((g) => g ? { ...g, idx: (g.idx + 1) % imgs.length } : null);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [gallery, rooms]);
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] dark:bg-[#08151f] pt-20">
       {/* Header */}
@@ -47,87 +79,130 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
 
       {/* Room Cards Grid */}
       <div className="max-w-7xl mx-auto px-6 md:px-16 py-14 grid grid-cols-1 md:grid-cols-2 gap-8">
-        {rooms.map((room, i) => (
-          <motion.div
-            key={room.id}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: i * 0.1 }}
-            className="bg-white dark:bg-slate-900/60 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 group"
-          >
-            {/* Image */}
-            <div className="relative h-60 overflow-hidden">
-              <img
-                src={room.imageUrl}
-                alt={room.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#001a52]/60 to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                <span className="text-white text-sm font-headline-md font-bold leading-snug drop-shadow-md">
-                  {room.name}
-                </span>
-                <span className="bg-amber-400 text-[#001a52] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide shrink-0 ml-2">
-                  ₹{room.ratePerNight.toLocaleString()}/night
-                </span>
-              </div>
-            </div>
-
-            {/* Details */}
-            <div className="p-6">
-              <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-4">
-                {room.description}
-              </p>
-
-              {/* Meta row */}
-              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400 mb-4">
-                <div className="flex items-center gap-1.5">
-                  <BedDouble className="w-3.5 h-3.5 text-[#001a52] dark:text-[#819ae7]" />
-                  <span className="font-semibold">KING SIZE Bed</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-[#001a52] dark:text-[#819ae7]" />
-                  <span className="font-semibold">Max 3 Adults</span>
-                </div>
-                {room.roomNumbers && room.roomNumbers.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-[#001a52] dark:text-[#819ae7]" />
-                    <span className="font-semibold">
-                      Room{room.roomNumbers.length > 1 ? "s" : ""}: {room.roomNumbers.join(", ")}
-                      {room.isBundle && <span className="ml-1 text-amber-600">(Bundle)</span>}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Amenity chips */}
-              <div className="flex flex-wrap gap-1.5 mb-5">
-                {room.amenities.slice(0, 4).map((a) => (
-                  <span
-                    key={a}
-                    className="text-[10px] px-2.5 py-1 bg-[#e5eeff] dark:bg-white/5 text-[#001a52] dark:text-[#819ae7] rounded-full font-medium"
-                  >
-                    {a}
-                  </span>
-                ))}
-                {room.amenities.length > 4 && (
-                  <span className="text-[10px] px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-400 rounded-full">
-                    +{room.amenities.length - 4} more
-                  </span>
-                )}
-              </div>
-
-              <button
-                onClick={() => onSelectRoom(room)}
-                className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+        {rooms.map((room, i) => {
+          const imgs = getImages(room);
+          return (
+            <motion.div
+              key={room.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="bg-white dark:bg-slate-900/60 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 group"
+            >
+              {/* Main Image with hover overlay */}
+              <div
+                className="relative h-52 overflow-hidden cursor-pointer"
+                onClick={() => setGallery({ roomId: room.id, idx: 0 })}
               >
-                <span>Book This Room</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
-        ))}
+                <img
+                  src={imgs[0]}
+                  alt={room.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#001a52]/60 to-transparent" />
+
+                {/* Hover View Gallery button */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/25 transition-all duration-300">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2 text-white text-xs font-bold flex items-center gap-2 border border-white/30">
+                    <Eye className="w-4 h-4" />
+                    View Gallery
+                  </span>
+                </div>
+
+                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                  <span className="text-white text-sm font-headline-md font-bold leading-snug drop-shadow-md">
+                    {room.name}
+                  </span>
+                  <span className="bg-amber-400 text-[#001a52] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide shrink-0 ml-2">
+                    ₹{room.ratePerNight.toLocaleString()}/night
+                  </span>
+                </div>
+              </div>
+
+              {/* Thumbnail Strip */}
+              <div className="flex items-center gap-1.5 px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
+                {imgs.slice(0, 4).map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setGallery({ roomId: room.id, idx })}
+                    className="w-14 h-10 rounded-lg overflow-hidden shrink-0 border-2 border-transparent hover:border-[#001a52] transition-all cursor-pointer active:scale-95"
+                    title={`Photo ${idx + 1}`}
+                  >
+                    <img
+                      src={img}
+                      alt={`${room.name} photo ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setGallery({ roomId: room.id, idx: 0 })}
+                  className="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-[#001a52] hover:bg-[#0e2f76] text-white text-[11px] font-bold shrink-0 transition-all cursor-pointer active:scale-95 select-none"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  View
+                </button>
+              </div>
+
+              {/* Details */}
+              <div className="p-6">
+                <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-4">
+                  {room.description}
+                </p>
+
+                {/* Meta row */}
+                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400 mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <BedDouble className="w-3.5 h-3.5 text-[#001a52] dark:text-[#819ae7]" />
+                    <span className="font-semibold">KING SIZE Bed</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#001a52] dark:text-[#819ae7]" />
+                    <span className="font-semibold">Max 3 Adults</span>
+                  </div>
+                  {room.roomNumbers && room.roomNumbers.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-[#001a52] dark:text-[#819ae7]" />
+                      <span className="font-semibold">
+                        Room{room.roomNumbers.length > 1 ? "s" : ""}: {room.roomNumbers.join(", ")}
+                        {room.isBundle && <span className="ml-1 text-amber-600">(Bundle)</span>}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Amenity chips */}
+                <div className="flex flex-wrap gap-1.5 mb-5">
+                  {room.amenities.slice(0, 4).map((a) => (
+                    <span
+                      key={a}
+                      className="text-[10px] px-2.5 py-1 bg-[#e5eeff] dark:bg-white/5 text-[#001a52] dark:text-[#819ae7] rounded-full font-medium"
+                    >
+                      {a}
+                    </span>
+                  ))}
+                  {room.amenities.length > 4 && (
+                    <span className="text-[10px] px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-400 rounded-full">
+                      +{room.amenities.length - 4} more
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => onSelectRoom(room)}
+                  className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  <span>Book This Room</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Info strip */}
@@ -220,6 +295,120 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
           </div>
         </motion.div>
       </div>
+
+      {/* ── Lightbox Modal ── */}
+      <AnimatePresence>
+        {gallery && (() => {
+          const room = rooms.find((r) => r.id === gallery.roomId);
+          if (!room) return null;
+          const imgs = getImages(room);
+          const prev = () => setGallery((g) => g ? { ...g, idx: (g.idx - 1 + imgs.length) % imgs.length } : null);
+          const next = () => setGallery((g) => g ? { ...g, idx: (g.idx + 1) % imgs.length } : null);
+
+          return (
+            <motion.div
+              key="lightbox"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center px-4"
+              onClick={() => setGallery(null)}
+            >
+              {/* Header bar */}
+              <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 py-4 z-10 bg-gradient-to-b from-black/60 to-transparent">
+                <div>
+                  <span className="text-white font-bold text-sm block">{room.name}</span>
+                  <span className="text-white/50 text-[11px]">Photo {gallery.idx + 1} of {imgs.length}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGallery(null)}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer active:scale-95"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Main image + arrows */}
+              <div
+                className="relative flex items-center justify-center w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={prev}
+                  className="absolute left-0 md:left-4 z-10 p-3 bg-white/10 hover:bg-white/25 rounded-full text-white transition-all cursor-pointer active:scale-95 select-none"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={gallery.idx}
+                    src={imgs[gallery.idx]}
+                    alt={`${room.name} — photo ${gallery.idx + 1}`}
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.22 }}
+                    className="max-h-[68vh] max-w-[82vw] md:max-w-[75vw] object-contain rounded-xl shadow-2xl"
+                    draggable={false}
+                  />
+                </AnimatePresence>
+
+                <button
+                  type="button"
+                  onClick={next}
+                  className="absolute right-0 md:right-4 z-10 p-3 bg-white/10 hover:bg-white/25 rounded-full text-white transition-all cursor-pointer active:scale-95 select-none"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Dot indicators */}
+              <div
+                className="flex gap-2 mt-5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {imgs.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setGallery((g) => g ? { ...g, idx: i } : null)}
+                    className={`rounded-full transition-all duration-300 cursor-pointer ${
+                      i === gallery.idx
+                        ? "w-6 h-2 bg-amber-400"
+                        : "w-2 h-2 bg-white/35 hover:bg-white/60"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Bottom thumbnail strip */}
+              <div
+                className="flex gap-2 mt-4 pb-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {imgs.map((img, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setGallery((g) => g ? { ...g, idx: i } : null)}
+                    className={`w-16 h-11 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                      i === gallery.idx
+                        ? "border-amber-400 scale-105"
+                        : "border-white/20 hover:border-white/50 opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

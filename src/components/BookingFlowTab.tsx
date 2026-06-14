@@ -12,12 +12,15 @@ import {
   Coffee,
   ArrowRight,
   ChevronRight,
+  ChevronLeft,
   Coins,
   Info,
   BedDouble,
   Wallet,
   CreditCard,
-  Search
+  Search,
+  Eye,
+  X
 } from "lucide-react";
 import { Room, Experience, Booking } from "../types";
 import { VILLAS_DATA, EXPERIENCES_DATA } from "../data";
@@ -108,10 +111,31 @@ export default function BookingFlowTab({
   });
   const [proofSubmitting, setProofSubmitting] = useState(false);
 
+  // Room image gallery lightbox
+  const [bookingGallery, setBookingGallery] = useState<{ roomId: string; idx: number } | null>(null);
+
   // Scroll to top of hero on mount (page load / tab switch)
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  // Keyboard navigation + scroll lock for room image gallery lightbox
+  useEffect(() => {
+    if (!bookingGallery) return;
+    const room = VILLAS_DATA.find((r) => r.id === bookingGallery.roomId);
+    const imgs = room?.images?.length ? room.images : room ? [room.imageUrl] : [];
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setBookingGallery(null);
+      if (e.key === "ArrowLeft") setBookingGallery((g) => g ? { ...g, idx: (g.idx - 1 + imgs.length) % imgs.length } : null);
+      if (e.key === "ArrowRight") setBookingGallery((g) => g ? { ...g, idx: (g.idx + 1) % imgs.length } : null);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [bookingGallery]);
 
   // Check-in must be today or later; only clear checkout if it's invalid
   // Sync guestChildAges array length with guestChildren count
@@ -803,6 +827,33 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                             </div>
                           </div>
                         </div>
+
+                        {/* Thumbnail gallery strip */}
+                        {r.images && r.images.length > 0 && (
+                          <div className="flex items-center gap-1.5 px-3 py-2 border-t border-slate-100 bg-slate-50/80">
+                            {r.images.slice(0, 4).map((img, imgIdx) => (
+                              <button
+                                key={imgIdx}
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setBookingGallery({ roomId: r.id, idx: imgIdx }); }}
+                                className="relative w-12 h-8 rounded-md overflow-hidden shrink-0 border border-slate-200 hover:border-[#001a52] transition-all cursor-pointer group/thumb active:scale-95"
+                              >
+                                <img src={img} alt="" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/35 flex items-center justify-center transition-all">
+                                  <Eye className="w-3 h-3 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity" />
+                                </div>
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setBookingGallery({ roomId: r.id, idx: 0 }); }}
+                              className="ml-auto flex items-center gap-1 px-2.5 py-1.5 bg-[#001a52] hover:bg-[#0e2f76] text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer active:scale-95 shrink-0 select-none"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>View</span>
+                            </button>
+                          </div>
+                        )}
 
                         {/* Individual room number buttons — N buttons for N rooms */}
                         <div className={`px-3 pb-3 pt-2 flex gap-2 flex-wrap border-t ${
@@ -1795,6 +1846,104 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
         </div>
 
       </div>
+
+      {/* ── Room Image Gallery Lightbox ── */}
+      {bookingGallery && (() => {
+        const galRoom = VILLAS_DATA.find((r) => r.id === bookingGallery.roomId);
+        if (!galRoom) return null;
+        const imgs = galRoom.images && galRoom.images.length > 0 ? galRoom.images : [galRoom.imageUrl];
+        const prev = () => setBookingGallery((g) => g ? { ...g, idx: (g.idx - 1 + imgs.length) % imgs.length } : null);
+        const next = () => setBookingGallery((g) => g ? { ...g, idx: (g.idx + 1) % imgs.length } : null);
+        return (
+          <div
+            className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center px-4"
+            onClick={() => setBookingGallery(null)}
+          >
+            {/* Header */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 py-4 z-10 bg-gradient-to-b from-black/60 to-transparent">
+              <div>
+                <span className="text-white font-bold text-sm block">{galRoom.name}</span>
+                <span className="text-white/50 text-[11px]">Photo {bookingGallery.idx + 1} of {imgs.length}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBookingGallery(null)}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all cursor-pointer active:scale-95"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Main image + arrows */}
+            <div
+              className="relative flex items-center justify-center w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={prev}
+                className="absolute left-0 md:left-4 z-10 p-3 bg-white/10 hover:bg-white/25 rounded-full text-white transition-all cursor-pointer active:scale-95 select-none"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <img
+                key={bookingGallery.idx}
+                src={imgs[bookingGallery.idx]}
+                alt={`${galRoom.name} — photo ${bookingGallery.idx + 1}`}
+                className="max-h-[68vh] max-w-[82vw] md:max-w-[75vw] object-contain rounded-xl shadow-2xl"
+                draggable={false}
+              />
+
+              <button
+                type="button"
+                onClick={next}
+                className="absolute right-0 md:right-4 z-10 p-3 bg-white/10 hover:bg-white/25 rounded-full text-white transition-all cursor-pointer active:scale-95 select-none"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Dot indicators */}
+            <div
+              className="flex gap-2 mt-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {imgs.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setBookingGallery((g) => g ? { ...g, idx: i } : null)}
+                  className={`rounded-full transition-all duration-300 cursor-pointer ${
+                    i === bookingGallery.idx ? "w-6 h-2 bg-amber-400" : "w-2 h-2 bg-white/35 hover:bg-white/60"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Bottom thumbnail strip */}
+            <div
+              className="flex gap-2 mt-4 pb-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {imgs.map((img, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setBookingGallery((g) => g ? { ...g, idx: i } : null)}
+                  className={`w-16 h-11 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                    i === bookingGallery.idx
+                      ? "border-amber-400 scale-105"
+                      : "border-white/20 hover:border-white/50 opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
