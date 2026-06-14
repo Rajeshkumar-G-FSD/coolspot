@@ -47,14 +47,8 @@ export default function BookingFlowTab({
 
   // Form Fields - Step 1
   const [room, setRoom] = useState<Room>(initialRoom);
-  // Tracks which specific room numbers the guest has chosen
-  const [selectedRoomNumbers, setSelectedRoomNumbers] = useState<string[]>(
-    initialRoom.isBundle
-      ? (initialRoom.roomNumbers || [])
-      : initialRoom.roomNumbers?.[0]
-      ? [initialRoom.roomNumbers[0]]
-      : []
-  );
+  // Tracks which specific room numbers the guest has chosen (empty until user explicitly selects)
+  const [selectedRoomNumbers, setSelectedRoomNumbers] = useState<string[]>([]);
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [guestAdults, setGuestAdults] = useState(() => parseInt(initialGuests.split(" Adult")[0]) || 2);
@@ -107,8 +101,17 @@ export default function BookingFlowTab({
   const [paymentSubStep, setPaymentSubStep] = useState<"qr" | "proof" | "done">("qr");
   const [proofRef, setProofRef] = useState("");
   const [proofAmount, setProofAmount] = useState("");
-  const [proofDateTime, setProofDateTime] = useState("");
+  const [proofDateTime, setProofDateTime] = useState(() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  });
   const [proofSubmitting, setProofSubmitting] = useState(false);
+
+  // Scroll to top of hero on mount (page load / tab switch)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   // Check-in must be today or later; only clear checkout if it's invalid
   // Sync guestChildAges array length with guestChildren count
@@ -238,9 +241,9 @@ export default function BookingFlowTab({
   const isHighDemand = availabilityFetched && bookedRoomNumbers.length >= 6;
   const isFullyBooked = availabilityFetched && availableRoomCount <= 0;
 
-  // Step 1 is valid when dates are set and all child ages are selected
+  // Step 1 is valid when dates are set, a room number is selected, and all child ages are selected
   const allChildAgesSelected = guestChildren === 0 || (guestChildAges.length === guestChildren && guestChildAges.every(a => a !== ""));
-  const isStep1Valid = !!(checkIn && checkOut && checkIn < checkOut && allChildAgesSelected);
+  const isStep1Valid = !!(checkIn && checkOut && checkIn < checkOut && allChildAgesSelected && selectedRoomNumbers.length > 0);
 
   // Returns true if a category has at least one unbooked room
   const isCategoryAvailable = (r: Room): boolean => {
@@ -483,18 +486,77 @@ Have a wonderful stay! 🌿
     window.open(whatsappUrl, "_blank");
   };
 
+  const executeWhatsAppUnpaidNotice = () => {
+    if (!generatedBooking) return;
+    const b = generatedBooking;
+    const phoneNo = "070103 95526".replace(/\s+/g, "");
+    const cleanNo = phoneNo.startsWith("0") ? "91" + phoneNo.substring(1) : phoneNo;
+
+    const paidAmt = parseFloat(proofAmount) || 0;
+    const requiredAmt = b.paymentMode === "advance"
+      ? (b.advanceAmount || 0)
+      : (b.totalCost || 0);
+    const shortfall = requiredAmt - paidAmt;
+
+    const message =
+`⚠️ *COOLSPOT COTTAGE — PAYMENT INCOMPLETE*
+
+Dear ${b.firstName || b.billingName},
+
+We received your payment proof, but the amount submitted does not cover the required payment for your booking. Please complete the payment to confirm your reservation.
+
+📋 *BOOKING REFERENCE*
+🎫 Booking ID       : ${b.id}
+👤 Guest Name       : ${b.billingName}
+📞 WhatsApp No.     : ${b.phonePrefix} ${b.phoneNumber}
+📅 Check-In         : ${b.checkIn}
+📅 Check-Out        : ${b.checkOut}
+🏠 Room             : ${b.room?.name}
+
+💰 *PAYMENT STATUS*
+${b.paymentMode === "advance"
+  ? `• 40% Advance Required : ₹${requiredAmt.toLocaleString()}
+• Amount Submitted      : ₹${paidAmt.toLocaleString()}
+• Shortfall (to pay)    : ₹${shortfall.toLocaleString()}`
+  : `• Full Amount Required : ₹${requiredAmt.toLocaleString()}
+• Amount Submitted      : ₹${paidAmt.toLocaleString()}
+• Shortfall (to pay)    : ₹${shortfall.toLocaleString()}`}
+
+⚠️ *Your booking will only be confirmed once we receive the full required amount of ₹${requiredAmt.toLocaleString()}.*
+
+Please scan the UPI QR code on the booking page or contact us directly to complete your payment.
+
+📞 *Coolspot Cottage, Ooty* — +91 70103 95526`;
+
+    const encoded = encodeURIComponent(message);
+    window.open(`https://api.whatsapp.com/send?phone=${cleanNo}&text=${encoded}`, "_blank");
+  };
+
   const handleProofSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!generatedBooking) return;
     setProofSubmitting(true);
     try {
+      const paidAmt = parseFloat(proofAmount) || 0;
       await updateDoc(doc(db, "bookings", generatedBooking.id), {
         paymentProofRef: proofRef.trim(),
-        paymentProofAmount: parseFloat(proofAmount) || 0,
+        paymentProofAmount: paidAmt,
         paymentProofDateTime: proofDateTime,
         paymentProofSubmitted: true,
       });
       setPaymentSubStep("done");
+
+      // Auto-open WhatsApp after submission:
+      // - Full/sufficient payment → send booking confirmation
+      // - Underpaid → send payment-incomplete notice
+      const requiredAmt = generatedBooking.paymentMode === "advance"
+        ? (generatedBooking.advanceAmount || 0)
+        : (generatedBooking.totalCost || 0);
+      if (paidAmt >= requiredAmt) {
+        executeWhatsAppLink();
+      } else {
+        executeWhatsAppUnpaidNotice();
+      }
     } catch (err) {
       console.error("Proof submit error:", err);
     } finally {
@@ -711,7 +773,7 @@ Have a wonderful stay! 🌿
                     const avail = isCategoryAvailable(r);
                     const availCount = categoryAvailableCount(r);
                     const isCatSelected = r.isBundle
-                      ? room.id === r.id
+                      ? room.id === r.id && selectedRoomNumbers.length > 0
                       : (r.roomNumbers || []).some(n => selectedRoomNumbers.includes(n));
                     const liveRate = roomRates[r.id] ?? r.ratePerNight;
                     return (
@@ -749,7 +811,7 @@ Have a wonderful stay! 🌿
                           {(r.roomNumbers || []).map((num) => {
                             const isRoomBooked = availabilityFetched && bookedRoomNumbers.includes(num);
                             const isRoomSelected = r.isBundle
-                              ? room.id === r.id
+                              ? room.id === r.id && selectedRoomNumbers.length > 0
                               : selectedRoomNumbers.includes(num);
                             return (
                               <button
@@ -919,6 +981,8 @@ Have a wonderful stay! 🌿
                     ? "Select check-in & check-out dates to continue"
                     : !allChildAgesSelected
                     ? "Select age for all children to continue"
+                    : selectedRoomNumbers.length === 0
+                    ? "Select a room number to continue"
                     : ""}
                 </p>
               )}
