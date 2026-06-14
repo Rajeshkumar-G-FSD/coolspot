@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Users, ArrowRight, Quote, Check, ChevronDown } from "lucide-react";
+import { Users, ArrowRight, Quote, Check, ChevronDown, Search } from "lucide-react";
 import Carousel from "./Carousel";
 import { motion } from "motion/react";
 import CountUp from "./CountUp";
@@ -407,14 +407,15 @@ export default function DestinationsTab({
                   <button
                     type="submit"
                     disabled={!checkIn || !checkOut}
-                    className={`rounded-xl px-6 font-sans text-[11px] uppercase tracking-[0.15em] font-extrabold transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap py-3.5 md:py-0 ${
+                    className={`rounded-full px-6 font-sans text-[11px] font-semibold transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap py-3.5 md:py-0 select-none ${
                       checkIn && checkOut
-                        ? "bg-[#001a52] text-white hover:bg-[#0c2560] active:scale-[0.97] shadow-lg shadow-[#001a52]/25 hover:shadow-[#001a52]/40 hover:shadow-xl cursor-pointer"
+                        ? "bg-[#001a52] text-white hover:bg-[#0c2560] shadow-lg shadow-[#001a52]/25 hover:shadow-[#001a52]/40 hover:shadow-xl cursor-pointer"
                         : "bg-slate-200 text-slate-400 cursor-not-allowed"
                     }`}
                   >
-                    <span>Search</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <Search className="w-4 h-4" />
+                    <span>Search Availability</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
 
                 </div>
