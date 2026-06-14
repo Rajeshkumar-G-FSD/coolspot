@@ -916,7 +916,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                                     : "bg-white border-slate-200 text-slate-700 hover:border-[#001a52] hover:text-[#001a52] cursor-pointer"
                                 }`}
                               >
-                                Room #{num}
+                                {r.roomNumbers?.length === 1 && r.name === "Glass House" ? r.name : `Room #${num}`}
                                 {isRoomBooked && <span className="block text-[9px] font-normal opacity-70">Taken</span>}
                                 {isRoomSelected && !isRoomBooked && <span className="block text-[9px] font-normal opacity-80">Selected</span>}
                               </button>
