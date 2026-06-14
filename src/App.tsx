@@ -67,6 +67,11 @@ export default function App() {
     localStorage.setItem("COOL_COTTAGES_THEME", darkMode ? "dark" : "light");
   }, [darkMode]);
 
+  // Scroll to top on every tab change so the hero / page top is always visible
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activeTab]);
+
   // Sync bookings from client-side local storage on startup
   useEffect(() => {
     try {

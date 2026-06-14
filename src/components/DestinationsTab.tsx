@@ -14,6 +14,7 @@ import ThreeDHoverGallery from "./ThreeDHoverGallery";
 import { Room } from "../types";
 // @ts-expect-error - Vite resolves image assets dynamically at build time
 import coolCottagesFrontview from "../public/images/coolcottages_frontview.png";
+import coolspotLogo from "../public/images/coolspot_roundlogo-removebg-preview.png";
 
 interface DestinationsTabProps {
   rooms: Room[];
@@ -305,6 +306,20 @@ export default function DestinationsTab({
         </div>
 
         <div className="relative z-10 text-center px-6 md:px-16 max-w-5xl mx-auto flex flex-col items-center mt-12 md:mt-0">
+          {/* Logo in hero */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-6"
+          >
+            <img
+              src={coolspotLogo}
+              alt="Cool Spot Cottages"
+              className="h-24 w-24 md:h-32 md:w-32 object-contain drop-shadow-[0_0_24px_rgba(251,191,36,0.5)]"
+            />
+          </motion.div>
+
           <BlurText
             text="Escape Into Luxury, Where Nature Meets Comfort"
             className="font-headline-lg text-4xl md:text-7xl text-white mb-6 text-glow leading-normal md:leading-tight justify-center"

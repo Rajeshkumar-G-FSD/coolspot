@@ -1075,15 +1075,27 @@ Have a wonderful stay! 🌿
                         <option>AE +971</option>
                       </select>
                       <input
-                        type="text"
+                        type="tel"
                         required
+                        maxLength={10}
                         value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="070103 95526"
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-xs"
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setPhoneNumber(digits);
+                          if (digits.length === 0) setPhoneError("WhatsApp number is required");
+                          else if (digits.length < 10) setPhoneError("Enter exactly 10 digits");
+                          else setPhoneError("");
+                        }}
+                        onBlur={() => {
+                          if (!phoneNumber) setPhoneError("WhatsApp number is required");
+                          else if (phoneNumber.length < 10) setPhoneError("Enter exactly 10 digits");
+                        }}
+                        placeholder="10-digit number"
+                        className={`flex-1 bg-slate-50 border rounded-lg py-2.5 px-3 text-xs ${phoneError ? "border-red-400" : "border-slate-200"}`}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">We'll send your booking confirmation on WhatsApp</p>
+                    {phoneError && <p className="text-[10px] text-red-500 mt-1">{phoneError}</p>}
+                    {!phoneError && <p className="text-[10px] text-slate-400 mt-1">We'll send your booking confirmation on WhatsApp</p>}
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Secondary Phone Number <span className="text-slate-400 font-normal">(Optional)</span></label>
@@ -1339,7 +1351,11 @@ Have a wonderful stay! 🌿
                   type="button"
                   onClick={() => {
                     if (!firstName || !phoneNumber) {
-                      alert("Please complete all required fields! (First name, WhatsApp Number, City)");
+                      alert("Please complete all required fields! (First name, WhatsApp Number)");
+                      return;
+                    }
+                    if (phoneNumber.length < 10) {
+                      setPhoneError("Enter exactly 10 digits");
                       return;
                     }
                     // Validate email only if provided
