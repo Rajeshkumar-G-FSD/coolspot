@@ -33,19 +33,36 @@ export default function Navbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navItems = [
+  const leftNavItems = [
     { id: "destinations", label: "Home", icon: Home },
     { id: "rooms", label: "Rooms", icon: BedDouble },
     { id: "gallery", label: "Gallery", icon: Images },
+  ];
+
+  const rightNavItems = [
     { id: "about", label: "About Us", icon: Info },
     { id: "contact", label: "Contact", icon: Phone },
     { id: "admin", label: "Admin", icon: Lock },
   ];
 
+  const allNavItems = [...leftNavItems, ...rightNavItems];
+
   const handleNavClick = (id: string) => {
     setActiveTab(id);
     setMobileMenuOpen(false);
   };
+
+  const navFill = isScrolled ? "#000e30" : "#001040";
+
+  const navItemClass = (isActive: boolean) =>
+    `relative group px-3.5 lg:px-5 py-2 font-sans text-[10px] lg:text-[11px] uppercase tracking-[0.15em] font-semibold transition-all duration-300 focus:outline-none whitespace-nowrap ${
+      isActive ? "text-amber-400" : "text-white/70 hover:text-white"
+    }`;
+
+  const underlineClass = (isActive: boolean) =>
+    `absolute bottom-0 left-1/2 -translate-x-1/2 h-[1.5px] rounded-full bg-amber-400 transition-all duration-300 ${
+      isActive ? "w-4/5 opacity-100" : "w-0 opacity-0 group-hover:w-3/5 group-hover:opacity-60"
+    }`;
 
   return (
     <>
@@ -54,91 +71,109 @@ export default function Navbar({
 
       <nav
         id="main-nav"
-        className={`fixed top-[2px] left-0 w-full z-45 transition-all duration-500 ${
+        className={`fixed top-[2px] left-0 w-full z-45 transition-all duration-500 relative overflow-visible ${
           isScrolled
-            ? "bg-[#000e30]/95 backdrop-blur-2xl border-b border-amber-400/15 shadow-[0_8px_32px_rgba(0,14,48,0.6)] py-3"
-            : "bg-gradient-to-b from-[#001040] to-[#001a52] border-b border-white/8 shadow-[0_4px_24px_rgba(0,10,40,0.4)] py-4"
+            ? "bg-[#000e30]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,14,48,0.6)] py-3"
+            : "bg-gradient-to-b from-[#001040] to-[#001a52] shadow-[0_4px_24px_rgba(0,10,40,0.4)] py-4"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
 
-          {/* Brand Logo */}
-          <button
-            onClick={() => handleNavClick("destinations")}
-            className="focus:outline-none group shrink-0 cursor-pointer"
-          >
-            <img
-              src={coolspotLogo}
-              alt="CoolSpot Cottages"
-              className="h-9 md:h-11 w-auto object-contain group-hover:opacity-90 transition-opacity duration-300"
-            />
-          </button>
+          {/* ── Desktop layout ── */}
+          <div className="hidden md:flex items-center">
 
-          {/* Thin vertical gold divider */}
-          <div className="hidden md:block w-px h-7 bg-gradient-to-b from-transparent via-amber-400/40 to-transparent mx-4 lg:mx-6 shrink-0" />
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center flex-1">
-            <div className="flex items-center gap-0.5 lg:gap-1">
-              {navItems.map((item, i) => {
+            {/* Left nav items */}
+            <div className="flex flex-1 items-center justify-end pr-14 lg:pr-16">
+              {leftNavItems.map((item) => {
                 const isActive = activeTab === item.id;
                 return (
-                  <React.Fragment key={item.id}>
-                    <button
-                      onClick={() => handleNavClick(item.id)}
-                      className={`relative group px-3 lg:px-4 py-2 font-sans text-[10px] lg:text-[11px] uppercase tracking-[0.12em] lg:tracking-[0.15em] font-semibold transition-all duration-300 focus:outline-none ${
-                        isActive
-                          ? "text-amber-400"
-                          : "text-white/65 hover:text-white"
-                      }`}
-                    >
-                      {item.label}
-                      {/* Sliding underline */}
-                      <span
-                        className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[1.5px] rounded-full bg-amber-400 transition-all duration-300 ${
-                          isActive ? "w-4/5 opacity-100" : "w-0 opacity-0 group-hover:w-3/5 group-hover:opacity-60"
-                        }`}
-                      />
-                    </button>
-                    {/* Small dot separator between items */}
-                    {i < navItems.length - 1 && (
-                      <span className="text-white/15 text-[6px] select-none">•</span>
-                    )}
-                  </React.Fragment>
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={navItemClass(isActive)}
+                  >
+                    {item.label}
+                    <span className={underlineClass(isActive)} />
+                  </button>
                 );
               })}
             </div>
 
-            {/* Spacer */}
-            <div className="flex-1" />
+            {/* Center spacer — logo is absolutely positioned here */}
+            <div className="w-16 shrink-0" />
 
-            {/* Phone quick-link */}
-            <a
-              href="tel:+917010395526"
-              className="hidden lg:flex items-center gap-1.5 text-white/50 hover:text-amber-300 transition-colors duration-300 text-[9px] font-mono tracking-wider mr-4 shrink-0"
-            >
-              <Phone className="w-3 h-3" />
-              +91 70103 95526
-            </a>
+            {/* Right nav items + phone + CTA */}
+            <div className="flex flex-1 items-center pl-14 lg:pl-16">
+              {rightNavItems.map((item) => {
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={navItemClass(isActive)}
+                  >
+                    {item.label}
+                    <span className={underlineClass(isActive)} />
+                  </button>
+                );
+              })}
 
-            {/* Premium Book Now CTA */}
-            <button
-              onClick={() => handleNavClick("booking-flow")}
-              className="shrink-0 relative overflow-hidden border border-amber-400/70 text-amber-400 hover:text-[#001a52] px-5 py-2 rounded-full text-[10px] lg:text-[11px] uppercase tracking-[0.15em] font-semibold transition-all duration-200 active:scale-95 group shadow-[0_0_14px_rgba(251,191,36,0.15)] hover:shadow-[0_0_22px_rgba(251,191,36,0.35)] cursor-pointer"
-            >
-              <span className="absolute inset-0 bg-amber-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-              <span className="relative">Book Now</span>
-            </button>
+              <div className="ml-auto flex items-center gap-3 lg:gap-4">
+                <a
+                  href="tel:+917010395526"
+                  className="hidden lg:flex items-center gap-1.5 text-white/50 hover:text-amber-300 transition-colors duration-300 text-[9px] font-mono tracking-wider"
+                >
+                  <Phone className="w-3 h-3" />
+                  +91 70103 95526
+                </a>
+
+                {/* Book Now CTA */}
+                <button
+                  onClick={() => handleNavClick("booking-flow")}
+                  className="shrink-0 relative overflow-hidden border border-amber-400/70 text-amber-400 hover:text-[#001a52] px-5 py-2 rounded-full text-[10px] lg:text-[11px] uppercase tracking-[0.15em] font-semibold transition-all duration-200 active:scale-95 group shadow-[0_0_14px_rgba(251,191,36,0.15)] hover:shadow-[0_0_22px_rgba(251,191,36,0.35)] cursor-pointer"
+                >
+                  <span className="absolute inset-0 bg-amber-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                  <span className="relative">Book Now</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Mobile hamburger */}
+          {/* ── Mobile layout ── */}
+          <div className="flex md:hidden items-center">
+            <button
+              onClick={() => handleNavClick("destinations")}
+              className="focus:outline-none cursor-pointer"
+            >
+              <img
+                src={coolspotLogo}
+                alt="CoolSpot Cottages"
+                className="h-9 w-auto object-contain hover:opacity-90 transition-opacity duration-300"
+              />
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="ml-auto flex items-center justify-center w-9 h-9 rounded-lg border border-white/10 text-white hover:bg-white/8 hover:border-white/20 transition-all"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Center logo — absolutely positioned, straddles nav bottom & wave */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20 hidden md:flex">
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex md:hidden items-center justify-center w-9 h-9 rounded-lg border border-white/10 text-white hover:bg-white/8 hover:border-white/20 transition-all"
+            onClick={() => handleNavClick("destinations")}
+            className="w-14 h-14 rounded-full border-2 border-amber-400/60 bg-[#001040] overflow-hidden shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 transition-all duration-300 focus:outline-none cursor-pointer active:scale-95"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <img
+              src={coolspotLogo}
+              alt="CoolSpot Cottages"
+              className="w-full h-full object-contain p-0.5"
+            />
           </button>
         </div>
+
       </nav>
 
       {/* Mobile Full-Screen Drawer */}
@@ -176,7 +211,7 @@ export default function Navbar({
           {/* Nav Links */}
           <div className="flex-1 overflow-y-auto py-4 px-4">
             <p className="text-[9px] uppercase tracking-[0.2em] text-white/25 font-semibold px-2 mb-3">Navigation</p>
-            {navItems.map((item) => {
+            {allNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
