@@ -78,6 +78,9 @@ export default function BookingFlowTab({
   const [specialRequests, setSpecialRequests] = useState("");
   const [arrivalTime, setArrivalTime] = useState("14:00 - 15:00");
   const [cotRequested, setCotRequested] = useState(false);
+  const [petAllowed, setPetAllowed] = useState(false);
+  const [campfireRequested, setCampfireRequested] = useState(false);
+  const [parkingRequired, setParkingRequired] = useState(false);
 
   const [paymentMode, setPaymentMode] = useState<"advance" | "full">("advance");
 
@@ -299,6 +302,9 @@ export default function BookingFlowTab({
       extraBedRate,
       extraBedTotal: extraBedCost,
       arrivalTime,
+      petAllowed,
+      campfireRequested,
+      parkingRequired,
       assignedRooms,
       roomsBooked: roomsNeeded,
       paymentMode,
@@ -327,36 +333,151 @@ export default function BookingFlowTab({
     if (!generatedBooking) return;
     const phoneNo = "070103 95526".replace(/\s+/g, '');
     const cleanNo = phoneNo.startsWith("0") ? "91" + phoneNo.substring(1) : phoneNo;
-    
-    const roomsLabel = generatedBooking.assignedRooms?.length
-      ? `Room ${generatedBooking.assignedRooms.join(" + ")} (${generatedBooking.roomsBooked} room${generatedBooking.roomsBooked > 1 ? "s" : ""})`
-      : generatedBooking.room.name;
-    const paymentLabel = generatedBooking.paymentMode === "advance"
-      ? `40% Advance — ₹${generatedBooking.advanceAmount?.toLocaleString()} (Balance ₹${generatedBooking.remainingAmount?.toLocaleString()} at property)`
-      : `Full Payment at property — ₹${generatedBooking.totalCost.toLocaleString()}`;
 
-    const message = `Hello Coolspot Cottage!\n\nI would like to confirm my booking:\n` +
-      `- Reference: ${generatedBooking.id}\n` +
-      `- Guest: ${generatedBooking.billingName}\n` +
-      `- Contact: ${generatedBooking.billingEmail}\n` +
-      `- Phone (WhatsApp): ${generatedBooking.phonePrefix} ${generatedBooking.phoneNumber}\n` +
-      (generatedBooking.secondaryPhone ? `- Secondary Phone: ${generatedBooking.secondaryPhone}\n` : "") +
-      `- Category: ${generatedBooking.room.name}\n` +
-      `- Assigned Rooms: ${roomsLabel}\n` +
-      `- Dates: ${generatedBooking.checkIn} to ${generatedBooking.checkOut} (${generatedBooking.nightsNum} Nights)\n` +
-      `- Guests: ${generatedBooking.guestsText}\n` +
-      `- Special Requests: ${generatedBooking.specialRequests}\n` +
-      `- Cot Requested: ${generatedBooking.cotRequested ? "Yes" : "No"}\n` +
-      `- Extra Bed(s): ${generatedBooking.extraBedRequested ? `${generatedBooking.extraBedCount} x ₹${extraBedRate}` : "None"}\n` +
-      `- Total: ₹${generatedBooking.totalCost.toLocaleString()}\n` +
-      `- Payment Plan: ${paymentLabel}\n\n` +
-      `Please register this stay. Thank you!`;
+    const b = generatedBooking;
+    const fmtDate = (d: string) => {
+      if (!d) return "—";
+      const dt = new Date(d + "T00:00:00");
+      return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    };
+
+    const roomsLabel = b.assignedRooms?.length
+      ? b.assignedRooms.map((n: string) => `#${n}`).join(" + ")
+      : "TBD";
+
+    // Build inclusions list
+    const inclusionLines: string[] = ["• Breakfast"];
+    if (b.campfireRequested) inclusionLines.push("• Campfire Evening");
+    if (b.petAllowed) inclusionLines.push("• Pet Friendly Arrangement");
+    if (b.parkingRequired) inclusionLines.push("• Parking Reserved");
+    if (b.cotRequested) inclusionLines.push("• Baby Cot (Complimentary)");
+    if (b.extraBedRequested) inclusionLines.push(`• Extra Bed × ${b.extraBedCount} (₹${(b.extraBedTotal || 0).toLocaleString()} total)`);
+    if ((b.selectedExps || b.selectedExperiences || []).length > 0) {
+      (b.selectedExps || b.selectedExperiences || []).forEach((exp: any) => {
+        inclusionLines.push(`• ${exp.name} — ₹${exp.cost.toLocaleString()}`);
+      });
+    }
+
+    // Build pricing block
+    const roomRate = b.room?.ratePerNight ?? effectiveRate;
+    const roomsCount = b.roomsBooked ?? 1;
+    const nightsCount = b.nightsNum ?? nights;
+    const roomCostTotal = (b.assignedRooms?.length > 1 && !b.room?.isBundle)
+      ? b.assignedRooms.reduce((s: number, num: string) => {
+          const cat = VILLAS_DATA.find((v: any) => (v.roomNumbers || []).includes(num));
+          const r = cat ? (roomRates[cat.id] ?? cat.ratePerNight) : roomRate;
+          return s + r * nightsCount;
+        }, 0)
+      : roomRate * nightsCount * roomsCount;
+
+    const expsCostTotal = (b.selectedExps || b.selectedExperiences || []).reduce((s: number, e: any) => s + e.cost, 0);
+    const extraBedCostTotal = b.extraBedTotal ?? 0;
+
+    const sep = "°°°°°°°°°°°°°°°°°°°°°°°°°°°°";
+    const line = "─────────────────────────────";
+
+    const message =
+`🏡 *COOLSPOT COTTAGE — BOOKING CONFIRMATION*
+
+Dear ${b.firstName || b.billingName},
+
+Thank you for choosing Coolspot Cottage, Ooty! We are pleased to confirm your reservation and look forward to welcoming you soon.
+
+${sep}
+📋 *BOOKING DETAILS*
+${sep}
+
+🎫 Booking ID      : ${b.id}
+👤 Guest Name      : ${b.billingName}
+📞 WhatsApp No.    : ${b.phonePrefix} ${b.phoneNumber}${b.secondaryPhone ? `\n📞 Alt. Number     : ${b.secondaryPhone}` : ""}
+📧 Email           : ${b.billingEmail || "Not provided"}
+🏙️ City / Region   : ${b.city ? `${b.city}, ` : ""}${b.countryRegion || "India"}
+
+${sep}
+🏨 *STAY DETAILS*
+${sep}
+
+🏠 Room Type       : ${b.room?.name}
+🔑 Room No.        : ${roomsLabel}
+🛏️ Rooms Booked    : ${roomsCount} Room${roomsCount > 1 ? "s" : ""}
+📅 Check-In        : ${fmtDate(b.checkIn)}
+📅 Check-Out       : ${fmtDate(b.checkOut)}
+🌙 No. of Nights   : ${nightsCount} Night${nightsCount > 1 ? "s" : ""}
+👥 No. of Guests   : ${b.guestsText}${b.arrivalTime ? `\n🕐 Arrival Time    : ${b.arrivalTime}` : ""}
+
+${sep}
+✨ *INCLUSIONS & ADD-ONS*
+${sep}
+
+${inclusionLines.join("\n")}
+
+${sep}
+💰 *PRICING SUMMARY*
+${sep}
+
+${b.assignedRooms?.length > 1
+  ? b.assignedRooms.map((num: string) => {
+      const cat = VILLAS_DATA.find((v: any) => (v.roomNumbers || []).includes(num));
+      const r = cat ? (roomRates[cat.id] ?? cat.ratePerNight) : roomRate;
+      return `Room #${num} @ ₹${r.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} = ₹${(r * nightsCount).toLocaleString()}`;
+    }).join("\n")
+  : `${b.room?.name} @ ₹${roomRate.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} × ${roomsCount} room${roomsCount > 1 ? "s" : ""} = ₹${roomCostTotal.toLocaleString()}`
+}${expsCostTotal > 0 ? `\nActivities & Experiences = ₹${expsCostTotal.toLocaleString()}` : ""}${extraBedCostTotal > 0 ? `\nExtra Bed(s) = ₹${extraBedCostTotal.toLocaleString()}` : ""}
+
+${line}
+💵 *Total Payable   : ₹${b.totalCost?.toLocaleString()} (Incl. taxes)*
+${line}
+${b.paymentMode === "advance"
+  ? `✅ Advance Paid    : ₹${b.advanceAmount?.toLocaleString()} (40%)\n⏳ Balance Due     : ₹${b.remainingAmount?.toLocaleString()} (payable at Check-In)`
+  : `✅ Full Payment    : ₹${b.totalCost?.toLocaleString()} (payable at Check-In)`}
+
+${sep}
+📋 *SPECIAL REQUESTS*
+${sep}
+
+${b.specialRequests && b.specialRequests !== "None" ? b.specialRequests : "None"}
+🐾 Pet             : ${b.petAllowed ? "Yes — Pet-friendly setup arranged" : "No"}
+🔥 Campfire        : ${b.campfireRequested ? "Yes — Bonfire setup requested" : "No"}
+🚗 Parking         : ${b.parkingRequired ? "Yes — Parking spot reserved" : "No"}
+
+${sep}
+📜 *TERMS & CONDITIONS*
+${sep}
+
+• Check-In @ 12:00 PM & Check-Out @ 10:00 AM
+• Early Check-In or Late Check-Out subject to availability and chargeable
+• Children below 5 years are complimentary
+• Children from 5 to 12 years are chargeable at applicable rates
+• Above 12 years full charges are applicable
+• ID proof mandatory for all adults (Hard or Soft copy)
+• Outside food & drinks are not allowed
+• No smoking / drinking inside cottage rooms
+• No parties / events unless entire cottage is booked
+• Quiet hours strictly enforced between 11:00 PM and 6:00 AM
+• Pets allowed only with prior confirmation
+
+${sep}
+❌ *CANCELLATION POLICY*
+${sep}
+
+• 25+ days prior to Check-In: Full refund applicable
+• 20 to 25 days prior to Check-In: 50% refund applicable
+• Below 20 days prior to Check-In: No refund
+• All refunds attract a 10% administrative charge
+
+${line}
+
+Assuring you our best service at all times. Do feel free to contact us for any clarifications or requirements.
+
+Have a wonderful stay! 🌿
+
+*Warm Regards,*
+*Coolspot Cottage, Ooty* 🏔️
+📞 +91 70103 95526`;
 
     const encoded = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNo}&text=${encoded}`;
     window.open(whatsappUrl, "_blank");
-
-    // Booking remains "Pending" until admin verifies payment — no auto-confirm here
   };
 
   const handleProofSubmit = async (e: React.FormEvent) => {
@@ -1073,6 +1194,52 @@ export default function BookingFlowTab({
                       Extra bed cost: ₹{extraBedCost.toLocaleString()} total for {nights} night{nights > 1 ? "s" : ""}
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Pet / Campfire / Parking Add-ons */}
+              <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800">Add-Ons & Preferences</h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Let us know what you need so we can prepare in advance.</p>
+                </div>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-[#001a52]/30 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={petAllowed}
+                      onChange={(e) => setPetAllowed(e.target.checked)}
+                      className="rounded accent-[#001a52]"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 block">🐾 Pet Friendly Stay</span>
+                      <span className="text-[10px] text-slate-400">Bringing a pet? We'll arrange a pet-friendly setup.</span>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-[#001a52]/30 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={campfireRequested}
+                      onChange={(e) => setCampfireRequested(e.target.checked)}
+                      className="rounded accent-[#001a52]"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 block">🔥 Campfire Evening</span>
+                      <span className="text-[10px] text-slate-400">Request a cozy bonfire setup for your evening.</span>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-[#001a52]/30 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={parkingRequired}
+                      onChange={(e) => setParkingRequired(e.target.checked)}
+                      className="rounded accent-[#001a52]"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 block">🚗 Parking Required</span>
+                      <span className="text-[10px] text-slate-400">We'll reserve a parking spot for your vehicle.</span>
+                    </div>
+                  </label>
                 </div>
               </div>
 
