@@ -233,6 +233,11 @@ export default function BookingFlowTab({
   const hasBundleRoomsSelected = bundleRoomNumbers.some(n => selectedRoomNumbers.includes(n));
   const needsMoreRooms = isMultiRoomMode && hasBundleRoomsSelected && selectedRoomNumbers.length < 3;
 
+  // Rooms required based on adult count: 1 room per 3 adults (ceiling)
+  const requiredRooms = Math.ceil(adultCount / 3);
+  // User has not selected enough rooms for their adult count (only meaningful when >3 adults)
+  const notEnoughRoomsSelected = adultCount > 3 && selectedRoomNumbers.length < requiredRooms;
+
   // Assigned rooms: always use explicit selections (bundle no longer auto-expands)
   const assignedRooms = selectedRoomNumbers.filter(Boolean);
 
@@ -267,10 +272,12 @@ export default function BookingFlowTab({
   const availableRoomCount = TOTAL_ROOMS - bookedRoomNumbers.length;
   const isHighDemand = availabilityFetched && bookedRoomNumbers.length >= 6;
   const isFullyBooked = availabilityFetched && availableRoomCount <= 0;
+  // Not enough rooms available on the selected dates for the adult count
+  const notEnoughRoomsAvailable = availabilityFetched && availableRoomCount < requiredRooms;
 
   // Step 1 is valid when dates are set, a room number is selected, all child ages are selected, and room count rules are met
   const allChildAgesSelected = guestChildren === 0 || (guestChildAges.length === guestChildren && guestChildAges.every(a => a !== ""));
-  const isStep1Valid = !!(checkIn && checkOut && checkIn < checkOut && allChildAgesSelected && selectedRoomNumbers.length > 0 && !needsMoreRooms);
+  const isStep1Valid = !!(checkIn && checkOut && checkIn < checkOut && allChildAgesSelected && selectedRoomNumbers.length > 0 && !needsMoreRooms && !notEnoughRoomsSelected && !notEnoughRoomsAvailable);
 
   // Returns true if a category has at least one unbooked room
   const isCategoryAvailable = (r: Room): boolean => {
@@ -799,6 +806,14 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                     </span>
                   </div>
                 )}
+                {notEnoughRoomsSelected && selectedRoomNumbers.length > 0 && !needsMoreRooms && (
+                  <div className="flex items-start gap-2 mb-3 px-3 py-2.5 rounded-lg bg-red-50 border border-red-200">
+                    <Info className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <span className="text-[11px] text-red-700 font-semibold">
+                      {adultCount} adults require {requiredRooms} rooms — should select more than one room
+                    </span>
+                  </div>
+                )}
                 <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
                   Select Room
                 </label>
@@ -832,7 +847,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[10px] font-bold text-[#001a52]">₹{liveRate.toLocaleString()}/night</span>
                               {r.isBundle && !isMultiRoomMode && <span className="text-[9px] text-slate-400">· select 1 room (≤ 3 adults)</span>}
-                              {r.isBundle && isMultiRoomMode && <span className="text-[9px] text-amber-600 font-semibold">· select both rooms + 1 more for 4+ adults</span>}
+                              {r.isBundle && isMultiRoomMode && <span className="text-[9px] text-amber-600 font-semibold">· select each room individually for 4+ adults</span>}
                             </div>
                           </div>
                         </div>
@@ -878,22 +893,8 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                                 disabled={!avail || isRoomBooked}
                                 onClick={() => {
                                   if (!avail || isRoomBooked) return;
-                                  if (r.isBundle && isMultiRoomMode) {
-                                    // > 3 adults + bundle: clicking any bundle room auto-selects ALL bundle rooms
-                                    // then toggle (deselect all if already all selected)
-                                    setRoom(r);
-                                    const bundleNums = (r.roomNumbers || []).filter(n => !bookedRoomNumbers.includes(n));
-                                    const allBundleSelected = bundleNums.every(n => selectedRoomNumbers.includes(n));
-                                    setSelectedRoomNumbers(prev => {
-                                      const withoutBundle = prev.filter(n => !bundleNums.includes(n));
-                                      return allBundleSelected ? (withoutBundle.length > 0 ? withoutBundle : [num]) : [...withoutBundle, ...bundleNums];
-                                    });
-                                  } else if (r.isBundle && !isMultiRoomMode) {
-                                    // ≤ 3 adults + bundle: select only this one room
-                                    setRoom(r);
-                                    setSelectedRoomNumbers([num]);
-                                  } else if (isMultiRoomMode) {
-                                    // > 3 adults, non-bundle: toggle individual room
+                                  if (isMultiRoomMode) {
+                                    // > 3 adults: toggle individual room — always manual, no auto-select
                                     setRoom(r);
                                     setSelectedRoomNumbers(prev => {
                                       if (prev.includes(num)) {
@@ -903,7 +904,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                                       return [...prev, num];
                                     });
                                   } else {
-                                    // ≤ 3 adults, non-bundle: single room selection
+                                    // ≤ 3 adults: single room selection only
                                     setRoom(r);
                                     setSelectedRoomNumbers([num]);
                                   }
@@ -983,6 +984,15 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                       </span>
                     </div>
                   )}
+                  {/* Insufficient availability for selected adult count */}
+                  {notEnoughRoomsAvailable && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                      <Info className="w-4 h-4 text-red-500 shrink-0" />
+                      <span className="text-[11px] text-red-700 font-semibold">
+                        Only {availableRoomCount} room{availableRoomCount !== 1 ? "s" : ""} available for these dates — cannot accommodate {adultCount} adults
+                      </span>
+                    </div>
+                  )}
 
                   {/* Child age dropdowns */}
                   {guestChildren > 0 && (
@@ -1052,6 +1062,10 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                     ? "Select age for all children to continue"
                     : selectedRoomNumbers.length === 0
                     ? "Select a room number to continue"
+                    : notEnoughRoomsAvailable
+                    ? `Only ${availableRoomCount} room${availableRoomCount !== 1 ? "s" : ""} available for these dates — cannot accommodate ${adultCount} adults`
+                    : notEnoughRoomsSelected
+                    ? `${adultCount} adults require ${requiredRooms} rooms — should select more than one room`
                     : needsMoreRooms
                     ? "Deluxe Family Room with 4+ adults requires selecting at least 3 rooms total"
                     : ""}
