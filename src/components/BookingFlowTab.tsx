@@ -893,33 +893,27 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                                 disabled={!avail || isRoomBooked}
                                 onClick={() => {
                                   if (!avail || isRoomBooked) return;
-                                  if (isMultiRoomMode) {
-                                    // > 3 adults: toggle individual room — always manual, no auto-select
+                                  if (isRoomSelected) {
+                                    setSelectedRoomNumbers(prev => prev.filter(n => n !== num));
+                                  } else if (isMultiRoomMode) {
                                     setRoom(r);
-                                    setSelectedRoomNumbers(prev => {
-                                      if (prev.includes(num)) {
-                                        const next = prev.filter(n => n !== num);
-                                        return next.length > 0 ? next : [num];
-                                      }
-                                      return [...prev, num];
-                                    });
+                                    setSelectedRoomNumbers(prev => [...prev, num]);
                                   } else {
-                                    // ≤ 3 adults: single room selection only
                                     setRoom(r);
                                     setSelectedRoomNumbers([num]);
                                   }
                                 }}
-                                className={`flex-1 min-w-[64px] py-2 px-2 rounded-lg text-xs font-bold border-2 transition-all ${
+                                className={`flex-1 min-w-[64px] py-2 px-2 rounded-lg text-xs font-bold border-2 transition-all select-none ${
                                   isRoomBooked
-                                    ? "cursor-not-allowed bg-slate-100 border-slate-200 text-slate-400"
+                                    ? "pointer-events-none cursor-not-allowed bg-slate-100 border-slate-200 text-slate-400 opacity-50"
                                     : isRoomSelected
-                                    ? "bg-[#001a52] border-[#001a52] text-white shadow-sm"
-                                    : "bg-white border-slate-200 text-slate-700 hover:border-[#001a52] hover:text-[#001a52] cursor-pointer"
+                                    ? "cursor-pointer bg-[#001a52] border-[#001a52] text-white shadow-sm hover:bg-red-600 hover:border-red-600 active:scale-95"
+                                    : "bg-white border-slate-200 text-slate-700 hover:border-[#001a52] hover:text-[#001a52] cursor-pointer active:scale-95"
                                 }`}
                               >
                                 {r.roomNumbers?.length === 1 && r.name === "Glass House" ? r.name : `Room #${num}`}
                                 {isRoomBooked && <span className="block text-[9px] font-normal opacity-70">Taken</span>}
-                                {isRoomSelected && !isRoomBooked && <span className="block text-[9px] font-normal opacity-80">Selected</span>}
+                                {isRoomSelected && !isRoomBooked && <span className="block text-[9px] font-normal opacity-80">Tap to remove</span>}
                               </button>
                             );
                           })}
