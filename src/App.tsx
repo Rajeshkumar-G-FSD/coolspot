@@ -163,7 +163,7 @@ export default function App() {
   };
 
   return (
-    <div className={`${darkMode ? "dark" : ""} bg-[#f8f9ff] dark:bg-[#08151f] text-[#0b1c30] dark:text-[#f8fafc] font-sans selection:bg-[#0e2f76]/20 overflow-x-hidden min-h-screen flex flex-col justify-between`}>
+    <div className={`${darkMode ? "dark" : ""} bg-[#f8f9ff] dark:bg-[#08151f] text-[#0b1c30] dark:text-[#f8fafc] font-sans selection:bg-[#0e2f76]/20 [overflow-x:clip] min-h-screen flex flex-col justify-between`}>
       
       {/* 1. Immersive Preloader Sunrise Mask */}
       {preloaderActive && (
