@@ -171,16 +171,13 @@ export default function App() {
           id="preloader"
           className="fixed inset-0 z-[100] bg-gradient-to-b from-[#001a52] via-[#0e2f76] to-[#f8f9ff] flex flex-col items-center justify-center transition-all duration-1000 select-none animate-fade-out"
         >
-          {/* Pulsing Sun Sunrise Mask */}
-          <div className="w-[110px] h-[110px] bg-gradient-to-r from-amber-200 to-indigo-100 rounded-full animate-pulse shadow-[0_0_50px_rgba(255,218,214,0.8)] mb-8" />
-          <h1 className="font-headline-md text-3xl italic tracking-widest uppercase mb-1 animate-bounce flex gap-2">
-            <span className="text-[#819ae7]">COOL</span>
-            <span className="text-amber-300">SPOT</span>
-          </h1>
-          <span className="font-sans text-sm tracking-widest uppercase text-amber-200/80 font-semibold mb-1">
-            Cottages
-          </span>
-          <span className="font-sans text-xs tracking-widest uppercase text-white/70 font-semibold h-4">
+          {/* Logo */}
+          <img
+            src={coolspotLogo}
+            alt="Cool Spot Cottages"
+            className="w-32 h-32 object-contain animate-pulse drop-shadow-[0_0_30px_rgba(255,218,100,0.6)] mb-6"
+          />
+          <span className="font-sans text-sm tracking-widest uppercase text-white/80 font-semibold">
             Preparing Your Luxury Escape...
           </span>
         </div>
