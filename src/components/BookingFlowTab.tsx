@@ -619,7 +619,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
       </section>
 
       {/* Modern Horizontal Process Steps Counter */}
-      <div className="max-w-4xl mx-auto px-4 mb-8">
+      <div className="mx-auto px-4 md:px-6 lg:px-10 mb-8">
         <div className="flex items-center justify-between bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
           {[
             { nr: 1, label: "Stay Specifications" },
@@ -651,7 +651,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 grid md:grid-cols-3 gap-8">
+      <div className="mx-auto px-4 md:px-6 lg:px-10 grid md:grid-cols-3 gap-8">
         
         {/* LEFT COLUMN: ACTIVE INTERACTIVE FORM STEPS */}
         <div className="md:col-span-2 space-y-6">
