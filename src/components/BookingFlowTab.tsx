@@ -1048,32 +1048,34 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
               )}
 
               {/* Continue button — enabled only when dates set + all child ages selected */}
-              {!isStep1Valid && (
-                <p className="text-[11px] text-slate-400 text-center -mb-2">
-                  {!checkIn || !checkOut
-                    ? "Select check-in & check-out dates to continue"
-                    : !allChildAgesSelected
-                    ? "Select age for all children to continue"
-                    : selectedRoomNumbers.length === 0
-                    ? "Select a room number to continue"
-                    : notEnoughRoomsAvailable
-                    ? `Only ${availableRoomCount} room${availableRoomCount !== 1 ? "s" : ""} available for these dates — cannot accommodate ${adultCount} adults`
-                    : notEnoughRoomsSelected
-                    ? `${adultCount} adults require ${requiredRooms} rooms — should select more than one room`
-                    : needsMoreRooms
-                    ? "Deluxe Family Room with 4+ adults requires selecting at least 3 rooms total"
-                    : ""}
-                </p>
-              )}
-              <button
-                type="button"
-                disabled={!isStep1Valid}
-                onClick={() => setStep(2)}
-                className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
-              >
-                <span>Continue to Guest Details</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-col items-center gap-2 w-full">
+                {!isStep1Valid && (
+                  <p className="text-[11px] text-slate-400 text-center leading-relaxed px-2 w-full">
+                    {!checkIn || !checkOut
+                      ? "Select check-in & check-out dates to continue"
+                      : !allChildAgesSelected
+                      ? "Select age for all children to continue"
+                      : selectedRoomNumbers.length === 0
+                      ? "Select a room number to continue"
+                      : notEnoughRoomsAvailable
+                      ? `Only ${availableRoomCount} room${availableRoomCount !== 1 ? "s" : ""} available for these dates — cannot accommodate ${adultCount} adults`
+                      : notEnoughRoomsSelected
+                      ? `${adultCount} adults require ${requiredRooms} rooms — should select more than one room`
+                      : needsMoreRooms
+                      ? "Deluxe Family Room with 4+ adults requires selecting at least 3 rooms total"
+                      : ""}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  disabled={!isStep1Valid}
+                  onClick={() => setStep(2)}
+                  className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                >
+                  <span>Continue to Guest Details</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </motion.div>
           )}
 
