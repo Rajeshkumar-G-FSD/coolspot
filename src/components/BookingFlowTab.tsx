@@ -228,15 +228,15 @@ export default function BookingFlowTab({
   // > 3 adults → multi-room selection allowed; ≤ 3 → single room only
   const isMultiRoomMode = adultCount > 3;
 
-  // Deluxe Family Room rule: if any bundle rooms are selected with >3 adults, require >2 rooms total
-  const bundleRoomNumbers = VILLAS_DATA.filter(r => r.isBundle).flatMap(r => r.roomNumbers || []);
-  const hasBundleRoomsSelected = bundleRoomNumbers.some(n => selectedRoomNumbers.includes(n));
-  const needsMoreRooms = isMultiRoomMode && hasBundleRoomsSelected && selectedRoomNumbers.length < 3;
-
   // Rooms required based on adult count: 1 room per 3 adults (ceiling)
   const requiredRooms = Math.ceil(adultCount / 3);
   // User has not selected enough rooms for their adult count (only meaningful when >3 adults)
   const notEnoughRoomsSelected = adultCount > 3 && selectedRoomNumbers.length < requiredRooms;
+
+  // Deluxe Family Room rule: if any bundle rooms are selected with >3 adults, require enough rooms per adult count
+  const bundleRoomNumbers = VILLAS_DATA.filter(r => r.isBundle).flatMap(r => r.roomNumbers || []);
+  const hasBundleRoomsSelected = bundleRoomNumbers.some(n => selectedRoomNumbers.includes(n));
+  const needsMoreRooms = isMultiRoomMode && hasBundleRoomsSelected && selectedRoomNumbers.length < requiredRooms;
 
   // Assigned rooms: always use explicit selections (bundle no longer auto-expands)
   const assignedRooms = selectedRoomNumbers.filter(Boolean);
@@ -651,7 +651,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
         </div>
       </div>
 
-      <div className="mx-auto px-4 md:px-6 lg:px-10 grid md:grid-cols-3 gap-8">
+      <div className="mx-auto px-4 md:px-6 lg:px-10 grid md:grid-cols-3 gap-8 items-start">
         
         {/* LEFT COLUMN: ACTIVE INTERACTIVE FORM STEPS */}
         <div className="md:col-span-2 space-y-6">
@@ -802,7 +802,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                   <div className="flex items-start gap-2 mb-3 px-3 py-2.5 rounded-lg bg-red-50 border border-red-200">
                     <Info className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                     <span className="text-[11px] text-red-700 font-semibold">
-                      Deluxe Family Room with 4+ adults needs more than 2 rooms — please select at least 1 more room
+                      {adultCount} adults require {requiredRooms} rooms — please select {requiredRooms - selectedRoomNumbers.length} more room{requiredRooms - selectedRoomNumbers.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                 )}
@@ -1747,7 +1747,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
         </div>
 
         {/* RIGHT COLUMN: PRICE ESTIMATES OVERVIEW BOX */}
-        <div className="space-y-6">
+        <div className="space-y-6 sticky top-4">
           <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4 text-left">
             <h4 className="text-[10px] uppercase tracking-widest text-[#4a607c] font-black border-b pb-2">
               Stay Details Summary
