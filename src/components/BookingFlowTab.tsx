@@ -33,14 +33,14 @@ const BOOKING_DISPLAY_ROOMS: Room[] = (() => {
   if (!mv || !gh) return VILLAS_DATA;
   const merged: Room = {
     ...mv,
-    name: "Mountain View & Glass House",
+    name: "Mountain View (Left) & Glass House (Right)",
     roomNumbers: ["101", "109"],
   };
   return [merged, ...rest];
 })();
 import { motion } from "motion/react";
 import { db, handleFirestoreError, OperationType } from "../firebase";
-import { doc, setDoc, getDocs, collection, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDocs, collection, updateDoc, getDoc } from "firebase/firestore";
 
 interface BookingFlowTabProps {
   initialRoom?: Room;
@@ -109,6 +109,7 @@ export default function BookingFlowTab({
 
   // Live rates from Firebase rooms collection (set by admin panel)
   const [roomRates, setRoomRates] = useState<Record<string, number>>({});
+  const [extraBedRate, setExtraBedRate] = useState<number>(1500);
 
   // Status & Submit values
   const [submitting, setSubmitting] = useState(false);
@@ -169,7 +170,7 @@ export default function BookingFlowTab({
     if (checkOut && checkOut <= resolvedCheckIn) setCheckOut("");
   }, []);
 
-  // Fetch live room rates set by admin from Firebase rooms collection
+  // Fetch live room rates + extra bed rate from Firebase
   useEffect(() => {
     const fetchRates = async () => {
       try {
@@ -182,6 +183,15 @@ export default function BookingFlowTab({
         setRoomRates(rates);
       } catch (err) {
         console.error("Room rate fetch error:", err);
+      }
+      try {
+        const pricingSnap = await getDoc(doc(db, "settings", "pricing"));
+        if (pricingSnap.exists()) {
+          const data = pricingSnap.data();
+          if (data.extraBedRate) setExtraBedRate(data.extraBedRate);
+        }
+      } catch (err) {
+        console.error("Extra bed rate fetch error:", err);
       }
     };
     fetchRates();
@@ -274,7 +284,6 @@ export default function BookingFlowTab({
         ? selectedRoomNumbers.reduce((sum, num) => sum + getRateForNumber(num) * nights, 0)
         : effectiveRate * nights);
   const expsCost = selectedExps.reduce((acc, curr) => acc + curr.cost, 0);
-  const extraBedRate = 1500;
   const extraBedCost = extraBedRequested ? extraBedRate * extraBedCount * nights : 0;
   const totalCost = roomBaseCost + expsCost + extraBedCost;
 
@@ -472,7 +481,7 @@ ${b.assignedRooms?.length > 1
   ? b.assignedRooms.map((num: string) => {
       const cat = VILLAS_DATA.find((v: any) => (v.roomNumbers || []).includes(num));
       const r = cat ? (roomRates[cat.id] ?? cat.ratePerNight) : roomRate;
-      return `Room #${num} @ ₹${r.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} = ₹${(r * nightsCount).toLocaleString()}`;
+      return `Room ${num} @ ₹${r.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} = ₹${(r * nightsCount).toLocaleString()}`;
     }).join("\n")
   : `${b.room?.name} @ ₹${roomRate.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} × ${roomsCount} room${roomsCount > 1 ? "s" : ""} = ₹${roomCostTotal.toLocaleString()}`
 }${expsCostTotal > 0 ? `\nActivities & Experiences = ₹${expsCostTotal.toLocaleString()}` : ""}${extraBedCostTotal > 0 ? `\nExtra Bed(s) = ₹${extraBedCostTotal.toLocaleString()}` : ""}
@@ -927,7 +936,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                                     : "bg-white border-slate-200 text-slate-700 hover:border-[#001a52] hover:text-[#001a52] cursor-pointer active:scale-95"
                                 }`}
                               >
-                                {num === "109" ? "Glass House" : `Room #${num}`}
+                                {num === "109" ? "Glass House" : `Room ${num}`}
                                 {isRoomBooked && <span className="block text-[9px] font-normal opacity-70">Taken</span>}
                                 {isRoomSelected && !isRoomBooked && <span className="block text-[9px] font-normal opacity-80">Tap to remove</span>}
                               </button>
@@ -1022,9 +1031,17 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                               <select
                                 value={guestChildAges[i] || ""}
                                 onChange={(e) => {
-                                  const arr = [...guestChildAges];
-                                  arr[i] = e.target.value;
-                                  setGuestChildAges(arr);
+                                  const selectedAge = e.target.value;
+                                  if (selectedAge !== "" && parseInt(selectedAge) >= 11) {
+                                    // Auto-convert to adult
+                                    setGuestAdults((a: number) => Math.min(24, a + 1));
+                                    setGuestChildren((c: number) => Math.max(0, c - 1));
+                                    setGuestChildAges((prev: string[]) => prev.filter((_: string, idx: number) => idx !== i));
+                                  } else {
+                                    const arr = [...guestChildAges];
+                                    arr[i] = selectedAge;
+                                    setGuestChildAges(arr);
+                                  }
                                 }}
                                 className={`border rounded-lg px-2 py-1.5 text-xs text-slate-700 bg-white focus:outline-none focus:border-[#001a52] cursor-pointer ${
                                   !isSelected ? "border-red-300" : "border-slate-200"
@@ -1032,7 +1049,9 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                               >
                                 <option value="">Select age</option>
                                 {Array.from({ length: 18 }, (_, age) => (
-                                  <option key={age} value={String(age)}>{age} yr{age !== 1 ? "s" : ""}</option>
+                                  <option key={age} value={String(age)}>
+                                    {age} yr{age !== 1 ? "s" : ""}{age >= 11 ? " (counts as adult)" : ""}
+                                  </option>
                                 ))}
                               </select>
                             </div>
@@ -1795,15 +1814,28 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                 <span className="text-slate-400">Stay Dates:</span>
                 <span className="font-semibold text-slate-600">{checkIn || "Not set"} to {checkOut || "Not set"}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Total Guests:</span>
-                <span className="font-semibold text-slate-600">{guests}</span>
+              {/* Guest Count breakdown */}
+              <div className="bg-[#f0f4ff] rounded-xl px-3 py-2.5 space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Adults:</span>
+                  <span className="font-semibold text-[#001a52]">{guestAdults}</span>
+                </div>
+                {guestChildren > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Children:</span>
+                    <span className="font-semibold text-slate-600">{guestChildren}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-slate-200/60 pt-1.5">
+                  <span className="text-slate-500 font-semibold text-[11px] uppercase tracking-wide">Total Guests:</span>
+                  <span className="font-black text-[#001a52]">{guestAdults + guestChildren}</span>
+                </div>
               </div>
               {/* Room assignment */}
               <div className="flex justify-between items-start">
                 <span className="text-slate-400">Room(s):</span>
                 <span className="font-semibold text-[#001a52] text-right">
-                  {assignedRooms.length > 0 ? assignedRooms.map(n => `#${n}`).join(" + ") : "TBD"}
+                  {assignedRooms.length > 0 ? assignedRooms.join(" + ") : "TBD"}
                   {assignedRooms.length > 1 && (
                     <span className="block text-[10px] text-amber-600 font-bold">{assignedRooms.length} rooms selected</span>
                   )}
@@ -1827,7 +1859,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
             <div className="bg-[#f8f9ff] p-4 rounded-2xl space-y-2 border border-slate-100 shadow-inner mt-2">
               {room.isBundle || selectedRoomNumbers.length <= 1 ? (
                 <div className="flex justify-between text-xs text-slate-600">
-                  <span>Room #{assignedRooms[0] ?? "—"} · ₹{effectiveRate.toLocaleString()}/night:</span>
+                  <span>Room {assignedRooms[0] ?? "—"} · ₹{effectiveRate.toLocaleString()}/night:</span>
                   <span className="font-mono font-bold">₹{roomBaseCost.toLocaleString()}</span>
                 </div>
               ) : (
@@ -1836,7 +1868,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                   const rate = cat ? (roomRates[cat.id] ?? cat.ratePerNight) : 0;
                   return (
                     <div key={num} className="flex justify-between text-xs text-slate-600">
-                      <span>Room #{num} · ₹{rate.toLocaleString()}/night:</span>
+                      <span>Room {num} · ₹{rate.toLocaleString()}/night:</span>
                       <span className="font-mono font-bold">₹{(rate * nights).toLocaleString()}</span>
                     </div>
                   );
@@ -1889,6 +1921,32 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
               )}
             </div>
           </div>
+
+          {/* Continue to Guest Details — shown in sidebar on step 1 */}
+          {step === 1 && (
+            <div className="space-y-2">
+              {!isStep1Valid && (
+                <p className="text-[10px] text-slate-400 text-center leading-relaxed px-1">
+                  {!checkIn || !checkOut
+                    ? "Select check-in & check-out dates to continue"
+                    : !allChildAgesSelected
+                    ? "Select age for all children to continue"
+                    : selectedRoomNumbers.length === 0
+                    ? "Select a room to continue"
+                    : ""}
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={!isStep1Valid}
+                onClick={() => setStep(2)}
+                className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                <span>Continue to Guest Details</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
       </div>

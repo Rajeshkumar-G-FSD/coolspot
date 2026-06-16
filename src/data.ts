@@ -21,7 +21,7 @@ export const ROOM_GALLERY_IMAGES = [
 export const VILLAS_DATA: Room[] = [
   {
     id: "mountain-view",
-    name: "Mountain View Room",
+    name: "Mountain View Room (Left)",
     description: "Wake up to breathtaking panoramic views of the Nilgiri mountains. This cozy room features warm wooden interiors, queen bed, and a private balcony framing misty hilltops at sunrise.",
     ratePerNight: 3500,
     maxGuests: 4,
@@ -48,7 +48,7 @@ export const VILLAS_DATA: Room[] = [
   },
   {
     id: "glass-house",
-    name: "Glass House",
+    name: "Glass House (Right)",
     description: "Wake up to breathtaking panoramic views of the Nilgiri mountains. This cozy room features warm wooden interiors, queen bed, and a private balcony framing misty hilltops at sunrise.",
     ratePerNight: 5500,
     maxGuests: 2,

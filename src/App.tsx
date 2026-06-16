@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Share2, Camera, Compass, Sparkles, AlertCircle, Phone, MessageCircle } from "lucide-react";
+import { Share2, Camera, Compass, Sparkles, AlertCircle, Phone, MessageCircle, Mail, MapPin, Clock, ExternalLink, PhoneCall } from "lucide-react";
 import coolspotLogo from "./public/images/coolspot_roundlogo-removebg-preview.png";
 import Navbar from "./components/Navbar";
 import DestinationsTab from "./components/DestinationsTab";
@@ -306,98 +306,162 @@ export default function App() {
         onNavigateToTab={setActiveTab}
       />
 
-      {/* 7. Elegant Footer Section */}
-      <footer className="bg-[#001a52] text-white w-full py-12 select-none border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-6 md:px-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+      {/* 7. Footer */}
+      <footer className="relative bg-[#000d2e] text-white w-full select-none overflow-hidden">
+        {/* Subtle top accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
 
-            {/* Brand + Tagline + Owner */}
-            <div className="flex flex-col items-start gap-3">
-              <img src={coolspotLogo} alt="Cool Spot Cottage" className="h-12 w-auto object-contain" />
-              <p className="text-slate-300 text-xs leading-relaxed max-w-xs italic">
+        {/* Faint background glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(0,26,82,0.6),transparent)] pointer-events-none" />
+
+        <div className="relative max-w-7xl mx-auto px-6 md:px-16 pt-14 pb-8">
+
+          {/* Main grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-10">
+
+            {/* ── Col 1 · Brand ── */}
+            <div className="flex flex-col gap-4">
+              <img src={coolspotLogo} alt="Cool Spot Cottage" className="h-14 w-auto object-contain" />
+              <p className="text-slate-300/80 text-xs leading-relaxed max-w-[220px] italic font-light">
                 Relax, Refresh and Reconnect with Nature.
               </p>
-              <p className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">
-                Owner: SARAVANA NAGARAJAN
+              <p className="text-amber-400/70 text-[10px] uppercase tracking-[0.15em] font-bold">
+                Owner: Saravana Nagarajan
               </p>
+
+              {/* WhatsApp CTA */}
+              <a
+                href="https://wa.me/917010395526"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-1 px-4 py-2 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400/50 transition-all duration-200 text-[11px] font-semibold w-fit"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                WhatsApp Us
+              </a>
             </div>
 
-            {/* Contact Details */}
-            <div className="space-y-3">
-              <span className="text-[10px] uppercase tracking-widest text-amber-400 font-bold block">Contact Us</span>
-              <div className="space-y-2 text-xs text-slate-300">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span>📞</span>
-                  <a href="tel:+917010395526" className="hover:text-white transition-colors font-mono">+91 70103 95526</a>
-                  <span className="text-slate-500">·</span>
-                  <a href="tel:+919042737424" className="hover:text-white transition-colors font-mono">+91 90427 37424</a>
+            {/* ── Col 2 · Contact ── */}
+            <div className="space-y-4">
+              <div>
+                <span className="text-[9px] uppercase tracking-[0.2em] text-amber-400 font-black block mb-3">Get in Touch</span>
+                <div className="w-6 h-[1.5px] bg-amber-400/40 mb-4" />
+              </div>
+
+              <div className="space-y-3">
+                {/* Primary numbers */}
+                <div className="flex items-start gap-2.5">
+                  <PhoneCall className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-slate-300 space-y-0.5">
+                    <a href="tel:+917010395526" className="hover:text-white transition-colors font-mono block">+91 70103 95526</a>
+                    <a href="tel:+919042737424" className="hover:text-white transition-colors font-mono block">+91 90427 37424</a>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span>📞</span>
-                  <span className="text-slate-400 text-[10px]">Alternate:</span>
-                  <a href="tel:+919443364626" className="hover:text-white transition-colors font-mono text-[11px]">+91 94433 64626</a>
+
+                {/* Contact number */}
+                <div className="flex items-center gap-2.5">
+                  <PhoneCall className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span className="text-slate-500 text-[9px] uppercase tracking-wider font-semibold">Contact</span>
+                    <a href="tel:+919443364626" className="hover:text-white transition-colors font-mono text-slate-300">+91 94433 64626</a>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span>💬</span>
-                  <a href="https://wa.me/917010395526" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                    WhatsApp: 70103 95526
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>✉️</span>
-                  <a href="mailto:Coolspotcottage@gmail.com" className="hover:text-white transition-colors">
+
+                {/* Email */}
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <a href="mailto:Coolspotcottage@gmail.com" className="text-[11px] text-slate-300 hover:text-white transition-colors">
                     Coolspotcottage@gmail.com
                   </a>
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="shrink-0 mt-0.5">📍</span>
-                  <span className="leading-relaxed">123/L, Vijayanagara palace road, Near HMT gate, Ooty – 643001</span>
+
+                {/* Address */}
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-[11px] text-slate-400 leading-relaxed">
+                    123/L, Vijayanagara Palace Road,<br />
+                    Near HMT Gate, Ooty – 643001
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Hours + Quick Links */}
-            <div className="space-y-3">
-              <span className="text-[10px] uppercase tracking-widest text-amber-400 font-bold block">Information</span>
-              <div className="text-xs text-slate-300 space-y-1.5">
-                <div>⏰ Open <span className="font-bold text-white">24/7</span></div>
-                <div>🏨 Check-in: <span className="font-bold text-white">12:00 PM</span></div>
-                <div>🏨 Check-out: <span className="font-bold text-white">11:00 AM</span></div>
+            {/* ── Col 3 · Info + Links ── */}
+            <div className="space-y-4">
+              <div>
+                <span className="text-[9px] uppercase tracking-[0.2em] text-amber-400 font-black block mb-3">Information</span>
+                <div className="w-6 h-[1.5px] bg-amber-400/40 mb-4" />
               </div>
-              <div className="flex flex-wrap gap-4 mt-4 font-sans text-[10px] uppercase tracking-widest text-slate-400 font-medium">
-                <a
-                  href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z"
-                  target="_blank" rel="noopener noreferrer"
-                  className="hover:text-amber-300 transition-colors"
-                >
-                  Google Maps
-                </a>
-                <button onClick={() => setActiveTab("privacy")} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
-                <button onClick={() => setActiveTab("terms")} className="hover:text-white transition-colors cursor-pointer">Terms</button>
-                <button onClick={() => setActiveTab("cancellation")} className="hover:text-white transition-colors cursor-pointer">Cancellation</button>
-                <button onClick={() => setActiveTab("refund")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
-              </div>
-              <div className="flex flex-wrap gap-4 mt-3 font-sans text-[10px] uppercase tracking-widest text-slate-400 font-medium">
-                <button onClick={() => setActiveTab("rooms")} className="hover:text-white transition-colors cursor-pointer">Rooms</button>
-                <button onClick={() => setActiveTab("gallery")} className="hover:text-white transition-colors cursor-pointer">Gallery</button>
 
-                <button onClick={() => setActiveTab("contact")} className="hover:text-white transition-colors cursor-pointer">Contact Us</button>
+              {/* Hours */}
+              <div className="space-y-2 text-[11px] text-slate-300">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Open <strong className="text-white">24/7</strong></span>
+                </div>
+                <div className="flex items-center gap-2 pl-5">
+                  <span className="text-slate-500 text-[9px] uppercase tracking-wider">Check-in</span>
+                  <span className="font-bold text-white">12:00 PM</span>
+                </div>
+                <div className="flex items-center gap-2 pl-5">
+                  <span className="text-slate-500 text-[9px] uppercase tracking-wider">Check-out</span>
+                  <span className="font-bold text-white">11:00 AM</span>
+                </div>
+              </div>
+
+              {/* Quick links row 1 */}
+              <div className="pt-2 border-t border-white/5">
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] uppercase tracking-widest font-semibold">
+                  <a
+                    href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z"
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-slate-400 hover:text-amber-300 transition-colors"
+                  >
+                    <ExternalLink className="w-2.5 h-2.5" />
+                    google maps
+                  </a>
+                  <button onClick={() => setActiveTab("privacy")} className="text-slate-400 hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
+                  <button onClick={() => setActiveTab("rooms")} className="text-slate-400 hover:text-white transition-colors cursor-pointer">Rooms</button>
+                  <button onClick={() => setActiveTab("gallery")} className="text-slate-400 hover:text-white transition-colors cursor-pointer">Gallery</button>
+                  <button onClick={() => setActiveTab("contact")} className="text-slate-400 hover:text-white transition-colors cursor-pointer">Contact</button>
+                </div>
+              </div>
+
+              {/* Policy links — Cancellation & Refund together */}
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] uppercase tracking-widest font-semibold">
+                <button onClick={() => setActiveTab("cancellation")} className="text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">Cancellation Policy</button>
+                <span className="text-white/10 select-none">·</span>
+                <button onClick={() => setActiveTab("refund")} className="text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">Refund Policy</button>
+              </div>
+
+              {/* Terms & Conditions — below */}
+              <div>
+                <button
+                  onClick={() => setActiveTab("terms")}
+                  className="text-[10px] uppercase tracking-widest font-semibold text-slate-500 hover:text-white transition-colors cursor-pointer border-b border-slate-500/30 hover:border-white/40 pb-0.5"
+                >
+                  Terms &amp; Conditions
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
-            <div className="text-slate-400 font-sans text-[10px] uppercase font-bold tracking-wider">
+          {/* Bottom bar */}
+          <div className="border-t border-white/8 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div className="text-slate-500 font-sans text-[10px] uppercase font-bold tracking-wider">
               © 2026 Cool Spot Cottage. All rights reserved.
             </div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Ooty, Tamil Nadu, India</div>
-            <div className="text-slate-500 text-[10px] tracking-wider">
+            <div className="flex items-center gap-1.5 text-slate-600 text-[10px] uppercase tracking-wider">
+              <MapPin className="w-3 h-3 text-amber-400/50" />
+              Ooty, Tamil Nadu, India
+            </div>
+            <div className="text-slate-600 text-[10px] tracking-wider">
               Developed by{" "}
               <a
                 href="https://www.datazync.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative inline-block font-semibold text-amber-400/70 hover:text-amber-300 transition-colors duration-300 group"
+                className="relative inline-block font-semibold text-amber-400/60 hover:text-amber-300 transition-colors duration-300 group"
               >
                 DataZync
                 <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-amber-300 group-hover:w-full transition-all duration-300" />

@@ -434,6 +434,10 @@ function ModuleRooms() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [extraBedRate, setExtraBedRate] = useState<number>(1500);
+  const [editingExtraBed, setEditingExtraBed] = useState(false);
+  const [editExtraBedRate, setEditExtraBedRate] = useState("");
+  const [savingExtraBed, setSavingExtraBed] = useState(false);
 
   const loadRooms = async () => {
     setLoading(true);
@@ -472,6 +476,17 @@ function ModuleRooms() {
     } finally {
       setLoading(false);
     }
+    // Load extra bed rate from Firebase settings
+    try {
+      const { getDoc } = await import("firebase/firestore");
+      const pricingSnap = await getDoc(doc(db, "settings", "pricing"));
+      if (pricingSnap.exists()) {
+        const data = pricingSnap.data();
+        if (data.extraBedRate) setExtraBedRate(data.extraBedRate);
+      }
+    } catch (err) {
+      console.error("Failed to load extra bed rate:", err);
+    }
   };
 
   useEffect(() => { loadRooms(); }, []);
@@ -482,6 +497,22 @@ function ModuleRooms() {
   };
 
   const cancelEdit = () => { setEditingId(null); setEditRate(""); };
+
+  const saveExtraBedRate = async () => {
+    const newRate = parseInt(editExtraBedRate);
+    if (!newRate || newRate < 100) { alert("Enter a valid rate (min ₹100)"); return; }
+    setSavingExtraBed(true);
+    try {
+      await setDoc(doc(db, "settings", "pricing"), { extraBedRate: newRate }, { merge: true });
+      setExtraBedRate(newRate);
+      setEditingExtraBed(false);
+    } catch (err) {
+      alert("Failed to save extra bed rate. Please try again.");
+      console.error(err);
+    } finally {
+      setSavingExtraBed(false);
+    }
+  };
 
   const saveRate = async (roomId: string) => {
     const newRate = parseInt(editRate);
@@ -539,7 +570,7 @@ function ModuleRooms() {
                   <div className="text-sm font-bold text-white">{room.name}</div>
                   <div className="text-xs text-white/60">
                     {(room.roomNumbers || []).length > 0
-                      ? `Room${(room.roomNumbers || []).length > 1 ? "s" : ""} ${(room.roomNumbers || []).map((n: string) => `#${n}`).join(" + ")} · `
+                      ? `Room${(room.roomNumbers || []).length > 1 ? "s" : ""} ${(room.roomNumbers || []).map((n: string) => n).join(" + ")} · `
                       : ""}
                     Max {room.maxGuests} guests
                   </div>
@@ -625,6 +656,62 @@ function ModuleRooms() {
           ))}
         </div>
       )}
+
+      {/* Extra Bed Rate */}
+      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ background: C.card }}>
+          <div>
+            <div className="text-sm font-bold" style={{ color: C.text }}>Extra Bed Charge</div>
+            <div className="text-[10px] mt-0.5 uppercase tracking-widest" style={{ color: C.muted }}>Per bed · Per night</div>
+          </div>
+          {editingExtraBed ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={100}
+                step={50}
+                value={editExtraBedRate}
+                onChange={e => setEditExtraBedRate(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && saveExtraBedRate()}
+                className="w-28 px-3 py-2 rounded-xl text-sm font-bold border outline-none text-right"
+                style={{ background: "rgba(255,255,255,0.06)", borderColor: C.gold, color: C.text }}
+                autoFocus
+                placeholder="1500"
+              />
+              <button
+                onClick={saveExtraBedRate}
+                disabled={savingExtraBed}
+                className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1"
+                style={{ background: C.gold, color: "#0a0a0a", opacity: savingExtraBed ? 0.6 : 1 }}
+              >
+                <Check className="w-3.5 h-3.5" />
+                {savingExtraBed ? "Saving…" : "Save"}
+              </button>
+              <button
+                onClick={() => setEditingExtraBed(false)}
+                className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border"
+                style={{ borderColor: C.border, color: C.muted }}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="text-2xl font-black" style={{ color: C.gold }}>
+                ₹{extraBedRate.toLocaleString()}<span className="text-xs font-normal ml-1" style={{ color: C.muted }}>/night</span>
+              </div>
+              <button
+                onClick={() => { setEditExtraBedRate(String(extraBedRate)); setEditingExtraBed(true); }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border hover:bg-white/10 transition-colors"
+                style={{ borderColor: C.border, color: C.gold }}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

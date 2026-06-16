@@ -418,12 +418,9 @@ export default function CottageInfoTab() {
                   
                   {/* Detailed Digital Map & Location Frame */}
                   <div className="bg-white dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center">
                       <span className="text-[10px] font-sans text-[#819ae7] font-extrabold uppercase tracking-widest">
                         Physical Location & Directions
-                      </span>
-                      <span className="text-[10px] bg-[#819ae7]/10 text-[#819ae7] dark:bg-[#819ae7]/20 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                        ★ Gated Resort
                       </span>
                     </div>
 
@@ -808,12 +805,30 @@ export default function CottageInfoTab() {
                         </div>
                       </div>
 
-                      {/* Cash only */}
+                      {/* Payment */}
                       <div className="flex items-start gap-2.5">
                         <span className="p-1 bg-[#001a52]/10 text-[#001a52] dark:text-[#819ae7] rounded text-[9px] uppercase font-bold shrink-0">Payment</span>
                         <div>
-                          <span className="font-bold text-slate-800 dark:text-slate-200 block">Cash Payments Only</span>
-                          <span className="text-slate-500">Cottage billing services accept cash only at checking desk.</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200 block">Cash or UPI Only</span>
+                          <span className="text-slate-500">Payments are accepted via Cash or UPI only. No card or online transfers accepted at the desk.</span>
+                        </div>
+                      </div>
+
+                      {/* Property Damage */}
+                      <div className="flex items-start gap-2.5">
+                        <span className="p-1 bg-red-500/10 text-red-600 rounded text-[9px] uppercase font-bold shrink-0">Damage</span>
+                        <div>
+                          <span className="font-bold text-slate-800 dark:text-slate-200 block">Property Damage Liability</span>
+                          <span className="text-slate-500">Guests are liable for any damage to property, furnishings, fixtures, or appliances during their stay. The full cost of repair or replacement will be charged to the guest.</span>
+                        </div>
+                      </div>
+
+                      {/* Bedding Damage */}
+                      <div className="flex items-start gap-2.5">
+                        <span className="p-1 bg-orange-500/10 text-orange-600 rounded text-[9px] uppercase font-bold shrink-0">Bedding</span>
+                        <div>
+                          <span className="font-bold text-slate-800 dark:text-slate-200 block">Blanket & Bedspread Damage Policy</span>
+                          <span className="text-slate-500">If blankets, bedspreads, pillow covers, or other bedding items are stained, damaged, or rendered unusable, the guest will be charged the full replacement cost. Cleaning charges alone are not sufficient for permanent stains or irreparable damage.</span>
                         </div>
                       </div>
 
@@ -837,10 +852,15 @@ export default function CottageInfoTab() {
 
                     <div className="space-y-4 text-xs leading-relaxed">
                       <div>
-                        <span className="font-bold text-slate-800 dark:text-slate-200 block mb-1">Child policies:</span>
-                        <p className="text-slate-500">
-                          Children of any age are welcome. Realtime availability details can be queried by inserting child occupancy count in reservation panels.
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block mb-1">Child Age Policy:</span>
+                        <p className="text-slate-500 mb-2">
+                          Children of any age are welcome. Children <strong className="text-slate-700 dark:text-slate-300">above 10 years of age</strong> are considered <strong className="text-slate-700 dark:text-slate-300">adults</strong> for accommodation and occupancy purposes.
                         </p>
+                        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-lg p-2.5">
+                          <p className="text-[10px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                            <strong>Note:</strong> When a child aged 11 years or older is added to a booking, they will automatically be counted as an adult and the guest count, room occupancy, and pricing will update accordingly.
+                          </p>
+                        </div>
                       </div>
 
                       <div className="bg-slate-50 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-100 dark:border-white/5">
