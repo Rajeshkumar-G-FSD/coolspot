@@ -37,10 +37,10 @@ export default function Navbar({
     { id: "destinations", label: "Home", icon: Home },
     { id: "rooms", label: "Rooms", icon: BedDouble },
     { id: "gallery", label: "Gallery", icon: Images },
+    { id: "about", label: "About Us", icon: Info },
   ];
 
   const rightNavItems = [
-    { id: "about", label: "About Us", icon: Info },
     { id: "contact", label: "Contact", icon: Phone },
     { id: "admin", label: "Admin", icon: Lock },
   ];
@@ -121,9 +121,9 @@ export default function Navbar({
               <div className="ml-auto flex items-center gap-3 lg:gap-4">
                 <a
                   href="tel:+917010395526"
-                  className="hidden lg:flex items-center gap-1.5 text-white/50 hover:text-amber-300 transition-colors duration-300 text-[9px] font-mono tracking-wider"
+                  className="hidden lg:flex items-center gap-1.5 text-white/60 hover:text-amber-300 transition-colors duration-300 text-[10px] font-mono tracking-wider whitespace-nowrap"
                 >
-                  <Phone className="w-3 h-3" />
+                  <Phone className="w-3 h-3 shrink-0" />
                   +91 70103 95526
                 </a>
 
