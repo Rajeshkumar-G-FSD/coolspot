@@ -8,8 +8,9 @@ import {
   Menu, TrendingDown, AlertCircle, CheckCircle, Eye, MoreVertical,
   Wifi, MessageSquare, Printer, Building2, Leaf, Mountain,
   Coffee, Sunset, Wind, Award, ShieldCheck, Zap, PieChart,
-  ChevronUp, ChevronDown, Pencil, Send, Upload, Trash
+  ChevronUp, ChevronDown, Pencil, Send, Upload, Trash, EyeOff
 } from "lucide-react";
+import coolspotLogo from "../public/images/coolspot_roundlogo-removebg-preview.png";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import {
   collection, getDocs, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot
@@ -1815,7 +1816,7 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formFirstName || !formLastName || !formEmail || !formCity || !formCheckIn || !formCheckOut) {
+    if (!formFirstName || !formPhone) {
       alert("Please fill all required fields.");
       return;
     }
@@ -1875,18 +1876,24 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
               <input value={formFirstName} onChange={e=>setFormFirstName(e.target.value)} placeholder="Rajan" className={inputCls} style={inputStyle} required />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Last Name *</label>
-              <input value={formLastName} onChange={e=>setFormLastName(e.target.value)} placeholder="Kumar" className={inputCls} style={inputStyle} required />
+              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Last Name</label>
+              <input value={formLastName} onChange={e=>setFormLastName(e.target.value)} placeholder="Kumar" className={inputCls} style={inputStyle} />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Email *</label>
-              <input type="email" value={formEmail} onChange={e=>setFormEmail(e.target.value)} placeholder="guest@email.com" className={inputCls} style={inputStyle} required />
+              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Phone Number *</label>
+              <input type="tel" value={formPhone} onChange={e=>setFormPhone(e.target.value)} placeholder="+91 98400 12345" className={inputCls} style={inputStyle} required />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>City *</label>
-              <input value={formCity} onChange={e=>setFormCity(e.target.value)} placeholder="Chennai" className={inputCls} style={inputStyle} required />
+              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Email</label>
+              <input type="email" value={formEmail} onChange={e=>setFormEmail(e.target.value)} placeholder="guest@email.com" className={inputCls} style={inputStyle} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>City</label>
+              <input value={formCity} onChange={e=>setFormCity(e.target.value)} placeholder="Chennai" className={inputCls} style={inputStyle} />
             </div>
           </div>
           <div>
@@ -1898,12 +1905,12 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Check-In *</label>
-              <input type="date" value={formCheckIn} onChange={e=>setFormCheckIn(e.target.value)} className={inputCls} style={{ ...inputStyle, colorScheme:"dark" }} required />
+              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Check-In</label>
+              <input type="date" value={formCheckIn} onChange={e=>setFormCheckIn(e.target.value)} className={inputCls} style={{ ...inputStyle, colorScheme:"dark" }} />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Check-Out *</label>
-              <input type="date" value={formCheckOut} onChange={e=>setFormCheckOut(e.target.value)} className={inputCls} style={{ ...inputStyle, colorScheme:"dark" }} required />
+              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Check-Out</label>
+              <input type="date" value={formCheckOut} onChange={e=>setFormCheckOut(e.target.value)} className={inputCls} style={{ ...inputStyle, colorScheme:"dark" }} />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1957,9 +1964,16 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [touched, setTouched] = useState({ user: false, pass: false });
+
+  const userError = touched.user && !user.trim() ? "Username is required." : "";
+  const passError = touched.pass && !pass ? "Password is required." : touched.pass && pass.length < 4 ? "Password must be at least 4 characters." : "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched({ user: true, pass: true });
+    if (!user.trim() || !pass || pass.length < 4) return;
     setLoading(true);
     setError("");
     const normalized = user.trim().toLowerCase();
@@ -1976,7 +1990,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
       if ((normalized === "coolcootage" || normalized === "coolcottage") && pass === "12345") {
         onLogin();
       } else {
-        setError("Authentication error. Check connectivity.");
+        setError("Authentication error. Please check your connection.");
       }
     } finally {
       setLoading(false);
@@ -1984,59 +1998,158 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-16"
-      style={{ background: "linear-gradient(135deg, #040a05 0%, #0a1a10 50%, #050e07 100%)" }}>
-      <motion.div initial={{ opacity:0, y:20, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }}
-        className="w-full max-w-sm rounded-3xl p-8 border"
-        style={{ background: "rgba(255,255,255,0.04)", borderColor: C.border, backdropFilter:"blur(24px)" }}>
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: `${C.gold}18` }}>
-            <ShieldCheck className="w-7 h-7" style={{ color: C.gold }} />
+    <div className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: "linear-gradient(145deg, #020b04 0%, #071510 40%, #0b1f11 70%, #040c06 100%)" }}>
+
+      {/* Background ambient glows */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-10"
+          style={{ background: `radial-gradient(circle, ${C.gold} 0%, transparent 70%)`, filter: "blur(60px)" }} />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full opacity-5"
+          style={{ background: `radial-gradient(circle, #4ade80 0%, transparent 70%)`, filter: "blur(80px)" }} />
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 24, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-md rounded-3xl border overflow-hidden"
+        style={{ background: "rgba(255,255,255,0.035)", borderColor: "rgba(212,168,67,0.18)", backdropFilter: "blur(32px)" }}>
+
+        {/* Gold top accent bar */}
+        <div className="h-0.5 w-full" style={{ background: `linear-gradient(90deg, transparent, ${C.gold}, transparent)` }} />
+
+        <div className="p-8 sm:p-10">
+          {/* Logo + Brand */}
+          <div className="flex flex-col items-center mb-8">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.4, ease: "backOut" }}
+              className="relative mb-5">
+              <div className="absolute inset-0 rounded-full opacity-30 blur-xl"
+                style={{ background: C.gold, transform: "scale(1.3)" }} />
+              <img src={coolspotLogo} alt="Cool Cottages" className="relative w-24 h-24 object-contain drop-shadow-2xl" />
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <h1 className="text-2xl font-black text-center tracking-tight" style={{ color: C.text }}>Admin Console</h1>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-center mt-1.5 font-semibold" style={{ color: C.gold }}>
+                Cool Cottages · Authorized Access Only
+              </p>
+            </motion.div>
           </div>
-          <div className="text-xl font-black" style={{ color: C.text }}>Admin Console</div>
-          <div className="text-[10px] uppercase tracking-widest mt-1" style={{ color: C.muted }}>Cool Cottages · Authorized Access Only</div>
+
+          {/* Credential error banner */}
+          {error && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 p-3.5 rounded-2xl mb-6 text-xs font-medium"
+              style={{ background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}>
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              {error}
+            </motion.div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {/* Username */}
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: C.muted }}>
+                Username
+              </label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: userError ? "#f87171" : C.muted }} />
+                <input
+                  type="text"
+                  value={user}
+                  onChange={e => { setUser(e.target.value); setError(""); }}
+                  onBlur={() => setTouched(t => ({ ...t, user: true }))}
+                  placeholder="e.g. coolcootage"
+                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm outline-none transition-all duration-200"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: `1.5px solid ${userError ? "rgba(248,113,113,0.5)" : touched.user && user.trim() ? "rgba(212,168,67,0.4)" : C.border}`,
+                    color: C.text,
+                  }}
+                />
+              </div>
+              {userError && (
+                <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: "#f87171" }}>
+                  <AlertCircle className="w-3 h-3" />{userError}
+                </p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: C.muted }}>
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: passError ? "#f87171" : C.muted }} />
+                <input
+                  type={showPass ? "text" : "password"}
+                  value={pass}
+                  onChange={e => { setPass(e.target.value); setError(""); }}
+                  onBlur={() => setTouched(t => ({ ...t, pass: true }))}
+                  placeholder="••••••••"
+                  className="w-full pl-11 pr-12 py-3.5 rounded-2xl text-sm outline-none transition-all duration-200"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: `1.5px solid ${passError ? "rgba(248,113,113,0.5)" : touched.pass && pass.length >= 4 ? "rgba(212,168,67,0.4)" : C.border}`,
+                    color: C.text,
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(v => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 transition-opacity hover:opacity-100 opacity-60"
+                >
+                  {showPass
+                    ? <EyeOff className="w-4 h-4" style={{ color: C.muted }} />
+                    : <Eye className="w-4 h-4" style={{ color: C.muted }} />}
+                </button>
+              </div>
+              {passError && (
+                <p className="text-[11px] mt-1.5 flex items-center gap-1" style={{ color: "#f87171" }}>
+                  <AlertCircle className="w-3 h-3" />{passError}
+                </p>
+              )}
+            </div>
+
+            {/* Submit */}
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.02 }}
+              whileTap={{ scale: loading ? 1 : 0.97 }}
+              className="btn-apple w-full py-4 text-sm font-bold uppercase tracking-widest mt-2 relative overflow-hidden"
+              style={{
+                background: loading ? "rgba(212,168,67,0.5)" : `linear-gradient(135deg, ${C.gold} 0%, ${C.goldLight} 100%)`,
+                color: "#0a0a0a",
+                boxShadow: loading ? "none" : `0 8px 32px ${C.gold}40`,
+              }}>
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Authenticating…
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <ShieldCheck className="w-4 h-4" />
+                  Authorize Access
+                </span>
+              )}
+            </motion.button>
+          </form>
+
+          {/* Footer hint */}
+          <div className="mt-6 pt-5 border-t flex items-center justify-center gap-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <ShieldCheck className="w-3 h-3 opacity-40" style={{ color: C.gold }} />
+            <p className="text-[10px]" style={{ color: C.muted }}>
+              Default: <span className="font-bold" style={{ color: C.gold }}>coolcootage</span>
+              <span className="mx-1 opacity-40">/</span>
+              <span className="font-bold" style={{ color: C.gold }}>12345</span>
+            </p>
+          </div>
         </div>
-
-        {error && (
-          <div className="flex items-center gap-2 p-3 rounded-xl mb-5 text-xs"
-            style={{ background: "rgba(248,113,113,0.12)", color:"#f87171", border:"1px solid rgba(248,113,113,0.2)" }}>
-            <AlertCircle className="w-4 h-4 shrink-0" />{error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: C.muted }}>Username</label>
-            <div className="relative">
-              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.muted }} />
-              <input type="text" value={user} onChange={e=>setUser(e.target.value)}
-                placeholder="e.g. coolcootage"
-                className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none border"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor: C.border, color: C.text }}
-                required />
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: C.muted }}>Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.muted }} />
-              <input type="password" value={pass} onChange={e=>setPass(e.target.value)}
-                placeholder="••••••"
-                className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none border"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor: C.border, color: C.text }}
-                required />
-            </div>
-          </div>
-          <button type="submit" disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-bold uppercase tracking-widest mt-2 transition-opacity"
-            style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldLight})`, color:"#0a0a0a", opacity: loading ? 0.7 : 1 }}>
-            {loading ? "Authenticating..." : "Authorize Access"}
-          </button>
-        </form>
-        <p className="text-[10px] text-center mt-5" style={{ color: C.muted }}>
-          Default: <strong style={{ color: C.gold }}>coolcootage</strong> / <strong style={{ color: C.gold }}>12345</strong>
-        </p>
       </motion.div>
     </div>
   );
