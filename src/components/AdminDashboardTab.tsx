@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import {
-  collection, getDocs, doc, setDoc, updateDoc, deleteDoc, getDoc
+  collection, getDocs, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot
 } from "firebase/firestore";
 import { VILLAS_DATA } from "../data";
 import { motion, AnimatePresence } from "motion/react";
@@ -186,53 +186,125 @@ function StatCard({ label, value, icon: Icon, color, trend, chart }: any) {
 }
 
 // ─── MODULE: OVERVIEW ─────────────────────────────────────────────────────────
-function ModuleOverview({ bookings }: { bookings: any[] }) {
-  const totalRevenue = bookings.reduce((s, b) => s + (b.totalCost || 0), 0);
+function ModuleOverview({ bookings, onNavigate, onCreateBooking }: {
+  bookings: any[];
+  onNavigate: (module: string) => void;
+  onCreateBooking: () => void;
+}) {
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
+  const today = now.toISOString().split("T")[0];
+
+  const totalRevenue = bookings.filter(b => b.status !== "Cancelled").reduce((s, b) => s + (b.totalCost || 0), 0);
   const confirmed = bookings.filter(b => b.status === "Confirmed").length;
   const pending = bookings.filter(b => b.status === "Pending").length;
   const completed = bookings.filter(b => b.status === "Completed").length;
   const cancelled = bookings.filter(b => b.status === "Cancelled").length;
-  const today = new Date().toISOString().split("T")[0];
   const todayArrivals = bookings.filter(b => b.checkIn === today && b.status !== "Cancelled").length;
-  const occupancyPct = bookings.length > 0 ? Math.min(98, Math.round((confirmed / Math.max(1, VILLAS_DATA.length)) * 100)) : 0;
 
-  const recentBookings = [...bookings].slice(0, 5);
-
-  const statusPct = { confirmed, pending, completed, cancelled };
   const total = confirmed + pending + completed + cancelled || 1;
+
+  // Monthly revenue from actual bookings (current year)
+  const monthlyRevenue = Array(12).fill(0);
+  const lastYearRevenue = { total: 0 };
+  bookings.forEach(b => {
+    if (!b.checkIn || b.status === "Cancelled") return;
+    const d = new Date(b.checkIn + "T00:00:00");
+    if (d.getFullYear() === thisYear) monthlyRevenue[d.getMonth()] += (b.totalCost || 0);
+    else if (d.getFullYear() === thisYear - 1) lastYearRevenue.total += (b.totalCost || 0);
+  });
+  const maxRev = Math.max(...monthlyRevenue, 1);
+  const yoyPct = lastYearRevenue.total > 0
+    ? Math.round(((totalRevenue - lastYearRevenue.total) / lastYearRevenue.total) * 100)
+    : totalRevenue > 0 ? 100 : 0;
+
+  // Month-on-month trend for stat card sparklines
+  const revSparkline = monthlyRevenue.slice(Math.max(0, thisMonth - 7), thisMonth + 1);
+  const bookingsByMonth = Array(12).fill(0);
+  bookings.forEach(b => {
+    if (!b.checkIn || b.status === "Cancelled") return;
+    const d = new Date(b.checkIn + "T00:00:00");
+    if (d.getFullYear() === thisYear) bookingsByMonth[d.getMonth()]++;
+  });
+  const bookSparkline = bookingsByMonth.slice(Math.max(0, thisMonth - 7), thisMonth + 1);
+
+  // Current month vs previous month for trend badge
+  const curMonthBookings = bookingsByMonth[thisMonth];
+  const prevMonthBookings = thisMonth > 0 ? bookingsByMonth[thisMonth - 1] : 0;
+  const bookingTrend = prevMonthBookings > 0
+    ? Math.round(((curMonthBookings - prevMonthBookings) / prevMonthBookings) * 100)
+    : curMonthBookings > 0 ? 100 : 0;
+
+  // Room occupancy computed from actual bookings this month
+  const roomOccupancy = VILLAS_DATA.filter(r => r.ratePerNight > 0).map(room => {
+    const roomNums = (room.roomNumbers || []).map(String);
+    const roomBookings = bookings.filter(b => {
+      if (b.status === "Cancelled") return false;
+      if (b.room?.id === room.id) return true;
+      const assigned = (b.assignedRooms || []).map(String);
+      return assigned.some((n: string) => roomNums.includes(n));
+    });
+    let bookedDays = 0;
+    roomBookings.forEach(b => {
+      if (!b.checkIn || !b.checkOut) return;
+      const cin = new Date(b.checkIn + "T00:00:00");
+      const cout = new Date(b.checkOut + "T00:00:00");
+      const mStart = new Date(thisYear, thisMonth, 1);
+      const mEnd = new Date(thisYear, thisMonth + 1, 0);
+      const start = cin > mStart ? cin : mStart;
+      const end = cout < mEnd ? cout : mEnd;
+      if (end > start) bookedDays += Math.round((end.getTime() - start.getTime()) / 86400000);
+    });
+    const pct = Math.min(100, Math.round((bookedDays / daysInMonth) * 100));
+    return { room, pct };
+  });
+
+  const recentBookings = [...bookings]
+    .sort((a, b) => (b.createdTime || "").localeCompare(a.createdTime || ""))
+    .slice(0, 5);
+
+  const quickActions = [
+    { label: "Create Booking", icon: Plus, color: C.gold, action: onCreateBooking },
+    { label: "Send WhatsApp", icon: MessageSquare, color: "#25D366", action: () => window.open("https://api.whatsapp.com/send?phone=917010395526", "_blank") },
+    { label: "Generate Report", icon: Download, color: "#60a5fa", action: () => onNavigate("analytics") },
+    { label: "Add Room", icon: BedDouble, color: "#a78bfa", action: () => onNavigate("rooms") },
+    { label: "View Analytics", icon: BarChart3, color: "#f472b6", action: () => onNavigate("analytics") },
+  ];
 
   return (
     <div className="space-y-6">
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Revenue" value={`₹${(totalRevenue/1000).toFixed(0)}K`} icon={DollarSign} color={C.gold} trend={18} chart={REVENUE_DATA.slice(-8)} />
-        <StatCard label="Total Bookings" value={bookings.length} icon={CalendarCheck} color="#4ade80" trend={12} chart={OCCUPANCY_DATA.slice(-8)} />
+        <StatCard label="Total Revenue" value={`₹${(totalRevenue/1000).toFixed(1)}K`} icon={DollarSign} color={C.gold} trend={yoyPct} chart={revSparkline.length > 1 ? revSparkline : undefined} />
+        <StatCard label="Total Bookings" value={bookings.length} icon={CalendarCheck} color="#4ade80" trend={bookingTrend} chart={bookSparkline.length > 1 ? bookSparkline : undefined} />
         <StatCard label="Today's Arrivals" value={todayArrivals} icon={Users} color="#60a5fa" />
         <StatCard label="Pending Approvals" value={pending} icon={Clock} color="#f59e0b" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
-        {/* Revenue Chart */}
+        {/* Revenue Chart — built from real booking data */}
         <div className="lg:col-span-2 rounded-2xl p-6 border" style={{ background: C.card, borderColor: C.border }}>
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="text-xs uppercase tracking-widest font-bold" style={{ color: C.gold }}>Monthly Revenue</div>
-              <div className="text-2xl font-bold mt-1" style={{ color: C.text }}>₹{(totalRevenue/1000).toFixed(0)}K This Year</div>
+              <div className="text-2xl font-bold mt-1" style={{ color: C.text }}>₹{(totalRevenue/1000).toFixed(1)}K This Year</div>
             </div>
-            <div className="text-xs px-3 py-1.5 rounded-full font-bold" style={{ background: `${C.gold}20`, color: C.gold }}>
-              +18% YoY
+            <div className="text-xs px-3 py-1.5 rounded-full font-bold" style={{ background: `${yoyPct >= 0 ? C.gold : "#f87171"}20`, color: yoyPct >= 0 ? C.gold : "#f87171" }}>
+              {yoyPct >= 0 ? "+" : ""}{yoyPct}% YoY
             </div>
           </div>
           <div className="flex items-end gap-2 h-36">
-            {REVENUE_DATA.map((v, i) => {
-              const max = Math.max(...REVENUE_DATA);
-              const isNow = i === new Date().getMonth();
+            {monthlyRevenue.map((v, i) => {
+              const isNow = i === thisMonth;
+              const heightPct = maxRev > 0 ? (v / maxRev) * 100 : 0;
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
                   <div
                     className="w-full rounded-t-md transition-all"
                     style={{
-                      height: `${(v / max) * 100}%`,
+                      height: `${Math.max(heightPct, 2)}%`,
                       background: isNow
                         ? `linear-gradient(to top, ${C.gold}, ${C.goldLight})`
                         : "rgba(212,168,67,0.25)",
@@ -276,12 +348,12 @@ function ModuleOverview({ bookings }: { bookings: any[] }) {
         </div>
       </div>
 
-      {/* Occupancy + Quick Actions */}
+      {/* Recent Bookings + Quick Actions */}
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-2xl border overflow-hidden" style={{ background: C.card, borderColor: C.border }}>
           <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: C.border }}>
             <div className="text-xs uppercase tracking-widest font-bold" style={{ color: C.gold }}>Recent Bookings</div>
-            <span className="text-xs" style={{ color: C.muted }}>{bookings.length} total</span>
+            <button onClick={() => onNavigate("bookings")} className="text-xs hover:underline" style={{ color: C.muted }}>{bookings.length} total →</button>
           </div>
           {recentBookings.length === 0 ? (
             <div className="p-8 text-center text-sm" style={{ color: C.muted }}>No bookings yet</div>
@@ -310,17 +382,15 @@ function ModuleOverview({ bookings }: { bookings: any[] }) {
           )}
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions — all wired to real navigation */}
         <div className="rounded-2xl p-5 border space-y-3" style={{ background: C.card, borderColor: C.border }}>
           <div className="text-xs uppercase tracking-widest font-bold mb-4" style={{ color: C.gold }}>Quick Actions</div>
-          {[
-            { label: "Create Booking", icon: Plus, color: C.gold },
-            { label: "Send WhatsApp", icon: MessageSquare, color: "#25D366" },
-            { label: "Generate Report", icon: Download, color: "#60a5fa" },
-            { label: "Add Room", icon: BedDouble, color: "#a78bfa" },
-            { label: "View Analytics", icon: BarChart3, color: "#f472b6" },
-          ].map(a => (
-            <button key={a.label} className="w-full flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-white/[0.04] text-left group">
+          {quickActions.map(a => (
+            <button
+              key={a.label}
+              onClick={a.action}
+              className="w-full flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-white/[0.07] active:scale-95 text-left group cursor-pointer"
+            >
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
                 style={{ background: `${a.color}18` }}>
                 <a.icon className="w-4 h-4" style={{ color: a.color }} />
@@ -332,25 +402,24 @@ function ModuleOverview({ bookings }: { bookings: any[] }) {
         </div>
       </div>
 
-      {/* Occupancy by Room */}
+      {/* Room Occupancy — computed from real bookings this month */}
       <div className="rounded-2xl p-6 border" style={{ background: C.card, borderColor: C.border }}>
-        <div className="text-xs uppercase tracking-widest font-bold mb-5" style={{ color: C.gold }}>Room Occupancy This Month</div>
+        <div className="text-xs uppercase tracking-widest font-bold mb-5" style={{ color: C.gold }}>
+          Room Occupancy — {MONTHS[thisMonth]} {thisYear}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {VILLAS_DATA.filter(r => r.ratePerNight > 0).map((room, i) => {
-            const pct = [78, 92, 65, 88][i % 4];
-            return (
-              <div key={room.id} className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold truncate" style={{ color: C.text }}>{room.name.split(" ").slice(0, 2).join(" ")}</span>
-                  <span className="text-xs font-bold" style={{ color: pct > 80 ? "#4ade80" : C.gold }}>{pct}%</span>
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct > 80 ? "#4ade80" : C.gold }} />
-                </div>
-                <div className="text-[10px]" style={{ color: C.muted }}>₹{room.ratePerNight.toLocaleString()}/night</div>
+          {roomOccupancy.map(({ room, pct }) => (
+            <div key={room.id} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold truncate" style={{ color: C.text }}>{room.name.split(" ").slice(0, 2).join(" ")}</span>
+                <span className="text-xs font-bold" style={{ color: pct > 60 ? "#4ade80" : pct > 30 ? C.gold : C.muted }}>{pct}%</span>
               </div>
-            );
-          })}
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct > 60 ? "#4ade80" : C.gold }} />
+              </div>
+              <div className="text-[10px]" style={{ color: C.muted }}>₹{room.ratePerNight.toLocaleString()}/night</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -1999,8 +2068,24 @@ export default function AdminDashboardTab() {
     }
   };
 
+  // Real-time listener — updates dashboard instantly on any booking change
   useEffect(() => {
-    if (isLoggedIn) fetchBookings();
+    if (!isLoggedIn) return;
+    setLoadingBookings(true);
+    const unsub = onSnapshot(
+      collection(db, "bookings"),
+      (snap) => {
+        const list: any[] = [];
+        snap.forEach(d => list.push({ ...d.data(), firestoreDocId: d.id }));
+        setBookings(list);
+        setLoadingBookings(false);
+      },
+      (err) => {
+        handleFirestoreError(err, OperationType.LIST, "bookings");
+        setLoadingBookings(false);
+      }
+    );
+    return () => unsub();
   }, [isLoggedIn]);
 
   const handleDelete = async (id: string) => {
@@ -2095,7 +2180,7 @@ export default function AdminDashboardTab() {
         <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
           <AnimatePresence mode="wait">
             <motion.div key={activeModule} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }} transition={{ duration:0.2 }}>
-              {activeModule === "overview"   && <ModuleOverview bookings={bookings} />}
+              {activeModule === "overview"   && <ModuleOverview bookings={bookings} onNavigate={setActiveModule} onCreateBooking={() => setShowFormModal(true)} />}
               {activeModule === "rooms"      && <ModuleRooms />}
               {activeModule === "payments"   && (
                 <ModulePaymentVerify bookings={bookings} onRefresh={fetchBookings} />
