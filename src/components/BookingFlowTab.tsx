@@ -205,10 +205,10 @@ export default function BookingFlowTab({
     fetchRoomAvailability(checkIn, checkOut);
   }, [checkIn, checkOut]);
 
-  // When guest count drops back to ≤ 3 adults, trim multi-selection to one room
+  // When guest count drops below 3 adults, trim multi-selection to one room
   useEffect(() => {
     const count = parseInt(guests.split(" Adult")[0]) || 2;
-    if (count <= 3 && selectedRoomNumbers.length > 1) {
+    if (count < 3 && selectedRoomNumbers.length > 1) {
       setSelectedRoomNumbers(prev => [prev[0]]);
     }
   }, [guests]);
@@ -225,8 +225,8 @@ export default function BookingFlowTab({
   }
 
   const adultCount = parseInt(guests.split(" Adult")[0]) || 2;
-  // > 3 adults → multi-room selection allowed; ≤ 3 → single room only
-  const isMultiRoomMode = adultCount > 3;
+  // ≥ 3 adults → multi-room selection allowed (3 adults: up to 3 rooms; 4+ adults: based on requiredRooms)
+  const isMultiRoomMode = adultCount >= 3;
 
   // Rooms required based on adult count: 1 room per 3 adults (ceiling)
   const requiredRooms = Math.ceil(adultCount / 3);
@@ -896,6 +896,8 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                                   if (isRoomSelected) {
                                     setSelectedRoomNumbers(prev => prev.filter(n => n !== num));
                                   } else if (isMultiRoomMode) {
+                                    // Cap at 3 rooms when exactly 3 adults
+                                    if (adultCount === 3 && selectedRoomNumbers.length >= 3) return;
                                     setRoom(r);
                                     setSelectedRoomNumbers(prev => [...prev, num]);
                                   } else {
