@@ -21,6 +21,16 @@ interface GalleryState {
 
 export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
   const [gallery, setGallery] = useState<GalleryState | null>(null);
+  const [expandedAmenities, setExpandedAmenities] = useState<Set<string>>(new Set());
+
+  const toggleAmenities = (roomId: string) => {
+    setExpandedAmenities((prev: Set<string>) => {
+      const next = new Set(prev);
+      if (next.has(roomId)) next.delete(roomId);
+      else next.add(roomId);
+      return next;
+    });
+  };
 
   const getImages = (room: Room) =>
     room.images && room.images.length > 0 ? room.images : [room.imageUrl];
@@ -177,7 +187,7 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
 
                 {/* Amenity chips */}
                 <div className="flex flex-wrap gap-1.5 mb-5">
-                  {room.amenities.slice(0, 4).map((a) => (
+                  {(expandedAmenities.has(room.id) ? room.amenities : room.amenities.slice(0, 4)).map((a) => (
                     <span
                       key={a}
                       className="text-[10px] px-2.5 py-1 bg-[#e5eeff] dark:bg-white/5 text-[#001a52] dark:text-[#819ae7] rounded-full font-medium"
@@ -186,9 +196,13 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
                     </span>
                   ))}
                   {room.amenities.length > 4 && (
-                    <span className="text-[10px] px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-400 rounded-full">
-                      +{room.amenities.length - 4} more
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleAmenities(room.id)}
+                      className="text-[10px] px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 rounded-full cursor-pointer hover:bg-slate-200 dark:hover:bg-white/10 transition-all active:scale-95 select-none font-medium"
+                    >
+                      {expandedAmenities.has(room.id) ? "Show less" : `+${room.amenities.length - 4} more`}
+                    </button>
                   )}
                 </div>
 

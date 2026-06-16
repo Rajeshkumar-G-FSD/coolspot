@@ -30,7 +30,6 @@ export const VILLAS_DATA: Room[] = [
     amenities: [
       "Panoramic Mountain View Balcony",
       "Queen Bed with Premium Linen",
-      "Air Conditioning & Heating",
       "Private Attached Bathroom",
       "Complimentary Morning Tea",
     ],
@@ -48,7 +47,6 @@ export const VILLAS_DATA: Room[] = [
     isBundle: true,
     amenities: [
       "Two Connected Rooms (102 + 103)",
-      "Extra Cot Bed Included",
       "Family-Sized Living Space",
       "Air Conditioning",
       "Private Bathrooms in Each Room",
@@ -67,8 +65,6 @@ export const VILLAS_DATA: Room[] = [
     roomNumbers: ["104", "105"],
     amenities: [
       "Double Bed + Extra Cot Bed",
-      "Garden View Window",
-      "Air Conditioning",
       "Private Bathroom",
       "Wardrobe & Storage",
     ],
@@ -85,7 +81,6 @@ export const VILLAS_DATA: Room[] = [
     roomNumbers: ["106", "107", "108"],
     amenities: [
       "Double Bed",
-      "Optional Extra Cot Bed",
       "Natural Cool Temperature",
       "Private Bathroom",
       "Budget Friendly",
@@ -97,7 +92,7 @@ export const VILLAS_DATA: Room[] = [
   {
     id: "glass-house",
     name: "Glass House",
-    description: "An extraordinary stay in our signature Glass House — a fully transparent retreat offering 270° panoramic views of the Nilgiri hills and starlit night skies. Featuring a king bed, private garden deck, and unobstructed nature immersion from every angle.",
+    description: "Wake up to breathtaking panoramic views of the Nilgiri mountains. This cozy room features warm wooden interiors, queen bed, and a private balcony framing misty hilltops at sunrise.",
     ratePerNight: 5500,
     maxGuests: 2,
     sizeSquareMeter: 150,
@@ -107,7 +102,6 @@ export const VILLAS_DATA: Room[] = [
       "King Bed with Premium Linen",
       "Private Garden Deck",
       "Stargazing from Your Bed",
-      "Air Conditioning & Heating",
       "Private Attached Bathroom",
       "Morning Mist & Mountain Views",
     ],
