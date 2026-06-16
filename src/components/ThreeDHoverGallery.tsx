@@ -36,7 +36,7 @@ const LOOKBOOK_DETAILS: ImageDetail[] = [
   { title: "Hardwood Timber Living", desc: "Open airy timber architecture welcoming ocean breezes.", img: imgLivingroom },
   { title: "Somatic Master Suite", desc: "A cozy sleeping sanctuary with linen finishes.", img: imgBedroom },
   { title: "Traditional Secluded Bedroom", desc: "Elegant tropical woodwork with serene framing layout.", img: imgBedrooms },
-  { title: "Starlit Campfire Hearth", desc: "Bespoke stone charcoal pit situated in a quiet forest clearing.", img: imgCampfire },
+  { title: "Shared Iron/Steel-Bared Campfire Hearth", desc: "Iron-bared charcoal hearth set in a quiet forest clearing for a shared starlit evening.", img: imgCampfire },
   { title: "Garden Play & Leisure", desc: "Lush verdant lawn tailored for recreation and yoga.", img: imgPlayingArea },
   { title: "The Sovereign Stone Tub", desc: "Deep soaking spa bath framed by natural therapeutic ferns.", img: imgRestroom },
   { title: "Scenic Archways Overlook", desc: "Perfect harmony between master carpentry and natural beauty.", img: imgRoomsview },

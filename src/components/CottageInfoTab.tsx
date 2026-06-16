@@ -6,6 +6,7 @@
 import React, { useState } from "react";
 import BlurText from "./BlurText";
 import { motion, AnimatePresence } from "motion/react";
+import CoolSpotMap from "./CoolSpotMap";
 import {
   MapPin,
   Utensils,
@@ -188,25 +189,25 @@ const FACILITY_CATEGORIES = [
   {
     title: "Bathroom & Spa",
     icon: Droplet,
-    items: ["24/7 Hot Water", "Bidet", "Bath or shower", "Private bathroom", "Toilet", "Premium Bath tub", "Twin shower"]
+    items: ["24/7 Hot Water", "Bidet", "Bath or shower", "Private bathroom", "Toilet", "Twin shower"]
   },
   {
     title: "Bedroom comfort",
     icon: Home,
-    items: ["Fresh volumetric Linen", "Orthopaedic Pillows", "Warm timber wardrobe", "Secluded study nook"]
+    items: ["Fresh volumetric Linen", "Warm timber wardrobe", "Secluded study nook"]
   },
   {
     title: "Outdoors",
     icon: Compass,
-    items: ["Grand dining terrace", "Shared stone campfire hearth", "Verdent recreational lawns"]
+    items: ["Grand dining terrace", "Shared Iron/Steel-Bared Campfire Hearth"]
   },
   {
     title: "Kitchen & Dining",
     icon: Utensils,
-    items: ["Shared gourmet kitchen", "High chairs on demand", "Nespresso coffee hardware"]
+    items: ["Shared gourmet kitchen", "High chairs on demand"]
   },
   {
-    title: "Living Space",
+    title: "Reception",
     icon: Flame,
     items: ["Plush modern sofa set", "Open space fireplace", "Relaxation wooden recliners"]
   },
@@ -218,17 +219,17 @@ const FACILITY_CATEGORIES = [
   {
     title: "Common Services",
     icon: Clock,
-    items: ["Wake-up service call", "Professional car hire booking", "Daily linen housekeeping", "Invoice provided"]
+    items: ["Wake-up service call", "Professional car hire booking", "Daily linen housekeeping"]
   },
   {
     title: "Common Services",
     icon: User,
-    items: ["Guest Attendant on-site (8AM–10PM)", "Wake-up service call", "Professional car hire booking", "Daily linen housekeeping", "Invoice provided"]
+    items: ["Guest Attendant on-site (8AM–10PM)", "Wake-up service call", "Professional car hire booking", "Daily linen housekeeping"]
   },
   {
-    title: "Safety & Gated Security",
+    title: "Safety & Security",
     icon: ShieldCheck,
-    items: ["24/7 Security Camera (CCTV)", "Fire extinguishers on hand", "CCTV outside boundaries", "CCTV in lobbies", "Gated secure entry"]
+    items: ["24/7 Security Camera (CCTV)", "Fire extinguishers on hand", "CCTV outside boundaries", "CCTV in lobbies"]
   }
 ];
 
@@ -426,18 +427,9 @@ export default function CottageInfoTab() {
                       </span>
                     </div>
 
-                    {/* Real Google Maps Embed */}
-                    <div className="h-[210px] rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 shadow-sm">
-                      <iframe
-                        src="https://maps.google.com/maps?q=11.4039116,76.7118485&z=17&output=embed&hl=en"
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                        title="Cool Spot Cottages Location"
-                        allowFullScreen
-                      />
+                    {/* Map — only CoolSpot Cottage marker, no other business pins */}
+                    <div className="rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 shadow-sm">
+                      <CoolSpotMap height="h-[210px]" zoom={17} />
                     </div>
 
                     {/* Address Content & Details */}
@@ -502,17 +494,9 @@ export default function CottageInfoTab() {
                         <span>Navigate on Google Maps</span>
                       </a>
 
-                      {/* Embedded Google Map */}
-                      <div className="rounded-xl overflow-hidden border border-slate-100 dark:border-white/5 shadow-sm h-48">
-                        <iframe
-                          src="https://maps.google.com/maps?q=11.4039116,76.7118485&z=18&output=embed&hl=en"
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0 }}
-                          loading="lazy"
-                          referrerPolicy="no-referrer-when-downgrade"
-                          title="Cool Spot Cottages Map"
-                        />
+                      {/* Map — only CoolSpot Cottage marker */}
+                      <div className="rounded-xl overflow-hidden border border-slate-100 dark:border-white/5 shadow-sm">
+                        <CoolSpotMap height="h-48" zoom={18} />
                       </div>
                     </div>
                   </div>

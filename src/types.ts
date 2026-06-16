@@ -18,6 +18,7 @@ export interface Room {
   maxGuests: number;
   sizeSquareMeter: number;
   amenities: string[];
+  highlights?: string[];
   imageUrl: string;
   roomNumbers?: string[];
   isBundle?: boolean; // true = ratePerNight covers all roomNumbers together

@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { MapPin, Phone, Mail, Clock, MessageSquare, Send, User, CheckCircle, Users } from "lucide-react";
 import BlurText from "./BlurText";
+import CoolSpotMap from "./CoolSpotMap";
 
 export default function ContactTab() {
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
@@ -255,16 +256,8 @@ export default function ContactTab() {
             <MapPin className="w-3 h-3" /> Open in Google Maps
           </a>
         </div>
-        <div className="rounded-2xl overflow-hidden border border-slate-100 dark:border-white/5 shadow-sm h-80">
-          <iframe
-            src="https://maps.google.com/maps?q=11.4039116,76.7118485&z=18&output=embed&hl=en"
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Cool Spot Cottages Location"
-          />
+        <div className="border border-slate-100 dark:border-white/5 shadow-sm rounded-2xl overflow-hidden">
+          <CoolSpotMap height="h-80" zoom={18} />
         </div>
         <p className="text-[10px] text-slate-400 mt-2 text-center">
           123/L, Vijayanagara Palace Road, Near HMT Gate, Ooty – 643001, Tamil Nadu

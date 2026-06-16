@@ -24,6 +24,20 @@ import {
 } from "lucide-react";
 import { Room, Experience, Booking } from "../types";
 import { VILLAS_DATA, EXPERIENCES_DATA } from "../data";
+
+// Mountain View (101) and Glass House (109) share the same features — merge into one booking group
+const BOOKING_DISPLAY_ROOMS: Room[] = (() => {
+  const mv = VILLAS_DATA.find(r => r.id === "mountain-view");
+  const gh = VILLAS_DATA.find(r => r.id === "glass-house");
+  const rest = VILLAS_DATA.filter(r => r.id !== "mountain-view" && r.id !== "glass-house");
+  if (!mv || !gh) return VILLAS_DATA;
+  const merged: Room = {
+    ...mv,
+    name: "Mountain View & Glass House",
+    roomNumbers: ["101", "109"],
+  };
+  return [merged, ...rest];
+})();
 import { motion } from "motion/react";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { doc, setDoc, getDocs, collection, updateDoc } from "firebase/firestore";
@@ -818,7 +832,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                   Select Room
                 </label>
                 <div className="space-y-3">
-                  {VILLAS_DATA.map((r) => {
+                  {BOOKING_DISPLAY_ROOMS.map((r) => {
                     const avail = isCategoryAvailable(r);
                     const availCount = categoryAvailableCount(r);
                     const isCatSelected = (r.roomNumbers || []).some(n => selectedRoomNumbers.includes(n));
@@ -913,7 +927,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                                     : "bg-white border-slate-200 text-slate-700 hover:border-[#001a52] hover:text-[#001a52] cursor-pointer active:scale-95"
                                 }`}
                               >
-                                {r.roomNumbers?.length === 1 && r.name === "Glass House" ? r.name : `Room #${num}`}
+                                {num === "109" ? "Glass House" : `Room #${num}`}
                                 {isRoomBooked && <span className="block text-[9px] font-normal opacity-70">Taken</span>}
                                 {isRoomSelected && !isRoomBooked && <span className="block text-[9px] font-normal opacity-80">Tap to remove</span>}
                               </button>

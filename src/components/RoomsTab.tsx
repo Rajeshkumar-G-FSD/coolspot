@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { BedDouble, Users, ChevronRight, ChevronLeft, Layers, Check, Tag, Info, Eye, X } from "lucide-react";
+import { BedDouble, Users, ChevronRight, ChevronLeft, Layers, Check, Tag, Info, Eye, X, Tv, Wifi, Droplets, Car, Bath, UserCheck, BatteryCharging, Sunset, Footprints, ShieldAlert } from "lucide-react";
 import { Room } from "../types";
 import BlurText from "./BlurText";
 
@@ -30,6 +30,19 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
       else next.add(roomId);
       return next;
     });
+  };
+
+  const HIGHLIGHT_ICONS: Record<string, React.ElementType> = {
+    "Flat LCD Screen": Tv,
+    "Wi-Fi Access": Wifi,
+    "24/7 Hot Water Access": Droplets,
+    "Rooms Are Close to the Parking Area (No Steps/Stairs Involved)": Car,
+    "Private Attached Bathroom": Bath,
+    "Room Attendant": UserCheck,
+    "UPS Battery Backup in Case of Power Cut": BatteryCharging,
+    "Shared Veranda Space": Sunset,
+    "Private Stairs Access to These Rooms": Footprints,
+    "Steps/Stairs Involved": ShieldAlert,
   };
 
   const getImages = (room: Room) =>
@@ -205,6 +218,29 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
                     </button>
                   )}
                 </div>
+
+                {/* Points to be Highlighted */}
+                {room.highlights && room.highlights.length > 0 && (
+                  <div className="mb-5 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-1.5">
+                      <Check className="w-3 h-3" />
+                      Points to be Highlighted
+                    </p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {room.highlights.map((point) => {
+                        const Icon = HIGHLIGHT_ICONS[point] ?? Check;
+                        return (
+                          <div key={point} className="flex items-center gap-2.5">
+                            <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center shrink-0">
+                              <Icon className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <span className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">{point}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   onClick={() => onSelectRoom(room)}
