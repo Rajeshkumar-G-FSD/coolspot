@@ -36,6 +36,12 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Room Blocks Collection: admin sets date blocks; customers read to check availability
+    match /roomBlocks/{blockId} {
+      allow read, get, list: if true;
+      allow write: if true;
+    }
+
     // Connectivity test collection
     match /system_test/{docId} {
       allow read, write: if true;

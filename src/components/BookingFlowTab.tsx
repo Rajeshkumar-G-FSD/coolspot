@@ -206,15 +206,28 @@ export default function BookingFlowTab({
     }
     setAvailabilityLoading(true);
     try {
-      const snap = await getDocs(collection(db, "bookings"));
+      const [bookingSnap, blockSnap] = await Promise.all([
+        getDocs(collection(db, "bookings")),
+        getDocs(collection(db, "roomBlocks")),
+      ]);
       const taken: string[] = [];
-      snap.forEach((d) => {
+
+      // Confirmed/pending bookings that overlap the requested dates
+      bookingSnap.forEach((d) => {
         const b = d.data();
-        // Overlap: existing.checkIn < requested.checkOut AND existing.checkOut > requested.checkIn
         if (b.status !== "Cancelled" && b.checkIn < coDate && b.checkOut > ciDate && Array.isArray(b.assignedRooms)) {
           taken.push(...b.assignedRooms);
         }
       });
+
+      // Admin-blocked dates: startDate < checkOut AND endDate >= checkIn (endDate is inclusive)
+      blockSnap.forEach((d) => {
+        const b = d.data();
+        if (b.startDate < coDate && b.endDate >= ciDate && Array.isArray(b.roomNumbers)) {
+          taken.push(...b.roomNumbers);
+        }
+      });
+
       setBookedRoomNumbers([...new Set(taken)]);
       setAvailabilityFetched(true);
     } catch (err) {

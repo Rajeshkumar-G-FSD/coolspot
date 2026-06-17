@@ -13,7 +13,7 @@ import {
 import coolspotLogo from "../public/images/coolspot_roundlogo-removebg-preview.png";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import {
-  collection, getDocs, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot
+  collection, getDocs, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot, addDoc
 } from "firebase/firestore";
 import { VILLAS_DATA } from "../data";
 import { motion, AnimatePresence } from "motion/react";
@@ -201,6 +201,7 @@ function ModuleOverview({ bookings, onNavigate, onCreateBooking }: {
   const totalRevenue = bookings.filter(b => b.status !== "Cancelled").reduce((s, b) => s + (b.totalCost || 0), 0);
   const confirmed = bookings.filter(b => b.status === "Confirmed").length;
   const pending = bookings.filter(b => b.status === "Pending").length;
+  const pendingAmount = bookings.filter(b => b.status === "Pending").reduce((s, b) => s + (b.totalCost || 0), 0);
   const completed = bookings.filter(b => b.status === "Completed").length;
   const cancelled = bookings.filter(b => b.status === "Cancelled").length;
   const todayArrivals = bookings.filter(b => b.checkIn === today && b.status !== "Cancelled").length;
@@ -277,11 +278,12 @@ function ModuleOverview({ bookings, onNavigate, onCreateBooking }: {
   return (
     <div className="space-y-6">
       {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard label="Total Revenue" value={`₹${(totalRevenue/1000).toFixed(1)}K`} icon={DollarSign} color={C.gold} trend={yoyPct} chart={revSparkline.length > 1 ? revSparkline : undefined} />
         <StatCard label="Total Bookings" value={bookings.length} icon={CalendarCheck} color="#4ade80" trend={bookingTrend} chart={bookSparkline.length > 1 ? bookSparkline : undefined} />
         <StatCard label="Today's Arrivals" value={todayArrivals} icon={Users} color="#60a5fa" />
         <StatCard label="Pending Approvals" value={pending} icon={Clock} color="#f59e0b" />
+        <StatCard label="Pending Amount" value={pendingAmount > 0 ? `₹${(pendingAmount/1000).toFixed(1)}K` : "₹0"} icon={CreditCard} color="#f87171" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
@@ -439,6 +441,16 @@ function ModuleRooms() {
   const [editExtraBedRate, setEditExtraBedRate] = useState("");
   const [savingExtraBed, setSavingExtraBed] = useState(false);
 
+  // Date blocking state
+  const [blocks, setBlocks] = useState<any[]>([]);
+  const [blocksLoading, setBlocksLoading] = useState(false);
+  const [showAddBlock, setShowAddBlock] = useState(false);
+  const [blockRoomId, setBlockRoomId] = useState("");
+  const [blockStartDate, setBlockStartDate] = useState("");
+  const [blockEndDate, setBlockEndDate] = useState("");
+  const [blockReason, setBlockReason] = useState("");
+  const [savingBlock, setSavingBlock] = useState(false);
+
   const loadRooms = async () => {
     setLoading(true);
     try {
@@ -490,6 +502,63 @@ function ModuleRooms() {
   };
 
   useEffect(() => { loadRooms(); }, []);
+
+  const loadBlocks = async () => {
+    setBlocksLoading(true);
+    try {
+      const snap = await getDocs(collection(db, "roomBlocks"));
+      const list: any[] = [];
+      snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+      setBlocks(list);
+    } catch (err) {
+      console.error("Failed to load room blocks:", err);
+    } finally {
+      setBlocksLoading(false);
+    }
+  };
+
+  const saveBlock = async () => {
+    if (!blockRoomId || !blockStartDate || !blockEndDate) {
+      alert("Select a room and set both dates."); return;
+    }
+    if (blockStartDate > blockEndDate) {
+      alert("Start date must be on or before end date."); return;
+    }
+    setSavingBlock(true);
+    try {
+      const room = rooms.find(r => r.id === blockRoomId);
+      const payload = {
+        roomId: blockRoomId,
+        roomName: room?.name || blockRoomId,
+        roomNumbers: room?.roomNumbers || [],
+        startDate: blockStartDate,
+        endDate: blockEndDate,
+        reason: blockReason.trim() || "Admin block",
+        createdAt: new Date().toISOString(),
+      };
+      const ref = await addDoc(collection(db, "roomBlocks"), payload);
+      setBlocks(prev => [{ docId: ref.id, ...payload }, ...prev]);
+      setShowAddBlock(false);
+      setBlockRoomId(""); setBlockStartDate(""); setBlockEndDate(""); setBlockReason("");
+    } catch (err) {
+      alert("Failed to save block. Please try again.");
+      console.error(err);
+    } finally {
+      setSavingBlock(false);
+    }
+  };
+
+  const removeBlock = async (docId: string) => {
+    try {
+      await deleteDoc(doc(db, "roomBlocks", docId));
+      setBlocks(prev => prev.filter(b => b.docId !== docId));
+    } catch (err) {
+      alert("Failed to remove block."); console.error(err);
+    }
+  };
+
+  useEffect(() => { loadBlocks(); }, []);
 
   const startEdit = (room: any) => {
     setEditingId(room.id);
@@ -656,6 +725,153 @@ function ModuleRooms() {
           ))}
         </div>
       )}
+
+      {/* ── Date Blocking ─────────────────────────────────── */}
+      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
+
+        {/* Header */}
+        <div className="px-5 py-4 flex items-center justify-between" style={{ background: C.card }}>
+          <div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" style={{ color: "#f87171" }} />
+              <span className="text-sm font-bold" style={{ color: C.text }}>Date Blocking</span>
+            </div>
+            <div className="text-[10px] mt-0.5 uppercase tracking-widest" style={{ color: C.muted }}>
+              Block rooms on specific dates · Customers see Sold Out
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={loadBlocks}
+              className="p-2 rounded-lg border hover:bg-white/10 transition-colors"
+              style={{ borderColor: C.border }}>
+              <RefreshCcw className="w-3.5 h-3.5" style={{ color: C.muted }} />
+            </button>
+            <button
+              onClick={() => setShowAddBlock(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border hover:bg-white/10 transition-colors"
+              style={{ borderColor: showAddBlock ? "#f87171" : C.border, color: showAddBlock ? "#f87171" : C.gold }}
+            >
+              {showAddBlock ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              {showAddBlock ? "Cancel" : "Block Dates"}
+            </button>
+          </div>
+        </div>
+
+        {/* Add Block Form */}
+        {showAddBlock && (
+          <div className="px-5 py-4 border-t space-y-3" style={{ borderColor: C.border, background: "rgba(248,113,113,0.04)" }}>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Room</label>
+                <select
+                  value={blockRoomId}
+                  onChange={e => setBlockRoomId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
+                  style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text }}
+                >
+                  <option value="">Select room…</option>
+                  {rooms.map(r => (
+                    <option key={r.id} value={r.id} style={{ background: "#1a1a1a" }}>
+                      {r.name}{r.roomNumbers?.length ? ` (${r.roomNumbers.join(", ")})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Reason (optional)</label>
+                <input
+                  type="text"
+                  value={blockReason}
+                  onChange={e => setBlockReason(e.target.value)}
+                  placeholder="e.g. Maintenance, Owner stay…"
+                  className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
+                  style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text }}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Block From</label>
+                <input
+                  type="date"
+                  value={blockStartDate}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={e => setBlockStartDate(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
+                  style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text, colorScheme: "dark" }}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Block Until (inclusive)</label>
+                <input
+                  type="date"
+                  value={blockEndDate}
+                  min={blockStartDate || new Date().toISOString().split("T")[0]}
+                  onChange={e => setBlockEndDate(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
+                  style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text, colorScheme: "dark" }}
+                />
+              </div>
+            </div>
+            <button
+              onClick={saveBlock}
+              disabled={savingBlock}
+              className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-opacity"
+              style={{ background: "#f87171", color: "#fff", opacity: savingBlock ? 0.6 : 1 }}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              {savingBlock ? "Saving…" : "Confirm Block"}
+            </button>
+          </div>
+        )}
+
+        {/* Active Blocks List */}
+        <div className="px-5 py-4 border-t" style={{ borderColor: C.border, background: C.card }}>
+          {blocksLoading ? (
+            <div className="flex items-center gap-2 py-2">
+              <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: C.border, borderTopColor: "#f87171" }} />
+              <span className="text-xs" style={{ color: C.muted }}>Loading blocks…</span>
+            </div>
+          ) : blocks.length === 0 ? (
+            <p className="text-center text-xs py-3" style={{ color: C.muted }}>
+              No active blocks — all rooms are currently available.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: C.muted }}>
+                Active Blocks ({blocks.length})
+              </div>
+              {blocks.map(block => (
+                <div key={block.docId}
+                  className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border"
+                  style={{ borderColor: "rgba(248,113,113,0.25)", background: "rgba(248,113,113,0.06)" }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold" style={{ color: "#f87171" }}>{block.roomName}</span>
+                      {block.roomNumbers?.length > 0 && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold"
+                          style={{ background: "rgba(248,113,113,0.15)", color: "#f87171" }}>
+                          Room {block.roomNumbers.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] mt-0.5" style={{ color: C.muted }}>
+                      {block.startDate} → {block.endDate}
+                      {block.reason && block.reason !== "Admin block" ? ` · ${block.reason}` : ""}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removeBlock(block.docId)}
+                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border hover:bg-white/10 transition-colors"
+                    style={{ borderColor: "rgba(248,113,113,0.3)", color: "#f87171" }}
+                  >
+                    <X className="w-3 h-3" /> Unblock
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Extra Bed Rate */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
