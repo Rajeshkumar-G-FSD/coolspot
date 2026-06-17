@@ -14,13 +14,13 @@ import {
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAWKuuayRYLIZgV1gu_i509nKq5LUCuSy4",
-  authDomain: "coolcottage-77b83.firebaseapp.com",
-  projectId: "coolcottage-77b83",
-  storageBucket: "coolcottage-77b83.firebasestorage.app",
-  messagingSenderId: "1089094249108",
-  appId: "1:1089094249108:web:dd89a59b16207bae662281",
-  measurementId: "G-4NSEGDHSKM"
+  apiKey: "AIzaSyDE_VK6Qpnjfp_0el4Gbxa92toPX84SsoI",
+  authDomain: "coolspotcottage-b74d7.firebaseapp.com",
+  projectId: "coolspotcottage-b74d7",
+  storageBucket: "coolspotcottage-b74d7.firebasestorage.app",
+  messagingSenderId: "829721479046",
+  appId: "1:829721479046:web:2e922f8426aec22f8f8e07",
+  measurementId: "G-BRCJWT7BNS"
 };
 
 // Initialize Firebase
@@ -80,30 +80,18 @@ async function testConnection() {
 }
 testConnection();
 
-// Auto-seed admin credentials "coolcootage" & "coolcottage" with password "12345"
+// Auto-seed admin credentials
 export async function seedAdminCredentials() {
-  const pathForWrite = 'admins';
   try {
-    const adminRef1 = doc(db, pathForWrite, 'coolcootage');
-    const doc1 = await getDoc(adminRef1);
-    if (!doc1.exists()) {
-      await setDoc(adminRef1, {
-        username: "coolcootage",
-        password: "12345",
+    const adminRef = doc(db, 'admins', 'coolspot');
+    const existing = await getDoc(adminRef);
+    if (!existing.exists()) {
+      await setDoc(adminRef, {
+        username: "coolspot",
+        password: "coolspot@13",
         createdAt: new Date().toISOString()
       });
-      console.log("Admin account (coolcootage) seeded successfully in Firestore.");
-    }
-
-    const adminRef2 = doc(db, pathForWrite, 'coolcottage');
-    const doc2 = await getDoc(adminRef2);
-    if (!doc2.exists()) {
-      await setDoc(adminRef2, {
-        username: "coolcottage",
-        password: "12345",
-        createdAt: new Date().toISOString()
-      });
-      console.log("Admin account (coolcottage) seeded successfully in Firestore.");
+      console.log("Admin account (coolspot) seeded successfully in Firestore.");
     }
   } catch (error) {
     console.error("Seeding error (this is safe if rules prevent unauthenticated seed writes):", error);

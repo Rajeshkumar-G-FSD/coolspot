@@ -2068,13 +2068,13 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
       const snap = await getDoc(doc(db, "admins", normalized));
       if (snap.exists() && snap.data().password === pass) {
         onLogin();
-      } else if ((normalized === "coolcootage" || normalized === "coolcottage") && pass === "12345") {
+      } else if (normalized === "coolspot" && pass === "coolspot@13") {
         onLogin();
       } else {
         setError("Invalid credentials. Please try again.");
       }
     } catch {
-      if ((normalized === "coolcootage" || normalized === "coolcottage") && pass === "12345") {
+      if (normalized === "coolspot" && pass === "coolspot@13") {
         onLogin();
       } else {
         setError("Authentication error. Please check your connection.");
