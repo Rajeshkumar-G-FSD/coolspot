@@ -5,6 +5,7 @@
 
 import React, { useState } from "react";
 import BlurText from "./BlurText";
+import GoogleReviewCarousel from "./GoogleReviewCarousel";
 import { motion, AnimatePresence } from "motion/react";
 import CoolSpotMap from "./CoolSpotMap";
 import {
@@ -283,6 +284,11 @@ export default function CottageInfoTab() {
             direction="bottom"
             stepDuration={0.28}
           />
+        </div>
+
+        {/* Google Reviews 3D Carousel */}
+        <div className="mb-10">
+          <GoogleReviewCarousel />
         </div>
 
         {/* Tab Controls */}

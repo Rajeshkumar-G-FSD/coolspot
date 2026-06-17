@@ -11,6 +11,7 @@ import CountUp from "./CountUp";
 import BlurText from "./BlurText";
 import SplitText from "./SplitText";
 import ThreeDHoverGallery from "./ThreeDHoverGallery";
+import GoogleReviewCarousel from "./GoogleReviewCarousel";
 import { Room } from "../types";
 // @ts-expect-error - Vite resolves image assets dynamically at build time
 import coolCottagesFrontview from "../public/images/coolcottages_frontview.png";
@@ -764,78 +765,8 @@ export default function DestinationsTab({
             <p className="text-slate-500 text-sm">Rated 4.9 / 5 by our guests</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            {[
-              {
-                name: "Priya R.",
-                location: "Chennai",
-                rating: 5,
-                date: "May 2026",
-                review: "Absolutely loved our stay! The mountain view room was cozy and peaceful. The owner was very warm and helpful. Highly recommend for families visiting Ooty."
-              },
-              {
-                name: "Arun K.",
-                location: "Bangalore",
-                rating: 5,
-                date: "April 2026",
-                review: "Great value for money. Rooms were clean and comfortable. Hot water available 24/7 which was a huge plus in the cool Ooty weather. Very close to Rose Garden too!"
-              },
-              {
-                name: "Meena S.",
-                location: "Coimbatore",
-                rating: 5,
-                date: "March 2026",
-                review: "We stayed in the deluxe family room. Spacious, well-maintained, and the staff were very attentive. The location is perfect — near all the major attractions. Will definitely come back!"
-              },
-              {
-                name: "Rajesh M.",
-                location: "Hyderabad",
-                rating: 5,
-                date: "February 2026",
-                review: "Peaceful environment, friendly staff, and excellent facilities. The security was great and we felt very safe throughout our stay. Ooty in these cool mountains is magical."
-              },
-              {
-                name: "Divya T.",
-                location: "Mumbai",
-                rating: 4,
-                date: "January 2026",
-                review: "Very comfortable stay. Budget rooms are clean and well-equipped. Parking was free and convenient. Would suggest to all budget-conscious travelers visiting Ooty."
-              },
-              {
-                name: "Karthik N.",
-                location: "Madurai",
-                rating: 5,
-                date: "December 2025",
-                review: "The cottage has a homely feel. Owner was responsive on WhatsApp for booking. The check-in was smooth, and the room was exactly as shown in photos. 10/10!"
-              }
-            ].map((review, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="bg-[#f8f9ff] dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-100 dark:border-white/5 shadow-sm"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-[#001a52] text-white flex items-center justify-center font-bold text-sm shrink-0">
-                      {review.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{review.name}</div>
-                      <div className="text-[10px] text-slate-400">{review.location} · {review.date}</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-0.5 shrink-0">
-                    {Array.from({ length: review.rating }).map((_, j) => (
-                      <span key={j} className="text-amber-400 text-xs">★</span>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{review.review}</p>
-              </motion.div>
-            ))}
+          <div className="mb-10">
+            <GoogleReviewCarousel />
           </div>
 
           {/* Google Review CTA */}
