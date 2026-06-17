@@ -445,11 +445,14 @@ function ModuleRooms() {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [blocksLoading, setBlocksLoading] = useState(false);
   const [showAddBlock, setShowAddBlock] = useState(false);
-  const [blockRoomId, setBlockRoomId] = useState("");
+  const [blockRoomIds, setBlockRoomIds] = useState<string[]>([]);
   const [blockStartDate, setBlockStartDate] = useState("");
   const [blockEndDate, setBlockEndDate] = useState("");
   const [blockReason, setBlockReason] = useState("");
   const [savingBlock, setSavingBlock] = useState(false);
+
+  const toggleBlockRoom = (id: string) =>
+    setBlockRoomIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const loadRooms = async () => {
     setLoading(true);
@@ -519,28 +522,32 @@ function ModuleRooms() {
   };
 
   const saveBlock = async () => {
-    if (!blockRoomId || !blockStartDate || !blockEndDate) {
-      alert("Select a room and set both dates."); return;
+    if (blockRoomIds.length === 0 || !blockStartDate || !blockEndDate) {
+      alert("Select at least one room and set both dates."); return;
     }
     if (blockStartDate > blockEndDate) {
       alert("Start date must be on or before end date."); return;
     }
     setSavingBlock(true);
     try {
-      const room = rooms.find(r => r.id === blockRoomId);
-      const payload = {
-        roomId: blockRoomId,
-        roomName: room?.name || blockRoomId,
-        roomNumbers: room?.roomNumbers || [],
-        startDate: blockStartDate,
-        endDate: blockEndDate,
-        reason: blockReason.trim() || "Admin block",
-        createdAt: new Date().toISOString(),
-      };
-      const ref = await addDoc(collection(db, "roomBlocks"), payload);
-      setBlocks(prev => [{ docId: ref.id, ...payload }, ...prev]);
+      const newBlocks: any[] = [];
+      for (const roomId of blockRoomIds) {
+        const room = rooms.find(r => r.id === roomId);
+        const payload = {
+          roomId,
+          roomName: room?.name || roomId,
+          roomNumbers: room?.roomNumbers || [],
+          startDate: blockStartDate,
+          endDate: blockEndDate,
+          reason: blockReason.trim() || "Admin block",
+          createdAt: new Date().toISOString(),
+        };
+        const ref = await addDoc(collection(db, "roomBlocks"), payload);
+        newBlocks.push({ docId: ref.id, ...payload });
+      }
+      setBlocks(prev => [...newBlocks, ...prev]);
       setShowAddBlock(false);
-      setBlockRoomId(""); setBlockStartDate(""); setBlockEndDate(""); setBlockReason("");
+      setBlockRoomIds([]); setBlockStartDate(""); setBlockEndDate(""); setBlockReason("");
     } catch (err) {
       alert("Failed to save block. Please try again.");
       console.error(err);
@@ -614,9 +621,9 @@ function ModuleRooms() {
           <h2 className="text-xl font-bold" style={{ color: C.text }}>Room Rate Management</h2>
           <p className="text-xs mt-0.5" style={{ color: C.muted }}>Set per-night rates · Changes apply immediately to new bookings</p>
         </div>
-        <button onClick={loadRooms} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border"
+        <button onClick={loadRooms} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border active:scale-95 transition-all"
           style={{ borderColor: C.border, color: C.muted }}>
-          <RefreshCcw className="w-3.5 h-3.5" /> Refresh
+          <RefreshCcw className={`w-3.5 h-3.5 transition-transform ${loading ? "animate-spin" : ""}`} /> Refresh
         </button>
       </div>
 
@@ -742,9 +749,9 @@ function ModuleRooms() {
           </div>
           <div className="flex items-center gap-2">
             <button onClick={loadBlocks}
-              className="p-2 rounded-lg border hover:bg-white/10 transition-colors"
+              className="p-2 rounded-lg border hover:bg-white/10 transition-all active:scale-95"
               style={{ borderColor: C.border }}>
-              <RefreshCcw className="w-3.5 h-3.5" style={{ color: C.muted }} />
+              <RefreshCcw className={`w-3.5 h-3.5 transition-transform ${blocksLoading ? "animate-spin" : ""}`} style={{ color: C.muted }} />
             </button>
             <button
               onClick={() => setShowAddBlock(v => !v)}
@@ -759,24 +766,67 @@ function ModuleRooms() {
 
         {/* Add Block Form */}
         {showAddBlock && (
-          <div className="px-5 py-4 border-t space-y-3" style={{ borderColor: C.border, background: "rgba(248,113,113,0.04)" }}>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Room</label>
-                <select
-                  value={blockRoomId}
-                  onChange={e => setBlockRoomId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
-                  style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text }}
-                >
-                  <option value="">Select room…</option>
-                  {rooms.map(r => (
-                    <option key={r.id} value={r.id} style={{ background: "#1a1a1a" }}>
-                      {r.name}{r.roomNumbers?.length ? ` (${r.roomNumbers.join(", ")})` : ""}
-                    </option>
-                  ))}
-                </select>
+          <div className="px-5 py-4 border-t space-y-4" style={{ borderColor: C.border, background: "rgba(248,113,113,0.04)" }}>
+            {/* Multi-room checkbox selector */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.muted }}>
+                  Rooms to Block
+                  {blockRoomIds.length > 0 && (
+                    <span className="ml-2 px-1.5 py-0.5 rounded-full text-[9px]"
+                      style={{ background: "rgba(248,113,113,0.2)", color: "#f87171" }}>
+                      {blockRoomIds.length} selected
+                    </span>
+                  )}
+                </label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setBlockRoomIds(rooms.map(r => r.id))}
+                    className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-colors hover:bg-white/10"
+                    style={{ color: C.gold }}>
+                    All
+                  </button>
+                  <button type="button" onClick={() => setBlockRoomIds([])}
+                    className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-colors hover:bg-white/10"
+                    style={{ color: C.muted }}>
+                    Clear
+                  </button>
+                </div>
               </div>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {rooms.map(r => {
+                  const checked = blockRoomIds.includes(r.id);
+                  return (
+                    <label
+                      key={r.id}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-all select-none"
+                      style={{
+                        borderColor: checked ? "rgba(248,113,113,0.5)" : C.border,
+                        background: checked ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.03)",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleBlockRoom(r.id)}
+                        className="accent-[#f87171] shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold truncate" style={{ color: checked ? "#f87171" : C.text }}>
+                          {r.name}
+                        </div>
+                        {r.roomNumbers?.length > 0 && (
+                          <div className="text-[9px] font-mono" style={{ color: C.muted }}>
+                            Room {r.roomNumbers.join(", ")}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Reason (optional)</label>
                 <input
@@ -788,6 +838,7 @@ function ModuleRooms() {
                   style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text }}
                 />
               </div>
+              <div />
               <div>
                 <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Block From</label>
                 <input
@@ -936,6 +987,12 @@ function ModuleRooms() {
 function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange, onWhatsApp }: any) {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [refreshSpin, setRefreshSpin] = useState(false);
+  const handleRefresh = () => {
+    setRefreshSpin(true);
+    onRefresh();
+    setTimeout(() => setRefreshSpin(false), 900);
+  };
 
   const filtered = bookings.filter((b: any) => {
     const matchFilter = filter === "All" || b.status === filter;
@@ -951,8 +1008,8 @@ function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange,
           <p className="text-xs mt-0.5" style={{ color: C.muted }}>{bookings.length} total reservations in Firestore</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onRefresh} className="p-2.5 rounded-xl hover:bg-white/10 border transition-colors" style={{ borderColor: C.border }}>
-            <RefreshCcw className="w-4 h-4" style={{ color: C.muted }} />
+          <button onClick={handleRefresh} className="p-2.5 rounded-xl hover:bg-white/10 border transition-all active:scale-95" style={{ borderColor: C.border }}>
+            <RefreshCcw className={`w-4 h-4 transition-transform ${refreshSpin ? "animate-spin" : ""}`} style={{ color: C.muted }} />
           </button>
           <button onClick={() => onEdit(null)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider"
             style={{ background: C.gold, color: "#0a0a0a" }}>
@@ -1813,6 +1870,21 @@ function ModuleSettings({ onLogout }: { onLogout: () => void }) {
 function ModulePaymentVerify({ bookings, onRefresh }: { bookings: any[]; onRefresh: () => void }) {
   const pending = bookings.filter(b => b.paymentProofSubmitted && b.status !== "Confirmed" && b.status !== "Cancelled");
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [screenshots, setScreenshots] = useState<Record<string, string | null>>({});
+  const [loadingScreenshot, setLoadingScreenshot] = useState<string | null>(null);
+
+  const fetchScreenshot = async (id: string) => {
+    if (id in screenshots) {
+      setScreenshots(s => { const n = { ...s }; delete n[id]; return n; });
+      return;
+    }
+    setLoadingScreenshot(id);
+    try {
+      const snap = await getDoc(doc(db, "paymentScreenshots", id));
+      setScreenshots(s => ({ ...s, [id]: snap.exists() ? snap.data().screenshot : null }));
+    } catch (e) { console.error(e); setScreenshots(s => ({ ...s, [id]: null })); }
+    finally { setLoadingScreenshot(null); }
+  };
 
   const approve = async (id: string) => {
     setVerifying(id);
@@ -1905,6 +1977,33 @@ function ModulePaymentVerify({ bookings, onRefresh }: { bookings: any[]; onRefre
               <div className="text-[10px] rounded-lg px-3 py-2" style={{ background: `${C.gold}12`, color: C.gold }}>
                 ⚠ Verify this reference number against your UPI / bank statement before approving.
               </div>
+
+              {/* Payment screenshot viewer */}
+              {b.paymentProofHasScreenshot && (
+                <div>
+                  <button
+                    onClick={() => fetchScreenshot(b.id)}
+                    disabled={loadingScreenshot === b.id}
+                    className="btn-apple text-xs px-4 py-2 border border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    {loadingScreenshot === b.id
+                      ? "Loading…"
+                      : screenshots[b.id] !== undefined
+                        ? screenshots[b.id] === null ? "No screenshot found" : "Hide Screenshot"
+                        : "View Payment Screenshot"}
+                  </button>
+                  {screenshots[b.id] && (
+                    <div className="mt-3 rounded-xl overflow-hidden border border-slate-200">
+                      <img
+                        src={screenshots[b.id]!}
+                        alt="Payment screenshot"
+                        className="w-full max-h-80 object-contain bg-slate-50"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3 flex-wrap">
                 <button onClick={() => approve(b.id)} disabled={verifying === b.id}
@@ -2468,7 +2567,6 @@ export default function AdminDashboardTab() {
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editBooking, setEditBooking] = useState<any>(null);
-  const [notifications, setNotifications] = useState(3);
 
   const fetchBookings = async () => {
     setLoadingBookings(true);
@@ -2542,6 +2640,10 @@ export default function AdminDashboardTab() {
   }
 
   const moduleTitle = NAV_ITEMS.find(n => n.id === activeModule)?.label || "Dashboard";
+  const pendingPaymentsCount = bookings.filter(
+    b => (b.paymentProofSubmitted && b.status !== "Confirmed" && b.status !== "Cancelled") ||
+         b.status === "Enquiry"
+  ).length;
 
   return (
     <div className="flex" style={{ minHeight: "calc(100vh - 70px)", background: C.bg }}>
@@ -2572,16 +2674,21 @@ export default function AdminDashboardTab() {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
-            <button onClick={fetchBookings} className="p-2 md:p-2.5 rounded-xl hover:bg-white/10 transition-colors border" style={{ borderColor: C.border }}>
-              <RefreshCcw className="w-4 h-4" style={{ color: C.muted }} />
+            <button onClick={fetchBookings} className="p-2 md:p-2.5 rounded-xl hover:bg-white/10 transition-all active:scale-95 border" style={{ borderColor: C.border }}>
+              <RefreshCcw className={`w-4 h-4 transition-transform ${loadingBookings ? "animate-spin" : ""}`} style={{ color: C.muted }} />
             </button>
             <div className="relative">
-              <button className="p-2 md:p-2.5 rounded-xl hover:bg-white/10 transition-colors border" style={{ borderColor: C.border }}>
-                <Bell className="w-4 h-4" style={{ color: C.muted }} />
+              <button
+                onClick={() => setActiveModule("payments")}
+                className="p-2 md:p-2.5 rounded-xl hover:bg-white/10 transition-colors border active:scale-95"
+                style={{ borderColor: C.border }}
+                title={pendingPaymentsCount > 0 ? `${pendingPaymentsCount} payment${pendingPaymentsCount > 1 ? "s" : ""} awaiting verification` : "Notifications"}
+              >
+                <Bell className="w-4 h-4" style={{ color: pendingPaymentsCount > 0 ? "#f59e0b" : C.muted }} />
               </button>
-              {notifications > 0 && (
+              {pendingPaymentsCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center"
-                  style={{ background: "#f87171", color:"white" }}>{notifications}</span>
+                  style={{ background: "#f87171", color: "white" }}>{pendingPaymentsCount}</span>
               )}
             </div>
             <div className="flex items-center gap-2 px-2 md:px-3 py-2 rounded-xl border" style={{ borderColor: C.border }}>

@@ -130,8 +130,8 @@ export const VILLAS_DATA: Room[] = [
   },
   {
     id: "extra-cot-room-105",
-    name: "Extra Cot Bed Room (105)",
-    description: "Comfortable room equipped with an extra fold-out cot bed. A budget-friendly option perfect for small groups or families with a child.",
+    name: "Extra Cot Bed Room (105) — Basement",
+    description: "Comfortable basement-floor room equipped with an extra fold-out cot bed, offering a naturally cool temperature year-round. A budget-friendly option perfect for small groups or families with a child.",
     ratePerNight: 3000,
     maxGuests: 3,
     sizeSquareMeter: 140,
@@ -140,6 +140,7 @@ export const VILLAS_DATA: Room[] = [
       "Double Bed + Extra Cot Bed",
       "Private Bathroom",
       "Wardrobe & Storage",
+      "Natural Cool Temperature",
     ],
     highlights: [
       "Flat LCD Screen",

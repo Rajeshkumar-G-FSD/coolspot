@@ -20,7 +20,9 @@ import {
   CreditCard,
   Search,
   Eye,
-  X
+  X,
+  Send,
+  ImagePlus
 } from "lucide-react";
 import { Room, Experience, Booking } from "../types";
 import { VILLAS_DATA, EXPERIENCES_DATA } from "../data";
@@ -39,6 +41,7 @@ const BOOKING_DISPLAY_ROOMS: Room[] = (() => {
   return [merged, ...rest];
 })();
 import { motion } from "motion/react";
+import DatePicker from "react-datepicker";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { doc, setDoc, getDocs, collection, updateDoc, getDoc } from "firebase/firestore";
 
@@ -107,6 +110,9 @@ export default function BookingFlowTab({
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityFetched, setAvailabilityFetched] = useState(false);
 
+  // Calendar — fully-booked dates shown in red
+  const [fullyBookedDates, setFullyBookedDates] = useState<Date[]>([]);
+
   // Live rates from Firebase rooms collection (set by admin panel)
   const [roomRates, setRoomRates] = useState<Record<string, number>>({});
   const [extraBedRate, setExtraBedRate] = useState<number>(1500);
@@ -116,7 +122,7 @@ export default function BookingFlowTab({
   const [generatedBooking, setGeneratedBooking] = useState<Booking | null>(null);
 
   // Payment proof upload state
-  const [paymentSubStep, setPaymentSubStep] = useState<"qr" | "proof" | "done">("qr");
+  const [paymentSubStep, setPaymentSubStep] = useState<"qr" | "proof" | "done" | "enquiry-done">("qr");
   const [proofRef, setProofRef] = useState("");
   const [proofAmount, setProofAmount] = useState("");
   const [proofDateTime, setProofDateTime] = useState(() => {
@@ -125,6 +131,9 @@ export default function BookingFlowTab({
     return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
   });
   const [proofSubmitting, setProofSubmitting] = useState(false);
+  const [proofScreenshot, setProofScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState("");
+  const [proofScreenshotUrl, setProofScreenshotUrl] = useState("");
 
   // Room image gallery lightbox
   const [bookingGallery, setBookingGallery] = useState<{ roomId: string; idx: number } | null>(null);
@@ -195,6 +204,65 @@ export default function BookingFlowTab({
       }
     };
     fetchRates();
+  }, []);
+
+  // Fetch all bookings + blocks upfront and mark fully-booked dates red in the calendar
+  useEffect(() => {
+    const fetchFullyBookedDates = async () => {
+      try {
+        const [bookingSnap, blockSnap] = await Promise.all([
+          getDocs(collection(db, "bookings")),
+          getDocs(collection(db, "roomBlocks")),
+        ]);
+
+        const TOTAL_ROOMS = 9;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const horizon = new Date(today);
+        horizon.setMonth(horizon.getMonth() + 7);
+
+        // Build per-date room occupancy map
+        const dateRoomMap = new Map<string, Set<string>>();
+
+        const markRange = (start: Date, end: Date, rooms: string[]) => {
+          const cur = new Date(start);
+          while (cur < end) {
+            const key = cur.toISOString().split("T")[0];
+            if (!dateRoomMap.has(key)) dateRoomMap.set(key, new Set());
+            rooms.forEach(r => dateRoomMap.get(key)!.add(r));
+            cur.setDate(cur.getDate() + 1);
+          }
+        };
+
+        bookingSnap.forEach(d => {
+          const b = d.data();
+          if (b.status !== "Cancelled" && b.checkIn && b.checkOut && Array.isArray(b.assignedRooms) && b.assignedRooms.length) {
+            markRange(new Date(b.checkIn + "T00:00:00"), new Date(b.checkOut + "T00:00:00"), b.assignedRooms);
+          }
+        });
+
+        blockSnap.forEach(d => {
+          const b = d.data();
+          if (b.startDate && b.endDate && Array.isArray(b.roomNumbers) && b.roomNumbers.length) {
+            const endExclusive = new Date(b.endDate + "T00:00:00");
+            endExclusive.setDate(endExclusive.getDate() + 1);
+            markRange(new Date(b.startDate + "T00:00:00"), endExclusive, b.roomNumbers);
+          }
+        });
+
+        const fullyBooked: Date[] = [];
+        dateRoomMap.forEach((rooms, key) => {
+          if (rooms.size >= TOTAL_ROOMS) {
+            const d = new Date(key + "T00:00:00");
+            if (d >= today && d <= horizon) fullyBooked.push(d);
+          }
+        });
+        setFullyBookedDates(fullyBooked);
+      } catch (err) {
+        console.error("Calendar blocked-dates fetch error:", err);
+      }
+    };
+    fetchFullyBookedDates();
   }, []);
 
   // RETRIEVE: query Firebase for booked room numbers on selected dates
@@ -541,7 +609,7 @@ ${sep}
 • All refunds attract a 10% administrative charge
 
 ${line}
-
+${proofScreenshotUrl ? `\n📸 *Payment screenshot received and stored for admin verification.*\n` : ""}
 Assuring you our best service at all times. Do feel free to contact us for any clarifications or requirements.
 
 Have a wonderful stay! 🌿
@@ -553,6 +621,142 @@ Have a wonderful stay! 🌿
     const encoded = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNo}&text=${encoded}`;
     window.open(whatsappUrl, "_blank");
+  };
+
+  const executeWhatsAppEnquiry = () => {
+    if (!generatedBooking) return;
+    const phoneNo = "070103 95526".replace(/\s+/g, '');
+    const cleanNo = phoneNo.startsWith("0") ? "91" + phoneNo.substring(1) : phoneNo;
+
+    const b = generatedBooking;
+    const fmtDate = (d: string) => {
+      if (!d) return "—";
+      const dt = new Date(d + "T00:00:00");
+      return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    };
+
+    const roomsLabel = b.assignedRooms?.length
+      ? b.assignedRooms.map((n: string) => `#${n}`).join(" + ")
+      : "TBD";
+
+    const inclusionLines: string[] = [];
+    if (b.campfireRequested) inclusionLines.push("• Campfire Evening");
+    if (b.petAllowed) inclusionLines.push("• Pet Friendly Arrangement");
+    if (b.parkingRequired) inclusionLines.push("• Parking Reserved");
+    if (b.cotRequested) inclusionLines.push("• Baby Cot (Complimentary)");
+    if (b.extraBedRequested) inclusionLines.push(`• Extra Bed × ${b.extraBedCount}`);
+    if ((b.selectedExps || b.selectedExperiences || []).length > 0) {
+      (b.selectedExps || b.selectedExperiences || []).forEach((exp: any) => {
+        inclusionLines.push(`• ${exp.name}`);
+      });
+    }
+
+    const roomRate = b.room?.ratePerNight ?? effectiveRate;
+    const roomsCount = b.roomsBooked ?? 1;
+    const nightsCount = b.nightsNum ?? nights;
+    const roomCostTotal = (b.assignedRooms?.length > 1 && !b.room?.isBundle)
+      ? b.assignedRooms.reduce((s: number, num: string) => {
+          const cat = VILLAS_DATA.find((v: any) => (v.roomNumbers || []).includes(num));
+          const r = cat ? (roomRates[cat.id] ?? cat.ratePerNight) : roomRate;
+          return s + r * nightsCount;
+        }, 0)
+      : roomRate * nightsCount * roomsCount;
+
+    const expsCostTotal = (b.selectedExps || b.selectedExperiences || []).reduce((s: number, e: any) => s + e.cost, 0);
+    const extraBedCostTotal = b.extraBedTotal ?? 0;
+
+    const sep = "°°°°°°°°°°°°°°°°°°°°°°°°°°°°";
+    const line = "─────────────────────────────";
+
+    const message =
+`🏡 *COOLSPOT COTTAGE — BOOKING ENQUIRY*
+
+Dear ${b.firstName || b.billingName},
+
+Thank you for your interest in Coolspot Cottage, Ooty! We have received your enquiry and our team will reach out to you shortly to confirm your reservation.
+
+${sep}
+📋 *BOOKING DETAILS*
+${sep}
+
+🎫 Booking ID      : ${b.id}
+👤 Guest Name      : ${b.billingName}
+📞 WhatsApp No.    : ${b.phonePrefix} ${b.phoneNumber}${b.secondaryPhone ? `\n📞 Alt. Number     : ${b.secondaryPhone}` : ""}
+📧 Email           : ${b.billingEmail || "Not provided"}
+🏙️ City / Region   : ${b.city ? `${b.city}, ` : ""}${b.countryRegion || "India"}
+
+${sep}
+🏨 *STAY DETAILS*
+${sep}
+
+🏠 Room Type       : ${b.room?.name}
+🔑 Room No.        : ${roomsLabel}
+🛏️ Rooms Booked    : ${roomsCount} Room${roomsCount > 1 ? "s" : ""}
+📅 Check-In        : ${fmtDate(b.checkIn)}
+📅 Check-Out       : ${fmtDate(b.checkOut)}
+🌙 No. of Nights   : ${nightsCount} Night${nightsCount > 1 ? "s" : ""}
+👥 No. of Guests   : ${b.guestsText}${b.guestChildAges?.length > 0 && b.guestChildAges.some((a: string) => a !== "") ? `\n👶 Children Ages   : ${b.guestChildAges.map((a: string, i: number) => a ? `Child ${i + 1}: ${a} yr${a !== "1" ? "s" : ""}` : "").filter(Boolean).join(", ")}` : ""}${b.arrivalTime ? `\n🕐 Arrival Time    : ${b.arrivalTime}` : ""}
+
+${sep}
+✨ *INCLUSIONS & ADD-ONS*
+${sep}
+
+${inclusionLines.length > 0 ? inclusionLines.join("\n") : "None"}
+
+${sep}
+💰 *PRICING SUMMARY*
+${sep}
+
+${b.assignedRooms?.length > 1
+  ? b.assignedRooms.map((num: string) => {
+      const cat = VILLAS_DATA.find((v: any) => (v.roomNumbers || []).includes(num));
+      const r = cat ? (roomRates[cat.id] ?? cat.ratePerNight) : roomRate;
+      return `Room ${num} @ ₹${r.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} = ₹${(r * nightsCount).toLocaleString()}`;
+    }).join("\n")
+  : `${b.room?.name} @ ₹${roomRate.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} × ${roomsCount} room${roomsCount > 1 ? "s" : ""} = ₹${roomCostTotal.toLocaleString()}`
+}${expsCostTotal > 0 ? `\nActivities & Experiences = ₹${expsCostTotal.toLocaleString()}` : ""}${extraBedCostTotal > 0 ? `\nExtra Bed(s) = ₹${extraBedCostTotal.toLocaleString()}` : ""}
+
+${line}
+💵 *Total Payable   : ₹${b.totalCost?.toLocaleString()} (Incl. taxes)*
+${line}
+
+${sep}
+📋 *SPECIAL REQUESTS*
+${sep}
+
+${b.specialRequests && b.specialRequests !== "None" ? b.specialRequests : "None"}
+🐾 Pet             : ${b.petAllowed ? "Yes — Pet-friendly setup arranged" : "No"}
+🔥 Campfire        : ${b.campfireRequested ? "Yes — Bonfire setup requested" : "No"}
+🚗 Parking         : ${b.parkingRequired ? "Yes — Parking spot reserved" : "No"}
+
+${sep}
+📜 *TERMS & CONDITIONS*
+${sep}
+
+• Check-In @ 12:00 PM & Check-Out @ 10:00 AM
+• Early Check-In or Late Check-Out subject to availability and chargeable
+• Children below 5 years are complimentary
+• Children from 5 to 12 years are chargeable at applicable rates
+• Above 12 years full charges are applicable
+• ID proof mandatory for all adults (Hard or Soft copy)
+• Outside food & drinks are not allowed
+• No smoking / drinking inside cottage rooms
+• No parties / events unless entire cottage is booked
+• Quiet hours strictly enforced between 11:00 PM and 6:00 AM
+• Pets allowed only with prior confirmation
+
+${line}
+
+Assuring you our best service at all times. Do feel free to contact us for any clarifications or requirements.
+
+We look forward to hosting you! 🌿
+
+*Warm Regards,*
+*Coolspot Cottage, Ooty* 🏔️
+📞 +91 70103 95526`;
+
+    const encoded = encodeURIComponent(message);
+    window.open(`https://api.whatsapp.com/send?phone=${cleanNo}&text=${encoded}`, "_blank");
   };
 
   const executeWhatsAppUnpaidNotice = () => {
@@ -601,31 +805,84 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
     window.open(`https://api.whatsapp.com/send?phone=${cleanNo}&text=${encoded}`, "_blank");
   };
 
+  const handleEnquiry = async () => {
+    if (!generatedBooking) return;
+    try {
+      await updateDoc(doc(db, "bookings", generatedBooking.id), {
+        status: "Enquiry",
+        enquiryOnly: true,
+      });
+    } catch (err) {
+      console.error("Enquiry status update error:", err);
+    }
+    executeWhatsAppEnquiry();
+    setPaymentSubStep("enquiry-done");
+  };
+
+  const compressImageToBase64 = (file: File, maxPx = 1200, quality = 0.65): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("canvas")); return; }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const data = canvas.toDataURL("image/jpeg", quality);
+        if (data.length > 700_000) {
+          const c2 = document.createElement("canvas");
+          c2.width = Math.round(canvas.width * 0.7);
+          c2.height = Math.round(canvas.height * 0.7);
+          const ctx2 = c2.getContext("2d");
+          if (!ctx2) { resolve(data); return; }
+          ctx2.drawImage(canvas, 0, 0, c2.width, c2.height);
+          resolve(c2.toDataURL("image/jpeg", 0.5));
+        } else {
+          resolve(data);
+        }
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+
   const handleProofSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!generatedBooking) return;
     setProofSubmitting(true);
     try {
-      const paidAmt = parseFloat(proofAmount) || 0;
+      const paidAmt = generatedBooking.paymentMode === "advance"
+        ? (generatedBooking.advanceAmount || 0)
+        : (generatedBooking.totalCost || 0);
+
+      let hasScreenshot = false;
+      if (proofScreenshot) {
+        try {
+          const base64 = await compressImageToBase64(proofScreenshot);
+          await setDoc(doc(db, "paymentScreenshots", generatedBooking.id), {
+            bookingId: generatedBooking.id,
+            screenshot: base64,
+            uploadedAt: new Date().toISOString(),
+          });
+          hasScreenshot = true;
+          setProofScreenshotUrl("stored");
+        } catch (storeErr) {
+          console.warn("Screenshot store failed:", storeErr);
+        }
+      }
+
       await updateDoc(doc(db, "bookings", generatedBooking.id), {
         paymentProofRef: proofRef.trim(),
         paymentProofAmount: paidAmt,
         paymentProofDateTime: proofDateTime,
         paymentProofSubmitted: true,
+        ...(hasScreenshot ? { paymentProofHasScreenshot: true } : {}),
       });
       setPaymentSubStep("done");
-
-      // Auto-open WhatsApp after submission:
-      // - Full/sufficient payment → send booking confirmation
-      // - Underpaid → send payment-incomplete notice
-      const requiredAmt = generatedBooking.paymentMode === "advance"
-        ? (generatedBooking.advanceAmount || 0)
-        : (generatedBooking.totalCost || 0);
-      if (paidAmt >= requiredAmt) {
-        executeWhatsAppLink();
-      } else {
-        executeWhatsAppUnpaidNotice();
-      }
+      executeWhatsAppLink();
     } catch (err) {
       console.error("Proof submit error:", err);
     } finally {
@@ -706,46 +963,57 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
 
                 {/* Dates first so availability can be checked */}
                 {(() => {
-                  const today = new Date().toISOString().split("T")[0];
-                  const minCheckOut = checkIn
-                    ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
-                    : "";
+                  const todayDate = new Date();
+                  todayDate.setHours(0, 0, 0, 0);
+                  const minCheckOutDate = checkIn
+                    ? new Date(new Date(checkIn + "T00:00:00").getTime() + 86400000)
+                    : null;
+                  const isFullyBooked = (d: Date) =>
+                    fullyBookedDates.some(bd => bd.toDateString() === d.toDateString());
                   return (
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
                         <label className="block text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-2">
                           Check-In Date
                         </label>
-                        <input
-                          type="date"
-                          required
-                          min={today}
-                          value={checkIn}
-                          onChange={(e) => {
-                            setCheckIn(e.target.value);
-                            // Reset checkout if it's no longer valid
-                            if (checkOut && checkOut <= e.target.value) setCheckOut("");
-                          }}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs md:text-sm"
-                        />
+                        <div className="booking-datepicker-wrapper">
+                          <DatePicker
+                            selected={checkIn ? new Date(checkIn + "T00:00:00") : null}
+                            onChange={(date: Date | null) => {
+                              const val = date ? date.toISOString().split("T")[0] : "";
+                              setCheckIn(val);
+                              if (checkOut && checkOut <= val) setCheckOut("");
+                            }}
+                            minDate={todayDate}
+                            filterDate={(d) => !isFullyBooked(d)}
+                            dayClassName={(d) => isFullyBooked(d) ? "react-datepicker__day--booked" : ""}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Select date"
+                            showPopperArrow={false}
+                            autoComplete="off"
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className={`block text-[11px] font-sans font-bold uppercase tracking-wider mb-2 ${checkIn ? "text-slate-500" : "text-slate-300"}`}>
                           Check-Out Date
                         </label>
-                        <input
-                          type="date"
-                          required
-                          disabled={!checkIn}
-                          min={minCheckOut}
-                          value={checkOut}
-                          onChange={(e) => setCheckOut(e.target.value)}
-                          className={`w-full border rounded-lg py-2 px-3 text-xs md:text-sm transition-all ${
-                            checkIn
-                              ? "bg-slate-50 border-slate-200"
-                              : "bg-slate-100 border-slate-100 cursor-not-allowed text-slate-400"
-                          }`}
-                        />
+                        <div className="booking-datepicker-wrapper">
+                          <DatePicker
+                            selected={checkOut ? new Date(checkOut + "T00:00:00") : null}
+                            onChange={(date: Date | null) => {
+                              setCheckOut(date ? date.toISOString().split("T")[0] : "");
+                            }}
+                            minDate={minCheckOutDate || todayDate}
+                            disabled={!checkIn}
+                            filterDate={(d) => !isFullyBooked(d)}
+                            dayClassName={(d) => isFullyBooked(d) ? "react-datepicker__day--booked" : ""}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText={checkIn ? "Select date" : "Select check-in first"}
+                            showPopperArrow={false}
+                            autoComplete="off"
+                          />
+                        </div>
                         {!checkIn && (
                           <p className="text-[10px] text-slate-400 mt-1">Select check-in date first</p>
                         )}
@@ -1670,18 +1938,44 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setPaymentSubStep("proof")}
-                    className="w-full btn-apple-primary font-sans text-xs uppercase tracking-widest font-semibold py-3 flex items-center justify-center gap-2 shadow"
-                  >
-                    <Compass className="w-4 h-4" />
-                    <span>I've Made the Payment — Submit Proof</span>
-                  </button>
-                  <button type="button" onClick={executeWhatsAppLink}
-                    className="w-full btn-apple border border-emerald-400 text-emerald-700 text-xs font-semibold py-2.5 hover:bg-emerald-50 uppercase tracking-wider">
-                    Also Notify via WhatsApp
-                  </button>
+                  {/* Option 1: Complete Payment */}
+                  <div className="rounded-2xl border-2 border-[#001a52]/20 bg-[#f8f9ff] p-4 space-y-3">
+                    <div>
+                      <span className="text-xs font-bold text-[#001a52] block">Option 1 — Complete Payment</span>
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">Scan the QR above, pay via UPI, then submit your transaction proof to confirm your booking.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentSubStep("proof")}
+                      className="w-full btn-apple-primary font-sans text-xs uppercase tracking-widest font-semibold py-3 flex items-center justify-center gap-2 shadow"
+                    >
+                      <Compass className="w-4 h-4" />
+                      <span>I've Made the Payment — Submit Proof</span>
+                    </button>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-slate-200" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">or</span>
+                    <div className="flex-1 h-px bg-slate-200" />
+                  </div>
+
+                  {/* Option 2: Enquiry */}
+                  <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/40 p-4 space-y-3">
+                    <div>
+                      <span className="text-xs font-bold text-amber-800 block">Option 2 — Enquiry (No Payment Now)</span>
+                      <span className="text-[10px] text-amber-700/80 mt-0.5 block">Send your complete booking details to WhatsApp. Our team will reach out to confirm your reservation manually.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleEnquiry}
+                      className="w-full btn-apple border-2 border-amber-400 text-amber-700 hover:bg-amber-50 font-sans text-xs uppercase tracking-widest font-semibold py-3 flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>Enquiry — Send Details via WhatsApp</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1703,22 +1997,25 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                       className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-[#001a52]/30 font-mono"
                     />
                   </div>
+                  {/* Locked amount — auto from payment mode */}
                   <div>
                     <label className="text-[10px] uppercase tracking-widest font-bold text-slate-500 block mb-1.5">
-                      Amount Paid (₹) *
+                      Amount Paid (₹)
                     </label>
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      value={proofAmount}
-                      onChange={e => setProofAmount(e.target.value)}
-                      placeholder={String(generatedBooking.paymentMode === "advance"
-                        ? generatedBooking.advanceAmount
-                        : generatedBooking.totalCost)}
-                      className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-[#001a52]/30"
-                    />
+                    <div className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-100 flex items-center justify-between">
+                      <span className="font-bold text-[#001a52]">
+                        ₹{(generatedBooking.paymentMode === "advance"
+                          ? generatedBooking.advanceAmount
+                          : generatedBooking.totalCost
+                        )?.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">
+                        {generatedBooking.paymentMode === "advance" ? "40% Advance" : "Full Payment"}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Date & Time */}
                   <div>
                     <label className="text-[10px] uppercase tracking-widest font-bold text-slate-500 block mb-1.5">
                       Date & Time of Payment *
@@ -1732,18 +2029,89 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                     />
                   </div>
 
+                  {/* Screenshot upload */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-slate-500 block mb-1.5">
+                      Payment Screenshot <span className="normal-case font-normal text-slate-400">(optional — shared to WhatsApp)</span>
+                    </label>
+                    {screenshotPreview ? (
+                      <div className="relative rounded-xl overflow-hidden border border-slate-200">
+                        <img src={screenshotPreview} alt="Payment screenshot" className="w-full max-h-52 object-contain bg-slate-50" />
+                        <button
+                          type="button"
+                          onClick={() => { setProofScreenshot(null); setScreenshotPreview(""); }}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all active:scale-95"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="px-3 py-2 bg-emerald-50 border-t border-emerald-100 text-[10px] text-emerald-700 font-semibold flex items-center gap-1.5">
+                          <Check className="w-3 h-3" /> Screenshot ready to upload
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="block cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setProofScreenshot(file);
+                              setScreenshotPreview(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                        <div className="border-2 border-dashed border-slate-300 hover:border-[#001a52] rounded-xl p-6 text-center transition-all">
+                          <ImagePlus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-xs font-semibold text-slate-500">Tap to upload payment screenshot</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">JPG, PNG — max 5 MB</p>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+
                   <button
                     type="submit"
                     disabled={proofSubmitting}
                     className="w-full btn-apple-green font-sans text-xs uppercase tracking-widest font-semibold py-3 flex items-center justify-center gap-2"
                   >
-                    {proofSubmitting ? "Submitting..." : "Submit Payment Proof"}
+                    {proofSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        <span>{proofScreenshot ? "Uploading & Submitting…" : "Submitting…"}</span>
+                      </>
+                    ) : "Submit Payment Proof"}
                   </button>
                   <button type="button" onClick={() => setPaymentSubStep("qr")}
                     className="w-full text-xs text-slate-400 hover:text-slate-600 py-2 transition-colors cursor-pointer">
                     ← Back to QR
                   </button>
                 </form>
+              )}
+
+              {paymentSubStep === "enquiry-done" && (
+                <div className="bg-amber-50 p-6 rounded-3xl border border-amber-200 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-amber-400 text-[#001a52] flex items-center justify-center">
+                      <Send className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-amber-800">Enquiry Sent!</h4>
+                      <span className="text-[11px] font-mono uppercase bg-amber-400/20 text-amber-700 px-2.5 py-0.5 rounded-full font-bold">
+                        Booking ID: {generatedBooking.id}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    Your booking enquiry details have been sent to us via WhatsApp. Our team will review and reach out to confirm your reservation. You can also make the advance payment anytime to secure your booking instantly.
+                  </p>
+                  <button type="button" onClick={executeWhatsAppEnquiry}
+                    className="w-full btn-apple border-2 border-amber-400 text-amber-700 hover:bg-amber-100 font-sans text-xs uppercase tracking-widest font-semibold py-3 flex items-center justify-center gap-2">
+                    <Send className="w-4 h-4" />
+                    <span>Resend Details via WhatsApp</span>
+                  </button>
+                </div>
               )}
 
               {paymentSubStep === "done" && (

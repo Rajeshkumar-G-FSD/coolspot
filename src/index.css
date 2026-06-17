@@ -1,4 +1,79 @@
 @import "tailwindcss";
+@import "react-datepicker/dist/react-datepicker.css";
+
+/* ── React-DatePicker: fully-booked dates shown in red ── */
+.rdp-booked .react-datepicker__day--booked,
+.react-datepicker__day--booked {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+  border-radius: 0.3rem;
+  text-decoration: line-through;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+.react-datepicker__day--booked:hover {
+  background-color: #fecaca !important;
+}
+/* Input styling to match the rest of the form */
+.booking-datepicker-wrapper {
+  width: 100%;
+}
+.booking-datepicker-wrapper .react-datepicker-wrapper {
+  width: 100%;
+}
+.booking-datepicker-wrapper .react-datepicker__input-container input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+}
+.booking-datepicker-wrapper .react-datepicker__input-container input:focus {
+  ring: 1px solid rgba(0,26,82,0.3);
+  border-color: rgba(0,26,82,0.4);
+}
+.booking-datepicker-wrapper input:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+.react-datepicker__header {
+  background: #001a52;
+  border-radius: 1rem 1rem 0 0;
+  border-bottom: none;
+  padding-top: 0.75rem;
+}
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+  color: white;
+}
+.react-datepicker__navigation-icon::before {
+  border-color: white;
+}
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+  background-color: #001a52 !important;
+  color: white !important;
+}
+.react-datepicker__day--keyboard-selected {
+  background-color: #0e2f76;
+  color: white;
+}
+.react-datepicker__day--today:not(.react-datepicker__day--selected) {
+  font-weight: bold;
+  color: #001a52;
+}
 
 @layer components {
   /* Apple-style button base — pill shape, smooth press, clean weight */

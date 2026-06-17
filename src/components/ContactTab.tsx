@@ -141,18 +141,6 @@ export default function ContactTab() {
             Chat on WhatsApp
           </a>
 
-          {/* Google Maps link */}
-          <div className="mt-2">
-            <a
-              href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-xs text-[#001a52] dark:text-[#819ae7] font-bold uppercase tracking-wider hover:underline"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              View on Google Maps
-            </a>
-          </div>
         </motion.div>
 
         {/* Contact Form */}
@@ -242,20 +230,20 @@ export default function ContactTab() {
 
       {/* Google Maps Embed */}
       <div className="max-w-5xl mx-auto px-6 md:px-16 pb-14">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-[#001a52] dark:text-[#dbe1ff] uppercase tracking-wide flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-amber-500" />
-            Find Us on the Map
-          </h3>
-          <a
-            href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z/data=!4m6!1m5!3m4!2zMTHCsDI0JzE0LjEiTiA3NsKwNDInNDIuNyJF!8m2!3d11.4039167!4d76.7118611?hl=en&entry=ttu"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] font-bold uppercase tracking-widest text-[#001a52] dark:text-[#819ae7] hover:underline flex items-center gap-1"
-          >
-            <MapPin className="w-3 h-3" /> Open in Google Maps
-          </a>
-        </div>
+        <h3 className="text-sm font-bold text-[#001a52] dark:text-[#dbe1ff] uppercase tracking-wide flex items-center gap-2 mb-4">
+          <MapPin className="w-4 h-4 text-amber-500" />
+          Find Us on the Map
+        </h3>
+        {/* Navigate button */}
+        <a
+          href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z/data=!4m6!1m5!3m4!2zMTHCsDI0JzE0LjEiTiA3NsKwNDInNDIuNyJF!8m2!3d11.4039167!4d76.7118611?hl=en&entry=ttu"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-apple-primary w-full flex items-center justify-center gap-2 py-3.5 text-xs uppercase tracking-widest mb-4"
+        >
+          <MapPin className="w-4 h-4" />
+          Navigate on Google Maps
+        </a>
         <div className="border border-slate-100 dark:border-white/5 shadow-sm rounded-2xl overflow-hidden">
           <CoolSpotMap height="h-80" zoom={18} />
         </div>

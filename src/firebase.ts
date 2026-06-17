@@ -12,6 +12,7 @@ import {
   getDocFromServer
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDE_VK6Qpnjfp_0el4Gbxa92toPX84SsoI",
@@ -27,6 +28,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 
 // Error conversion guidelines implementation
 export enum OperationType {

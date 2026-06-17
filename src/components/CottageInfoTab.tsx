@@ -774,7 +774,7 @@ export default function CottageInfoTab() {
                 </div>
 
                 {/* Substantive House Rules Bento */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                   
                   {/* Policies Checklists */}
                   <div className="bg-white dark:bg-slate-900/40 p-6 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm space-y-4">

@@ -111,7 +111,7 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="bg-white dark:bg-slate-900/60 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 group"
+              className="bg-white dark:bg-slate-900/60 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 group flex flex-col"
             >
               {/* Main Image with hover overlay */}
               <div
@@ -172,7 +172,7 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
               </div>
 
               {/* Details */}
-              <div className="p-6">
+              <div className="p-6 flex flex-col flex-1">
                 <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-4">
                   {room.description}
                 </p>
@@ -244,7 +244,7 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
 
                 <button
                   onClick={() => onSelectRoom(room)}
-                  className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                  className="w-full btn-apple-primary py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 mt-auto"
                 >
                   <span>Book This Room</span>
                   <ChevronRight className="w-4 h-4" />
