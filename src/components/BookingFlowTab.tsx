@@ -22,7 +22,8 @@ import {
   Eye,
   X,
   Send,
-  ImagePlus
+  ImagePlus,
+  Share2
 } from "lucide-react";
 import { Room, Experience, Booking } from "../types";
 import { VILLAS_DATA, EXPERIENCES_DATA } from "../data";
@@ -608,8 +609,16 @@ ${sep}
 • Below 20 days prior to Check-In: No refund
 • All refunds attract a 10% administrative charge
 
-${line}
-${proofScreenshotUrl ? `\n📸 *Payment screenshot received and stored for admin verification.*\n` : ""}
+${proofRef.trim() ? `
+${sep}
+💳 *PAYMENT PROOF*
+${sep}
+
+🧾 Transaction Ref  : ${proofRef.trim()}
+📅 Date & Time      : ${proofDateTime ? new Date(proofDateTime).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }) : "—"}
+💵 Amount Paid      : ₹${(b.paymentMode === "advance" ? b.advanceAmount : b.totalCost)?.toLocaleString()}${proofScreenshotUrl ? "\n📸 Screenshot       : Received & stored for admin verification" : ""}
+
+` : ""}${line}
 Assuring you our best service at all times. Do feel free to contact us for any clarifications or requirements.
 
 Have a wonderful stay! 🌿
@@ -817,6 +826,21 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
     }
     executeWhatsAppEnquiry();
     setPaymentSubStep("enquiry-done");
+  };
+
+  const shareScreenshot = async () => {
+    if (!proofScreenshot || !generatedBooking) return;
+    const text = `Payment proof for booking ${generatedBooking.id} — Transaction Ref: ${proofRef.trim() || "—"}`;
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [proofScreenshot] })) {
+      try {
+        await navigator.share({ files: [proofScreenshot], title: `Payment Proof — ${generatedBooking.id}`, text });
+      } catch { /* user cancelled */ }
+    } else {
+      const url = URL.createObjectURL(proofScreenshot);
+      const a = document.createElement("a");
+      a.href = url; a.download = `payment-proof-${generatedBooking.id}.jpg`; a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   const compressImageToBase64 = (file: File, maxPx = 1200, quality = 0.65): Promise<string> =>
@@ -2079,7 +2103,7 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                     {proofSubmitting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                        <span>{proofScreenshot ? "Uploading & Submitting…" : "Submitting…"}</span>
+                        <span>{proofScreenshot ? "Saving & Submitting…" : "Submitting…"}</span>
                       </>
                     ) : "Submit Payment Proof"}
                   </button>
@@ -2131,8 +2155,15 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                   <button type="button" onClick={executeWhatsAppLink}
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs uppercase tracking-widest font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow transition-all cursor-pointer">
                     <Compass className="w-4 h-4 text-emerald-100" />
-                    <span>Also Send via WhatsApp (+91 70103 95526)</span>
+                    <span>Send Booking Details via WhatsApp</span>
                   </button>
+                  {proofScreenshot && (
+                    <button type="button" onClick={shareScreenshot}
+                      className="w-full btn-apple border-2 border-emerald-300 text-emerald-700 hover:bg-emerald-100 font-sans text-xs uppercase tracking-widest py-3 flex items-center justify-center gap-2">
+                      <Share2 className="w-4 h-4" />
+                      <span>Share Screenshot to WhatsApp</span>
+                    </button>
+                  )}
                 </div>
               )}
 
