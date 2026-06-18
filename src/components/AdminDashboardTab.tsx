@@ -542,11 +542,8 @@ function ModuleRooms() {
   });
 
   const saveBlock = async () => {
-    if (blockRoomIds.length === 0 || !blockStartDate || !blockEndDate) {
-      alert("Select at least one room and set both dates."); return;
-    }
-    if (blockStartDate > blockEndDate) {
-      alert("Start date must be on or before end date."); return;
+    if (blockRoomIds.length === 0 || !blockStartDate) {
+      alert("Select at least one room and a date."); return;
     }
     setSavingBlock(true);
     try {
@@ -860,27 +857,17 @@ function ModuleRooms() {
               </div>
               <div />
               <div>
-                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Block From</label>
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Block Date</label>
                 <input
                   type="date"
                   value={blockStartDate}
                   min={new Date().toISOString().split("T")[0]}
-                  onChange={e => setBlockStartDate(e.target.value)}
+                  onChange={e => { setBlockStartDate(e.target.value); setBlockEndDate(e.target.value); }}
                   className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
                   style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text, colorScheme: "dark" }}
                 />
               </div>
-              <div>
-                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Block Until (inclusive)</label>
-                <input
-                  type="date"
-                  value={blockEndDate}
-                  min={blockStartDate || new Date().toISOString().split("T")[0]}
-                  onChange={e => setBlockEndDate(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
-                  style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text, colorScheme: "dark" }}
-                />
-              </div>
+              <div />
             </div>
             <button
               onClick={saveBlock}
