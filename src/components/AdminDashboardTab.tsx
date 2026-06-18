@@ -521,6 +521,26 @@ function ModuleRooms() {
     }
   };
 
+  const blockRooms = rooms.flatMap((r: any) => {
+    if (r.id === "budget-basement") {
+      return (r.roomNumbers || []).map((num: string) => ({
+        ...r,
+        id: `budget-basement-${num}`,
+        name: `Budget Double Room — Room ${num}`,
+        roomNumbers: [num],
+      }));
+    }
+    if (r.id === "deluxe-family") {
+      return (r.roomNumbers || []).map((num: string) => ({
+        ...r,
+        id: `deluxe-family-${num}`,
+        name: `Deluxe Family Room — Room ${num}`,
+        roomNumbers: [num],
+      }));
+    }
+    return [r];
+  });
+
   const saveBlock = async () => {
     if (blockRoomIds.length === 0 || !blockStartDate || !blockEndDate) {
       alert("Select at least one room and set both dates."); return;
@@ -532,7 +552,7 @@ function ModuleRooms() {
     try {
       const newBlocks: any[] = [];
       for (const roomId of blockRoomIds) {
-        const room = rooms.find(r => r.id === roomId);
+        const room = blockRooms.find((r: any) => r.id === roomId);
         const payload = {
           roomId,
           roomName: room?.name || roomId,
@@ -780,7 +800,7 @@ function ModuleRooms() {
                   )}
                 </label>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setBlockRoomIds(rooms.map(r => r.id))}
+                  <button type="button" onClick={() => setBlockRoomIds(blockRooms.map((r: any) => r.id))}
                     className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-colors hover:bg-white/10"
                     style={{ color: C.gold }}>
                     All
@@ -793,7 +813,7 @@ function ModuleRooms() {
                 </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-2">
-                {rooms.map(r => {
+                {blockRooms.map((r: any) => {
                   const checked = blockRoomIds.includes(r.id);
                   return (
                     <label
