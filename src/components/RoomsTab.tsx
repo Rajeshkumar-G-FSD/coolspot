@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { BedDouble, Users, ChevronRight, ChevronLeft, Layers, Check, Tag, Info, Eye, X, Tv, Wifi, Droplets, Car, Bath, UserCheck, BatteryCharging, Sunset, Footprints, ShieldAlert } from "lucide-react";
 import { Room } from "../types";
 import BlurText from "./BlurText";
+import PriceCalendar from "./PriceCalendar";
 
 interface RoomsTabProps {
   rooms: Room[];
@@ -344,6 +345,9 @@ export default function RoomsTab({ rooms, onSelectRoom }: RoomsTabProps) {
             Cancellations within 25 days may not be eligible for a refund. All prices are inclusive of applicable taxes.
           </div>
         </motion.div>
+
+        {/* Pricing Calendar */}
+        <PriceCalendar />
       </div>
 
       {/* ── Lightbox Modal ── */}

@@ -436,6 +436,8 @@ function ModuleRooms() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState("");
+  const [editWeekdayRate, setEditWeekdayRate] = useState("");
+  const [editWeekendRate, setEditWeekendRate] = useState("");
   const [saving, setSaving] = useState(false);
   const [extraBedRate, setExtraBedRate] = useState<number>(1500);
   const [editingExtraBed, setEditingExtraBed] = useState(false);
@@ -590,9 +592,16 @@ function ModuleRooms() {
   const startEdit = (room: any) => {
     setEditingId(room.id);
     setEditRate(String(room.ratePerNight));
+    setEditWeekdayRate(String(room.weekdayRate || room.ratePerNight || ""));
+    setEditWeekendRate(String(room.weekendRate || room.ratePerNight || ""));
   };
 
-  const cancelEdit = () => { setEditingId(null); setEditRate(""); };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditRate("");
+    setEditWeekdayRate("");
+    setEditWeekendRate("");
+  };
 
   const saveExtraBedRate = async () => {
     const newRate = parseInt(editExtraBedRate);
@@ -611,20 +620,28 @@ function ModuleRooms() {
   };
 
   const saveRate = async (roomId: string) => {
-    const newRate = parseInt(editRate);
-    if (!newRate || newRate < 100) { alert("Enter a valid rate (min ₹100)"); return; }
+    const weekday = parseInt(editWeekdayRate);
+    const weekend = parseInt(editWeekendRate);
+    if (!weekday || weekday < 100) { alert("Enter a valid weekday rate (min ₹100)"); return; }
+    if (!weekend || weekend < 100) { alert("Enter a valid weekend rate (min ₹100)"); return; }
     setSaving(true);
     const room = rooms.find(r => r.id === roomId);
     try {
       await setDoc(doc(db, "rooms", roomId), {
         id: roomId,
         name: room?.name || roomId,
-        ratePerNight: newRate,
+        ratePerNight: weekday,
+        weekdayRate: weekday,
+        weekendRate: weekend,
         maxGuests: room?.maxGuests || 2,
         roomNumbers: room?.roomNumbers || [],
         isBundle: room?.isBundle || false,
       }, { merge: true });
-      setRooms(prev => prev.map(r => r.id === roomId ? { ...r, ratePerNight: newRate } : r));
+      setRooms(prev => prev.map(r =>
+        r.id === roomId
+          ? { ...r, ratePerNight: weekday, weekdayRate: weekday, weekendRate: weekend }
+          : r
+      ));
       setEditingId(null);
     } catch (err) {
       alert("Failed to save rate. Please try again.");
@@ -677,21 +694,39 @@ function ModuleRooms() {
               <div className="p-4 space-y-4" style={{ background: C.card }}>
                 {editingId === room.id ? (
                   <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-widest font-bold block" style={{ color: C.muted }}>
-                      Rate Per Night (₹)
-                    </label>
-                    <input
-                      type="number"
-                      min={100}
-                      step={50}
-                      value={editRate}
-                      onChange={e => setEditRate(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && saveRate(room.id)}
-                      className="w-full px-3 py-2.5 rounded-xl text-sm font-bold border outline-none"
-                      style={{ background: "rgba(255,255,255,0.06)", borderColor: C.gold, color: C.text }}
-                      autoFocus
-                      placeholder="e.g. 3500"
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: "#60a5fa" }}>
+                          Weekday Rate ₹ <span style={{ color: C.muted, fontWeight: 400 }}>(Mon–Thu)</span>
+                        </label>
+                        <input
+                          type="number"
+                          min={100}
+                          step={50}
+                          value={editWeekdayRate}
+                          onChange={e => setEditWeekdayRate(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-xl text-sm font-bold border outline-none"
+                          style={{ background: "rgba(96,165,250,0.07)", borderColor: "#60a5fa", color: C.text }}
+                          autoFocus
+                          placeholder="e.g. 3500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.gold }}>
+                          Weekend Rate ₹ <span style={{ color: C.muted, fontWeight: 400 }}>(Fri–Sun)</span>
+                        </label>
+                        <input
+                          type="number"
+                          min={100}
+                          step={50}
+                          value={editWeekendRate}
+                          onChange={e => setEditWeekendRate(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-xl text-sm font-bold border outline-none"
+                          style={{ background: "rgba(212,168,67,0.07)", borderColor: C.gold, color: C.text }}
+                          placeholder="e.g. 4500"
+                        />
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => saveRate(room.id)}
@@ -700,7 +735,7 @@ function ModuleRooms() {
                         style={{ background: C.gold, color: "#0a0a0a", opacity: saving ? 0.6 : 1 }}
                       >
                         <Check className="w-3.5 h-3.5" />
-                        {saving ? "Saving…" : "Save Rate"}
+                        {saving ? "Saving…" : "Save Rates"}
                       </button>
                       <button
                         onClick={cancelEdit}
@@ -712,38 +747,56 @@ function ModuleRooms() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-widest mb-1" style={{ color: C.muted }}>Per Night Rate</div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black" style={{ color: C.gold }}>
-                          ₹{(room.ratePerNight || 0).toLocaleString()}
-                        </span>
-                        <span className="text-xs" style={{ color: C.muted }}>/night</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="grid grid-cols-2 gap-4 flex-1 mr-4">
+                        <div>
+                          <div className="text-[9px] uppercase tracking-widest mb-0.5 font-bold" style={{ color: "#60a5fa" }}>
+                            Mon–Thu
+                          </div>
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="text-lg font-black" style={{ color: "#60a5fa" }}>
+                              ₹{((room.weekdayRate || room.ratePerNight) || 0).toLocaleString()}
+                            </span>
+                            <span className="text-[9px]" style={{ color: C.muted }}>/night</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] uppercase tracking-widest mb-0.5 font-bold" style={{ color: C.gold }}>
+                            Fri–Sun
+                          </div>
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="text-lg font-black" style={{ color: C.gold }}>
+                              ₹{((room.weekendRate || room.ratePerNight) || 0).toLocaleString()}
+                            </span>
+                            <span className="text-[9px]" style={{ color: C.muted }}>/night</span>
+                          </div>
+                        </div>
                       </div>
-                      {room.isBundle && (
-                        <div className="text-[9px] mt-0.5" style={{ color: C.muted }}>Bundle · covers all rooms in category</div>
-                      )}
+                      <button
+                        onClick={() => startEdit(room)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border hover:bg-white/10 transition-colors shrink-0"
+                        style={{ borderColor: C.border, color: C.gold }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
                     </div>
-                    <button
-                      onClick={() => startEdit(room)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border hover:bg-white/10 transition-colors"
-                      style={{ borderColor: C.border, color: C.gold }}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit Rate
-                    </button>
+                    {room.isBundle && (
+                      <div className="text-[9px]" style={{ color: C.muted }}>Bundle · covers all rooms in category</div>
+                    )}
                   </div>
                 )}
 
-                {/* Quick cost preview: 1, 2, 3 nights */}
+                {/* Quick cost preview: 1, 2, 3 nights (weekday rate) */}
                 <div className="grid grid-cols-3 gap-2 pt-3 border-t" style={{ borderColor: C.border }}>
                   {[1, 2, 3].map(days => (
                     <div key={days} className="text-center py-2 px-1 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
                       <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: C.muted }}>{days} Night{days > 1 ? "s" : ""}</div>
-                      <div className="text-xs font-black" style={{ color: C.text }}>
-                        ₹{((room.ratePerNight || 0) * days).toLocaleString()}
+                      <div className="text-[10px] font-black" style={{ color: "#60a5fa" }}>
+                        ₹{(((room.weekdayRate || room.ratePerNight) || 0) * days).toLocaleString()}
                       </div>
+                      <div className="text-[9px]" style={{ color: C.muted }}>weekday</div>
                     </div>
                   ))}
                 </div>
