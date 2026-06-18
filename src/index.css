@@ -75,6 +75,54 @@
   color: #001a52;
 }
 
+/* ── Admin Date Blocking — dark inline calendar ── */
+.admin-block-datepicker .react-datepicker {
+  background: #1a1f2e;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  width: 100%;
+}
+.admin-block-datepicker .react-datepicker__month-container { width: 100%; }
+.admin-block-datepicker .react-datepicker__header {
+  background: #111827;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+.admin-block-datepicker .react-datepicker__current-month,
+.admin-block-datepicker .react-datepicker__day-name {
+  color: rgba(255,255,255,0.7);
+}
+.admin-block-datepicker .react-datepicker__navigation-icon::before {
+  border-color: rgba(255,255,255,0.5);
+}
+.admin-block-datepicker .react-datepicker__day {
+  color: rgba(255,255,255,0.8);
+  border-radius: 0.375rem;
+}
+.admin-block-datepicker .react-datepicker__day:hover {
+  background: rgba(248,113,113,0.2) !important;
+  color: #f87171 !important;
+}
+.admin-block-datepicker .react-datepicker__day--selected,
+.admin-block-datepicker .react-datepicker__day--in-selecting-range,
+.admin-block-datepicker .react-datepicker__day--in-range {
+  background: rgba(248,113,113,0.25) !important;
+  color: #f87171 !important;
+  font-weight: 700;
+}
+.admin-block-datepicker .react-datepicker__day--keyboard-selected {
+  background: rgba(248,113,113,0.15);
+  color: #fca5a5;
+}
+.admin-block-datepicker .react-datepicker__day--today:not(.react-datepicker__day--selected) {
+  color: #fbbf24;
+  font-weight: 700;
+}
+.admin-block-datepicker .react-datepicker__day--disabled {
+  color: rgba(255,255,255,0.2) !important;
+}
+
 @layer components {
   /* Apple-style button base — pill shape, smooth press, clean weight */
   .btn-apple {

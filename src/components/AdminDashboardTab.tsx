@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { VILLAS_DATA } from "../data";
 import { motion, AnimatePresence } from "motion/react";
+import DatePicker from "react-datepicker";
 
 // ─── THEME TOKENS ──────────────────────────────────────────────────────────────
 const C = {
@@ -446,8 +447,7 @@ function ModuleRooms() {
   const [blocksLoading, setBlocksLoading] = useState(false);
   const [showAddBlock, setShowAddBlock] = useState(false);
   const [blockRoomIds, setBlockRoomIds] = useState<string[]>([]);
-  const [blockStartDate, setBlockStartDate] = useState("");
-  const [blockEndDate, setBlockEndDate] = useState("");
+  const [blockDates, setBlockDates] = useState<Date[]>([]);
   const [blockReason, setBlockReason] = useState("");
   const [savingBlock, setSavingBlock] = useState(false);
 
@@ -542,29 +542,32 @@ function ModuleRooms() {
   });
 
   const saveBlock = async () => {
-    if (blockRoomIds.length === 0 || !blockStartDate) {
-      alert("Select at least one room and a date."); return;
+    if (blockRoomIds.length === 0 || blockDates.length === 0) {
+      alert("Select at least one room and at least one date."); return;
     }
     setSavingBlock(true);
     try {
       const newBlocks: any[] = [];
       for (const roomId of blockRoomIds) {
         const room = blockRooms.find((r: any) => r.id === roomId);
-        const payload = {
-          roomId,
-          roomName: room?.name || roomId,
-          roomNumbers: room?.roomNumbers || [],
-          startDate: blockStartDate,
-          endDate: blockEndDate,
-          reason: blockReason.trim() || "Admin block",
-          createdAt: new Date().toISOString(),
-        };
-        const ref = await addDoc(collection(db, "roomBlocks"), payload);
-        newBlocks.push({ docId: ref.id, ...payload });
+        for (const date of blockDates) {
+          const dateStr = date.toISOString().split("T")[0];
+          const payload = {
+            roomId,
+            roomName: room?.name || roomId,
+            roomNumbers: room?.roomNumbers || [],
+            startDate: dateStr,
+            endDate: dateStr,
+            reason: blockReason.trim() || "Admin block",
+            createdAt: new Date().toISOString(),
+          };
+          const ref = await addDoc(collection(db, "roomBlocks"), payload);
+          newBlocks.push({ docId: ref.id, ...payload });
+        }
       }
       setBlocks(prev => [...newBlocks, ...prev]);
       setShowAddBlock(false);
-      setBlockRoomIds([]); setBlockStartDate(""); setBlockEndDate(""); setBlockReason("");
+      setBlockRoomIds([]); setBlockDates([]); setBlockReason("");
     } catch (err) {
       alert("Failed to save block. Please try again.");
       console.error(err);
@@ -856,18 +859,42 @@ function ModuleRooms() {
                 />
               </div>
               <div />
-              <div>
-                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Block Date</label>
-                <input
-                  type="date"
-                  value={blockStartDate}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={e => { setBlockStartDate(e.target.value); setBlockEndDate(e.target.value); }}
-                  className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
-                  style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text, colorScheme: "dark" }}
-                />
+              <div className="sm:col-span-2">
+                <label className="text-[10px] uppercase tracking-widest font-bold block mb-2" style={{ color: C.muted }}>
+                  Block Dates
+                  {blockDates.length > 0 && (
+                    <span className="ml-2 font-normal normal-case" style={{ color: "#f87171" }}>
+                      — {blockDates.length} date{blockDates.length > 1 ? "s" : ""} selected
+                    </span>
+                  )}
+                </label>
+                <div className="admin-block-datepicker">
+                  <DatePicker
+                    inline
+                    selectsMultiple
+                    selectedDates={blockDates}
+                    onChange={(dates: Date[]) => setBlockDates(dates ?? [])}
+                    minDate={new Date()}
+                  />
+                </div>
+                {blockDates.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {blockDates.map((d, i) => (
+                      <span key={i} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold"
+                        style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }}>
+                        {d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                        <button type="button" onClick={() => setBlockDates(prev => prev.filter((_, j) => j !== i))}
+                          className="hover:opacity-70 cursor-pointer ml-0.5 leading-none">×</button>
+                      </span>
+                    ))}
+                    <button type="button" onClick={() => setBlockDates([])}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-bold hover:opacity-70 cursor-pointer"
+                      style={{ background: "rgba(255,255,255,0.06)", color: C.muted, border: `1px solid ${C.border}` }}>
+                      Clear all
+                    </button>
+                  </div>
+                )}
               </div>
-              <div />
             </div>
             <button
               onClick={saveBlock}
