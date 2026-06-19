@@ -236,17 +236,20 @@ export default function DestinationsTab({
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative h-screen w-full flex items-center justify-center pt-20">
-        {/* Spectacular Hotlinked Background */}
+      <section className="relative h-screen w-full flex items-center justify-center pt-20 isolation-isolate">
+        {/* Background image — GPU-promoted layer to prevent scroll flicker */}
         <div
           className="absolute inset-0 w-full h-full bg-cover bg-center select-none"
           style={{
             backgroundImage: `url(${coolCottagesFrontview})`,
+            transform: "translateZ(0)",
+            willChange: "transform",
+            backfaceVisibility: "hidden",
           }}
         />
-        {/* Soft Indigo / Royal Navy overlay masking */}
-        <div className="absolute inset-0 bg-[#001a52]/50 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#001a52]/40 to-[#f8f9ff]" />
+        {/* Navy overlay — plain opacity (no mix-blend-multiply to avoid per-frame compositing) */}
+        <div className="absolute inset-0 bg-[#001a52]/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#001a52]/30 to-[#f8f9ff]" />
 
         {/* Social Media Sidebar — left bottom of hero */}
         <div className="absolute left-4 md:left-7 bottom-36 md:bottom-44 z-20 flex flex-col items-center gap-3">
