@@ -42,6 +42,18 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Price Overrides Collection: per-date custom prices set by admin
+    match /priceOverrides/{docId} {
+      allow read, get, list: if true;
+      allow write: if true;
+    }
+
+    // Settings Collection: app-wide settings (extra bed rate, pricing config, etc.)
+    match /settings/{docId} {
+      allow read, get, list: if true;
+      allow write: if true;
+    }
+
     // Connectivity test collection
     match /system_test/{docId} {
       allow read, write: if true;

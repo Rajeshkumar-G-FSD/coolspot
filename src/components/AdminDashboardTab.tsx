@@ -4,7 +4,7 @@ import {
   Mail, Phone, DollarSign, TrendingUp, Clock, X, LayoutDashboard,
   BedDouble, CalendarCheck, Users, UtensilsCrossed, Flame,
   CreditCard, Globe, Image, MapPin, UserCheck, Star, BarChart3,
-  Settings, LogOut, Bell, Search, ChevronRight, Download, Filter,
+  Settings, LogOut, Bell, Search, ChevronRight, ChevronLeft, Download, Filter,
   Menu, TrendingDown, AlertCircle, CheckCircle, Eye, MoreVertical,
   Wifi, MessageSquare, Printer, Building2, Leaf, Mountain,
   Coffee, Sunset, Wind, Award, ShieldCheck, Zap, PieChart,
@@ -453,6 +453,25 @@ function ModuleRooms() {
   const [blockReason, setBlockReason] = useState("");
   const [savingBlock, setSavingBlock] = useState(false);
 
+  // Price calendar state
+  const [priceCalRoomId, setPriceCalRoomId] = useState<string>("");
+  const [priceCalYear, setPriceCalYear] = useState(() => new Date().getFullYear());
+  const [priceCalMonth, setPriceCalMonth] = useState(() => new Date().getMonth());
+
+  // Blocked dates calendar view
+  const [showBlockedCal, setShowBlockedCal] = useState(false);
+  const [blockedCalYear, setBlockedCalYear] = useState(() => new Date().getFullYear());
+  const [blockedCalMonth, setBlockedCalMonth] = useState(() => new Date().getMonth());
+  const [selectedBlockCell, setSelectedBlockCell] = useState<{ roomId: string; roomName: string; date: string } | null>(null);
+  const [removingBlock, setRemovingBlock] = useState(false);
+
+  // Per-date price overrides
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, Record<string, number>>>({});
+  const [priceOverridesLoading, setPriceOverridesLoading] = useState(false);
+  const [editingPriceDate, setEditingPriceDate] = useState<string | null>(null);
+  const [editingPriceValue, setEditingPriceValue] = useState("");
+  const [savingPriceOverride, setSavingPriceOverride] = useState(false);
+
   const toggleBlockRoom = (id: string) =>
     setBlockRoomIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
@@ -588,6 +607,7 @@ function ModuleRooms() {
   };
 
   useEffect(() => { loadBlocks(); }, []);
+  useEffect(() => { loadPriceOverrides(); }, []);
 
   const startEdit = (room: any) => {
     setEditingId(room.id);
@@ -601,6 +621,90 @@ function ModuleRooms() {
     setEditRate("");
     setEditWeekdayRate("");
     setEditWeekendRate("");
+  };
+
+  // Price calendar nav
+  const prevPriceCalMonth = () => {
+    if (priceCalMonth === 0) { setPriceCalYear(y => y - 1); setPriceCalMonth(11); }
+    else setPriceCalMonth(m => m - 1);
+  };
+  const nextPriceCalMonth = () => {
+    if (priceCalMonth === 11) { setPriceCalYear(y => y + 1); setPriceCalMonth(0); }
+    else setPriceCalMonth(m => m + 1);
+  };
+
+  // Blocked calendar nav
+  const prevBlockedCalMonth = () => {
+    if (blockedCalMonth === 0) { setBlockedCalYear(y => y - 1); setBlockedCalMonth(11); }
+    else setBlockedCalMonth(m => m - 1);
+  };
+  const nextBlockedCalMonth = () => {
+    if (blockedCalMonth === 11) { setBlockedCalYear(y => y + 1); setBlockedCalMonth(0); }
+    else setBlockedCalMonth(m => m + 1);
+  };
+
+  // ── Per-date price overrides ──────────────────────────────────────────────
+  const loadPriceOverrides = async () => {
+    setPriceOverridesLoading(true);
+    try {
+      const snap = await getDocs(collection(db, "priceOverrides"));
+      const map: Record<string, Record<string, number>> = {};
+      snap.forEach(d => {
+        const data = d.data();
+        if (data.roomId && data.date && data.price) {
+          if (!map[data.roomId]) map[data.roomId] = {};
+          map[data.roomId][data.date] = data.price;
+        }
+      });
+      setPriceOverrides(map);
+    } catch (err) {
+      console.error("Failed to load price overrides:", err);
+    } finally {
+      setPriceOverridesLoading(false);
+    }
+  };
+
+  const savePriceOverride = async (roomId: string, date: string, price: number) => {
+    setSavingPriceOverride(true);
+    try {
+      const docId = `${roomId}_${date}`;
+      await setDoc(doc(db, "priceOverrides", docId), {
+        roomId, date, price, updatedAt: new Date().toISOString(),
+      });
+      setPriceOverrides(prev => ({
+        ...prev,
+        [roomId]: { ...(prev[roomId] || {}), [date]: price },
+      }));
+      setEditingPriceDate(null);
+      setEditingPriceValue("");
+    } catch (err) {
+      alert("Failed to save price. Please try again.");
+      console.error(err);
+    } finally {
+      setSavingPriceOverride(false);
+    }
+  };
+
+  const removePriceOverride = async (roomId: string, date: string) => {
+    setSavingPriceOverride(true);
+    try {
+      await deleteDoc(doc(db, "priceOverrides", `${roomId}_${date}`));
+      setPriceOverrides(prev => {
+        const updated = { ...prev };
+        if (updated[roomId]) {
+          const copy = { ...updated[roomId] };
+          delete copy[date];
+          updated[roomId] = copy;
+        }
+        return updated;
+      });
+      setEditingPriceDate(null);
+      setEditingPriceValue("");
+    } catch (err) {
+      alert("Failed to remove price override."); console.error(err);
+    } finally {
+      setSavingPriceOverride(false);
+    }
   };
 
   const saveExtraBedRate = async () => {
@@ -697,7 +801,7 @@ function ModuleRooms() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: "#60a5fa" }}>
-                          Weekday Rate ₹ <span style={{ color: C.muted, fontWeight: 400 }}>(Mon–Thu)</span>
+                          Weekday Rate ₹
                         </label>
                         <input
                           type="number"
@@ -713,7 +817,7 @@ function ModuleRooms() {
                       </div>
                       <div>
                         <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.gold }}>
-                          Weekend Rate ₹ <span style={{ color: C.muted, fontWeight: 400 }}>(Fri–Sun)</span>
+                          Weekend Rate ₹
                         </label>
                         <input
                           type="number"
@@ -752,7 +856,7 @@ function ModuleRooms() {
                       <div className="grid grid-cols-2 gap-4 flex-1 mr-4">
                         <div>
                           <div className="text-[9px] uppercase tracking-widest mb-0.5 font-bold" style={{ color: "#60a5fa" }}>
-                            Mon–Thu
+                            Weekday
                           </div>
                           <div className="flex items-baseline gap-0.5">
                             <span className="text-lg font-black" style={{ color: "#60a5fa" }}>
@@ -763,7 +867,7 @@ function ModuleRooms() {
                         </div>
                         <div>
                           <div className="text-[9px] uppercase tracking-widest mb-0.5 font-bold" style={{ color: C.gold }}>
-                            Fri–Sun
+                            Weekend
                           </div>
                           <div className="flex items-baseline gap-0.5">
                             <span className="text-lg font-black" style={{ color: C.gold }}>
@@ -806,210 +910,519 @@ function ModuleRooms() {
         </div>
       )}
 
-      {/* ── Date Blocking ─────────────────────────────────── */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
+      {/* ── Price Calendar ─────────────────────────────────── */}
+      {!loading && rooms.length > 0 && (() => {
+        const FULL_MONTHS_PC = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        const t = new Date();
+        const todayStr = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+        const activeRoom = rooms.find(r => r.id === priceCalRoomId) || rooms[0];
+        const roomOverrides = priceOverrides[activeRoom?.id || ""] || {};
+        const overrideCount = Object.keys(roomOverrides).length;
+        const firstDay = new Date(priceCalYear, priceCalMonth, 1).getDay();
+        const daysInMonth = new Date(priceCalYear, priceCalMonth + 1, 0).getDate();
 
-        {/* Header */}
-        <div className="px-5 py-4 flex items-center justify-between" style={{ background: C.card }}>
-          <div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" style={{ color: "#f87171" }} />
-              <span className="text-sm font-bold" style={{ color: C.text }}>Date Blocking</span>
-            </div>
-            <div className="text-[10px] mt-0.5 uppercase tracking-widest" style={{ color: C.muted }}>
-              Block rooms on specific dates · Customers see Sold Out
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={loadBlocks}
-              className="p-2 rounded-lg border hover:bg-white/10 transition-all active:scale-95"
-              style={{ borderColor: C.border }}>
-              <RefreshCcw className={`w-3.5 h-3.5 transition-transform ${blocksLoading ? "animate-spin" : ""}`} style={{ color: C.muted }} />
-            </button>
-            <button
-              onClick={() => setShowAddBlock(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border hover:bg-white/10 transition-colors"
-              style={{ borderColor: showAddBlock ? "#f87171" : C.border, color: showAddBlock ? "#f87171" : C.gold }}
-            >
-              {showAddBlock ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-              {showAddBlock ? "Cancel" : "Block Dates"}
-            </button>
-          </div>
-        </div>
+        const handleDateClick = (dateStr: string, baseRate: number) => {
+          if (editingPriceDate === dateStr) {
+            setEditingPriceDate(null); setEditingPriceValue("");
+          } else {
+            setEditingPriceDate(dateStr);
+            setEditingPriceValue(String(roomOverrides[dateStr] || baseRate));
+          }
+        };
 
-        {/* Add Block Form */}
-        {showAddBlock && (
-          <div className="px-5 py-4 border-t space-y-4" style={{ borderColor: C.border, background: "rgba(248,113,113,0.04)" }}>
-            {/* Multi-room checkbox selector */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.muted }}>
-                  Rooms to Block
-                  {blockRoomIds.length > 0 && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded-full text-[9px]"
-                      style={{ background: "rgba(248,113,113,0.2)", color: "#f87171" }}>
-                      {blockRoomIds.length} selected
-                    </span>
-                  )}
-                </label>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setBlockRoomIds(blockRooms.map((r: any) => r.id))}
-                    className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-colors hover:bg-white/10"
-                    style={{ color: C.gold }}>
-                    All
-                  </button>
-                  <button type="button" onClick={() => setBlockRoomIds([])}
-                    className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-colors hover:bg-white/10"
-                    style={{ color: C.muted }}>
-                    Clear
-                  </button>
+        const handleSave = async () => {
+          if (!activeRoom || !editingPriceDate) return;
+          const price = parseInt(editingPriceValue);
+          if (!price || price < 100) { alert("Enter a valid price (min ₹100)"); return; }
+          await savePriceOverride(activeRoom.id, editingPriceDate, price);
+        };
+
+        const handleRemove = async () => {
+          if (!activeRoom || !editingPriceDate) return;
+          await removePriceOverride(activeRoom.id, editingPriceDate);
+        };
+
+        return (
+          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between" style={{ background: C.card }}>
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4" style={{ color: C.gold }} />
+                <div>
+                  <span className="text-sm font-bold" style={{ color: C.text }}>Price Calendar</span>
+                  <div className="text-[10px] uppercase tracking-widest mt-0.5" style={{ color: C.muted }}>
+                    Click any date to add · edit · update price
+                  </div>
                 </div>
               </div>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {blockRooms.map((r: any) => {
-                  const checked = blockRoomIds.includes(r.id);
+              {priceOverridesLoading && (
+                <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: C.border, borderTopColor: C.gold }} />
+              )}
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Room selector */}
+              <div className="flex flex-wrap gap-2">
+                {rooms.map(room => (
+                  <button
+                    key={room.id}
+                    onClick={() => { setPriceCalRoomId(room.id); setEditingPriceDate(null); setEditingPriceValue(""); }}
+                    className="btn-apple px-3 py-1.5 text-[11px] font-semibold"
+                    style={activeRoom?.id === room.id
+                      ? { background: C.gold, color: "#0a0a0a", borderRadius: "9999px" }
+                      : { background: "transparent", color: C.muted, border: `1px solid ${C.border}`, borderRadius: "9999px" }
+                    }
+                  >
+                    {room.name.split(" ").slice(0, 3).join(" ")}
+                    {(room.roomNumbers || []).length > 0 && (
+                      <span className="ml-1 opacity-60">·{(room.roomNumbers || []).join(",")}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom price count badge */}
+              {overrideCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)" }}>
+                    {overrideCount} custom price{overrideCount > 1 ? "s" : ""} set for this room
+                  </span>
+                </div>
+              )}
+
+              {/* Month nav */}
+              <div className="flex items-center justify-between">
+                <button onClick={prevPriceCalMonth} className="btn-apple p-2 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-sm font-bold" style={{ color: C.text }}>{FULL_MONTHS_PC[priceCalMonth]} {priceCalYear}</span>
+                <button onClick={nextPriceCalMonth} className="btn-apple p-2 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-px rounded-xl overflow-hidden border" style={{ background: C.border, borderColor: C.border }}>
+                {["S","M","T","W","T","F","S"].map((d, i) => (
+                  <div key={i} className="py-2 text-center text-[10px] font-bold uppercase" style={{ background: "rgba(255,255,255,0.04)", color: C.muted }}>{d}</div>
+                ))}
+                {Array.from({ length: firstDay }, (_, i) => (
+                  <div key={`ep-${i}`} className="h-14" style={{ background: "rgba(0,0,0,0.25)" }} />
+                ))}
+                {Array.from({ length: daysInMonth }, (_, i) => {
+                  const day = i + 1;
+                  const dt = new Date(priceCalYear, priceCalMonth, day);
+                  const dateStr = `${priceCalYear}-${String(priceCalMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+                  const past = dateStr < todayStr;
+                  const isToday = dateStr === todayStr;
+                  const isEditing = editingPriceDate === dateStr;
+                  const dayIdx = dt.getDay();
+                  const isWeekend = dayIdx === 0 || dayIdx === 5 || dayIdx === 6;
+                  const baseRate = activeRoom ? (isWeekend ? (activeRoom.weekendRate || activeRoom.ratePerNight || 0) : (activeRoom.weekdayRate || activeRoom.ratePerNight || 0)) : 0;
+                  const override = roomOverrides[dateStr];
+                  const displayRate = override ?? baseRate;
+                  const hasOverride = override !== undefined;
                   return (
-                    <label
-                      key={r.id}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-all select-none"
+                    <button
+                      key={dateStr}
+                      type="button"
+                      disabled={past}
+                      onClick={() => !past && handleDateClick(dateStr, baseRate)}
+                      className="relative flex flex-col items-center justify-center h-14 transition-colors"
                       style={{
-                        borderColor: checked ? "rgba(248,113,113,0.5)" : C.border,
-                        background: checked ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.03)",
+                        background: isEditing ? "rgba(212,168,67,0.18)" : past ? "rgba(0,0,0,0.2)" : hasOverride ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.02)",
+                        cursor: past ? "default" : "pointer",
                       }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleBlockRoom(r.id)}
-                        className="accent-[#f87171] shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold truncate" style={{ color: checked ? "#f87171" : C.text }}>
-                          {r.name}
-                        </div>
-                        {r.roomNumbers?.length > 0 && (
-                          <div className="text-[9px] font-mono" style={{ color: C.muted }}>
-                            Room {r.roomNumbers.join(", ")}
-                          </div>
-                        )}
-                      </div>
-                    </label>
+                      {(isToday || isEditing) && (
+                        <div className="absolute inset-[2px] rounded-lg border-2 pointer-events-none" style={{ borderColor: C.gold }} />
+                      )}
+                      {hasOverride && !past && !isEditing && (
+                        <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full" style={{ background: "#4ade80" }} />
+                      )}
+                      <span className="text-[11px] font-bold leading-none mb-0.5" style={{
+                        color: past ? "rgba(255,255,255,0.2)" : isEditing || isToday ? C.gold : hasOverride ? "#4ade80" : C.text,
+                      }}>{day}</span>
+                      {!past && displayRate > 0 && (
+                        <span className="text-[9px] font-bold" style={{
+                          color: isEditing || isToday ? C.gold : hasOverride ? "#4ade80" : C.muted,
+                        }}>
+                          ₹{(displayRate / 1000).toFixed(displayRate % 1000 === 0 ? 0 : 1)}K
+                        </span>
+                      )}
+                    </button>
                   );
                 })}
               </div>
-            </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Reason (optional)</label>
-                <input
-                  type="text"
-                  value={blockReason}
-                  onChange={e => setBlockReason(e.target.value)}
-                  placeholder="e.g. Maintenance, Owner stay…"
-                  className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
-                  style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text }}
-                />
-              </div>
-              <div />
-              <div className="sm:col-span-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold block mb-2" style={{ color: C.muted }}>
-                  Block Dates
-                  {blockDates.length > 0 && (
-                    <span className="ml-2 font-normal normal-case" style={{ color: "#f87171" }}>
-                      — {blockDates.length} date{blockDates.length > 1 ? "s" : ""} selected
-                    </span>
-                  )}
-                </label>
-                <div className="admin-block-datepicker">
-                  <DatePicker
-                    inline
-                    selectsMultiple
-                    selectedDates={blockDates}
-                    onChange={(dates: Date[]) => setBlockDates(dates ?? [])}
-                    minDate={new Date()}
-                  />
-                </div>
-                {blockDates.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {blockDates.map((d, i) => (
-                      <span key={i} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold"
-                        style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }}>
-                        {d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                        <button type="button" onClick={() => setBlockDates(prev => prev.filter((_, j) => j !== i))}
-                          className="hover:opacity-70 cursor-pointer ml-0.5 leading-none">×</button>
+              {/* Inline edit panel */}
+              {editingPriceDate && (() => {
+                const editDateObj = new Date(editingPriceDate + "T12:00:00");
+                const hasExisting = !!(activeRoom && priceOverrides[activeRoom.id]?.[editingPriceDate]);
+                return (
+                  <div className="border rounded-xl p-4 space-y-3" style={{ borderColor: C.gold + "60", background: "rgba(212,168,67,0.05)" }}>
+                    <div className="flex items-center gap-2">
+                      <Pencil className="w-3.5 h-3.5 shrink-0" style={{ color: C.gold }} />
+                      <span className="text-xs font-bold" style={{ color: C.text }}>
+                        {editDateObj.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                       </span>
-                    ))}
-                    <button type="button" onClick={() => setBlockDates([])}
-                      className="px-2.5 py-1 rounded-full text-[10px] font-bold hover:opacity-70 cursor-pointer"
-                      style={{ background: "rgba(255,255,255,0.06)", color: C.muted, border: `1px solid ${C.border}` }}>
-                      Clear all
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={saveBlock}
-              disabled={savingBlock}
-              className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-opacity"
-              style={{ background: "#f87171", color: "#fff", opacity: savingBlock ? 0.6 : 1 }}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              {savingBlock ? "Saving…" : "Confirm Block"}
-            </button>
-          </div>
-        )}
-
-        {/* Active Blocks List */}
-        <div className="px-5 py-4 border-t" style={{ borderColor: C.border, background: C.card }}>
-          {blocksLoading ? (
-            <div className="flex items-center gap-2 py-2">
-              <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: C.border, borderTopColor: "#f87171" }} />
-              <span className="text-xs" style={{ color: C.muted }}>Loading blocks…</span>
-            </div>
-          ) : blocks.length === 0 ? (
-            <p className="text-center text-xs py-3" style={{ color: C.muted }}>
-              No active blocks — all rooms are currently available.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              <div className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: C.muted }}>
-                Active Blocks ({blocks.length})
-              </div>
-              {blocks.map(block => (
-                <div key={block.docId}
-                  className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border"
-                  style={{ borderColor: "rgba(248,113,113,0.25)", background: "rgba(248,113,113,0.06)" }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold" style={{ color: "#f87171" }}>{block.roomName}</span>
-                      {block.roomNumbers?.length > 0 && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold"
-                          style={{ background: "rgba(248,113,113,0.15)", color: "#f87171" }}>
-                          Room {block.roomNumbers.join(", ")}
+                      {hasExisting && (
+                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(74,222,128,0.15)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.35)" }}>
+                          Custom
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] mt-0.5" style={{ color: C.muted }}>
-                      {block.startDate} → {block.endDate}
-                      {block.reason && block.reason !== "Admin block" ? ` · ${block.reason}` : ""}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold" style={{ color: C.muted }}>₹</span>
+                        <input
+                          type="number"
+                          min={100}
+                          step={50}
+                          value={editingPriceValue}
+                          onChange={e => setEditingPriceValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") { setEditingPriceDate(null); setEditingPriceValue(""); } }}
+                          autoFocus
+                          placeholder="Enter price…"
+                          className="w-36 pl-7 pr-3 py-2.5 rounded-xl text-sm font-bold border outline-none"
+                          style={{ background: "rgba(212,168,67,0.08)", borderColor: C.gold, color: C.text }}
+                        />
+                      </div>
+                      <span className="text-[10px]" style={{ color: C.muted }}>/night</span>
+                      <button
+                        onClick={handleSave}
+                        disabled={savingPriceOverride}
+                        className="btn-apple-primary flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold"
+                        style={{ background: C.gold, color: "#0a0a0a", borderRadius: "9999px", opacity: savingPriceOverride ? 0.6 : 1 }}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        {savingPriceOverride ? "Saving…" : hasExisting ? "Update" : "Add"}
+                      </button>
+                      {hasExisting && (
+                        <button
+                          onClick={handleRemove}
+                          disabled={savingPriceOverride}
+                          className="btn-apple flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold"
+                          style={{ border: "1px solid rgba(248,113,113,0.45)", color: "#f87171", borderRadius: "9999px", opacity: savingPriceOverride ? 0.6 : 1 }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Remove
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { setEditingPriceDate(null); setEditingPriceValue(""); }}
+                        className="btn-apple px-3 py-2.5 text-xs font-bold border"
+                        style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => removeBlock(block.docId)}
-                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border hover:bg-white/10 transition-colors"
-                    style={{ borderColor: "rgba(248,113,113,0.3)", color: "#f87171" }}
-                  >
-                    <X className="w-3 h-3" /> Unblock
+                );
+              })()}
+
+              {/* Legend */}
+              <div className="flex flex-wrap items-center gap-4 pt-1 border-t" style={{ borderColor: C.border }}>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "rgba(237,233,225,0.5)" }} />
+                  <span className="text-[10px]" style={{ color: C.muted }}>Base rate</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "#4ade80" }} />
+                  <span className="text-[10px]" style={{ color: C.muted }}>Custom price</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full inline-block border-2" style={{ borderColor: C.gold }} />
+                  <span className="text-[10px]" style={{ color: C.muted }}>Selected / Today</span>
+                </div>
+                <span className="text-[9px] ml-auto italic" style={{ color: C.muted }}>Click any future date to set price</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Date Blocking ─────────────────────────────────── */}
+      {(() => {
+        const FULL_MONTHS_BC = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        const bt = new Date();
+        const todayStr = `${bt.getFullYear()}-${String(bt.getMonth()+1).padStart(2,"0")}-${String(bt.getDate()).padStart(2,"0")}`;
+        const calFirstDay = new Date(blockedCalYear, blockedCalMonth, 1).getDay();
+        const calDaysInMonth = new Date(blockedCalYear, blockedCalMonth + 1, 0).getDate();
+
+        // Build blocked date sets per room
+        const blockedByRoom: Record<string, Set<string>> = {};
+        blocks.forEach((block: any) => {
+          if (!blockedByRoom[block.roomId]) blockedByRoom[block.roomId] = new Set<string>();
+          const sp = block.startDate.split("-");
+          const ep = block.endDate.split("-");
+          const start = new Date(parseInt(sp[0]), parseInt(sp[1]) - 1, parseInt(sp[2]));
+          const end = new Date(parseInt(ep[0]), parseInt(ep[1]) - 1, parseInt(ep[2]));
+          const curr = new Date(start);
+          while (curr <= end) {
+            const ds = `${curr.getFullYear()}-${String(curr.getMonth()+1).padStart(2,"0")}-${String(curr.getDate()).padStart(2,"0")}`;
+            blockedByRoom[block.roomId].add(ds);
+            curr.setDate(curr.getDate() + 1);
+          }
+        });
+
+        const handleCellClick = (room: any, dateStr: string, isBlocked: boolean) => {
+          if (!isBlocked) return;
+          setSelectedBlockCell(prev =>
+            prev?.roomId === room.id && prev?.date === dateStr ? null
+              : { roomId: room.id, roomName: room.name, date: dateStr }
+          );
+        };
+
+        const handleUnblock = async () => {
+          if (!selectedBlockCell) return;
+          setRemovingBlock(true);
+          const toRemove = blocks.filter((b: any) =>
+            b.roomId === selectedBlockCell.roomId &&
+            b.startDate <= selectedBlockCell.date &&
+            b.endDate >= selectedBlockCell.date
+          );
+          try {
+            await Promise.all(toRemove.map((b: any) => deleteDoc(doc(db, "roomBlocks", b.docId))));
+            setBlocks(prev => prev.filter((b: any) => !toRemove.find((r: any) => r.docId === b.docId)));
+            setSelectedBlockCell(null);
+          } catch (err) {
+            alert("Failed to unblock. Please try again."); console.error(err);
+          } finally {
+            setRemovingBlock(false);
+          }
+        };
+
+        return (
+          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between" style={{ background: C.card }}>
+              <div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" style={{ color: "#f87171" }} />
+                  <span className="text-sm font-bold" style={{ color: C.text }}>Date Blocking</span>
+                  {blocks.length > 0 && (
+                    <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(248,113,113,0.15)", color: "#f87171" }}>
+                      {blocks.length} blocked
+                    </span>
+                  )}
+                </div>
+                <div className="text-[10px] mt-0.5 uppercase tracking-widest" style={{ color: C.muted }}>
+                  Tap a red date to unblock · Customers see Sold Out
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={loadBlocks} className="p-2 rounded-full border hover:bg-white/10 transition-all active:scale-95" style={{ borderColor: C.border }}>
+                  <RefreshCcw className={`w-3.5 h-3.5 transition-transform ${blocksLoading ? "animate-spin" : ""}`} style={{ color: C.muted }} />
+                </button>
+                <button
+                  onClick={() => { setShowAddBlock(v => !v); setSelectedBlockCell(null); }}
+                  className="btn-apple flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border"
+                  style={{ borderColor: showAddBlock ? "#f87171" : C.border, color: showAddBlock ? "#f87171" : C.gold, borderRadius: "9999px" }}
+                >
+                  {showAddBlock ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                  {showAddBlock ? "Cancel" : "Block Dates"}
+                </button>
+              </div>
+            </div>
+
+            {/* Add Block Form */}
+            {showAddBlock && (
+              <div className="px-5 py-4 border-t space-y-4" style={{ borderColor: C.border, background: "rgba(248,113,113,0.04)" }}>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.muted }}>
+                      Rooms to Block
+                      {blockRoomIds.length > 0 && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[9px]" style={{ background: "rgba(248,113,113,0.2)", color: "#f87171" }}>
+                          {blockRoomIds.length} selected
+                        </span>
+                      )}
+                    </label>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setBlockRoomIds(blockRooms.map((r: any) => r.id))}
+                        className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-white/10" style={{ color: C.gold }}>All</button>
+                      <button type="button" onClick={() => setBlockRoomIds([])}
+                        className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-white/10" style={{ color: C.muted }}>Clear</button>
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {blockRooms.map((r: any) => {
+                      const checked = blockRoomIds.includes(r.id);
+                      return (
+                        <label key={r.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-all select-none"
+                          style={{ borderColor: checked ? "rgba(248,113,113,0.5)" : C.border, background: checked ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.03)" }}>
+                          <input type="checkbox" checked={checked} onChange={() => toggleBlockRoom(r.id)} className="accent-[#f87171] shrink-0" />
+                          <div className="min-w-0">
+                            <div className="text-xs font-semibold truncate" style={{ color: checked ? "#f87171" : C.text }}>{r.name}</div>
+                            {r.roomNumbers?.length > 0 && <div className="text-[9px] font-mono" style={{ color: C.muted }}>Room {r.roomNumbers.join(", ")}</div>}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Reason (optional)</label>
+                    <input type="text" value={blockReason} onChange={e => setBlockReason(e.target.value)}
+                      placeholder="e.g. Maintenance, Owner stay…"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
+                      style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text }} />
+                  </div>
+                  <div />
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] uppercase tracking-widest font-bold block mb-2" style={{ color: C.muted }}>
+                      Block Dates{blockDates.length > 0 && <span className="ml-2 font-normal normal-case" style={{ color: "#f87171" }}>— {blockDates.length} selected</span>}
+                    </label>
+                    <div className="admin-block-datepicker">
+                      <DatePicker inline selectsMultiple selectedDates={blockDates}
+                        onChange={(dates: Date[]) => setBlockDates(dates ?? [])} minDate={new Date()} />
+                    </div>
+                    {blockDates.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {blockDates.map((d, i) => (
+                          <span key={i} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold"
+                            style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }}>
+                            {d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                            <button type="button" onClick={() => setBlockDates(prev => prev.filter((_, j) => j !== i))}
+                              className="hover:opacity-70 cursor-pointer ml-0.5">×</button>
+                          </span>
+                        ))}
+                        <button type="button" onClick={() => setBlockDates([])}
+                          className="px-2.5 py-1 rounded-full text-[10px] font-bold hover:opacity-70 cursor-pointer"
+                          style={{ background: "rgba(255,255,255,0.06)", color: C.muted, border: `1px solid ${C.border}` }}>Clear all</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <button onClick={saveBlock} disabled={savingBlock}
+                  className="btn-apple w-full py-2.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+                  style={{ background: "#f87171", color: "#fff", borderRadius: "9999px", opacity: savingBlock ? 0.6 : 1 }}>
+                  <Calendar className="w-3.5 h-3.5" />
+                  {savingBlock ? "Saving…" : "Confirm Block"}
+                </button>
+              </div>
+            )}
+
+            {/* Calendar View — always visible */}
+            {blocksLoading ? (
+              <div className="flex items-center justify-center gap-2 py-10">
+                <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: C.border, borderTopColor: "#f87171" }} />
+                <span className="text-xs" style={{ color: C.muted }}>Loading…</span>
+              </div>
+            ) : (
+              <>
+                {/* Month nav */}
+                <div className="px-5 py-3 flex items-center justify-between border-t" style={{ borderColor: C.border, background: "rgba(255,255,255,0.01)" }}>
+                  <button onClick={prevBlockedCalMonth} className="btn-apple p-1.5 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-sm font-bold" style={{ color: C.text }}>{FULL_MONTHS_BC[blockedCalMonth]} {blockedCalYear}</span>
+                  <button onClick={nextBlockedCalMonth} className="btn-apple p-1.5 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+
+                {/* Legend */}
+                <div className="px-5 py-2 flex items-center gap-4 border-t" style={{ borderColor: C.border }}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(74,222,128,0.35)", border: "1px solid rgba(74,222,128,0.5)" }} />
+                    <span className="text-[10px]" style={{ color: C.muted }}>Available</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(248,113,113,0.85)" }} />
+                    <span className="text-[10px]" style={{ color: C.muted }}>Blocked · tap to unblock</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(212,168,67,0.3)", border: `1px solid ${C.gold}` }} />
+                    <span className="text-[10px]" style={{ color: C.muted }}>Today</span>
+                  </div>
+                </div>
+
+                {/* Unblock action panel */}
+                {selectedBlockCell && (
+                  <div className="mx-4 mb-3 mt-1 border rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                    style={{ borderColor: "rgba(248,113,113,0.4)", background: "rgba(248,113,113,0.06)" }}>
+                    <div>
+                      <div className="text-xs font-bold" style={{ color: "#f87171" }}>{selectedBlockCell.roomName}</div>
+                      <div className="text-[10px] mt-0.5" style={{ color: C.muted }}>
+                        {new Date(selectedBlockCell.date + "T12:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={handleUnblock} disabled={removingBlock}
+                        className="btn-apple flex items-center gap-1.5 px-3 py-2 text-xs font-bold"
+                        style={{ background: "#f87171", color: "#fff", borderRadius: "9999px", opacity: removingBlock ? 0.6 : 1 }}>
+                        <X className="w-3.5 h-3.5" />
+                        {removingBlock ? "Removing…" : "Unblock"}
+                      </button>
+                      <button onClick={() => setSelectedBlockCell(null)}
+                        className="btn-apple p-2 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mini room calendars grid */}
+                <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {blockRooms.map((room: any) => {
+                    const roomBlocked = blockedByRoom[room.id] || new Set<string>();
+                    return (
+                      <div key={room.id} className="rounded-xl p-2.5 border" style={{ borderColor: C.border, background: "rgba(255,255,255,0.02)" }}>
+                        {/* Day headers */}
+                        <div className="grid grid-cols-7 mb-1">
+                          {["S","M","T","W","T","F","S"].map((d, i) => (
+                            <div key={i} className="text-center text-[7px] font-bold py-0.5" style={{ color: C.muted }}>{d}</div>
+                          ))}
+                        </div>
+                        {/* Date cells */}
+                        <div className="grid grid-cols-7 gap-[2px]">
+                          {Array.from({ length: calFirstDay }, (_, i) => <div key={`e-${i}`} className="aspect-square" />)}
+                          {Array.from({ length: calDaysInMonth }, (_, i) => {
+                            const day = i + 1;
+                            const dateStr = `${blockedCalYear}-${String(blockedCalMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+                            const isBlocked = roomBlocked.has(dateStr);
+                            const isPast = dateStr < todayStr;
+                            const isToday = dateStr === todayStr;
+                            const isSelected = selectedBlockCell?.roomId === room.id && selectedBlockCell?.date === dateStr;
+                            return (
+                              <button
+                                key={dateStr}
+                                type="button"
+                                onClick={() => handleCellClick(room, dateStr, isBlocked)}
+                                disabled={!isBlocked || isPast}
+                                className="aspect-square flex items-center justify-center rounded text-[8px] font-bold transition-all active:scale-90"
+                                style={{
+                                  background: isSelected ? "#f87171" : isBlocked ? "rgba(248,113,113,0.85)" : isPast ? "rgba(255,255,255,0.03)" : isToday ? "rgba(212,168,67,0.25)" : "rgba(74,222,128,0.18)",
+                                  color: isBlocked ? "#fff" : isPast ? "rgba(255,255,255,0.18)" : isToday ? C.gold : "rgba(74,222,128,0.9)",
+                                  border: isToday && !isBlocked ? `1px solid ${C.gold}` : isSelected ? "2px solid #fff" : "none",
+                                  cursor: isBlocked && !isPast ? "pointer" : "default",
+                                  transform: isSelected ? "scale(1.15)" : undefined,
+                                }}
+                              >
+                                {day}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* Room name */}
+                        <div className="mt-2 text-[9px] font-bold truncate" style={{ color: C.text }}>{room.name}</div>
+                        {roomBlocked.size > 0 && (
+                          <div className="text-[8px] mt-0.5" style={{ color: "#f87171" }}>
+                            {[...roomBlocked].filter(d => d >= todayStr && d.startsWith(`${blockedCalYear}-${String(blockedCalMonth+1).padStart(2,"0")}`)).length} blocked this month
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Extra Bed Rate */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
