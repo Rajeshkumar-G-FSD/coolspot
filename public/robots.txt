@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /bookings
+
+# Block AI training crawlers
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+# Sitemap
+Sitemap: https://coolspotcottage.com/sitemap.xml

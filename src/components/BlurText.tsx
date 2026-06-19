@@ -1,5 +1,5 @@
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { useEffect, useRef, useState, useMemo } from 'react';
 
 type EasingFn = (t: number) => number;
 
@@ -16,6 +16,7 @@ interface BlurTextProps {
   easing?: EasingFn;
   onAnimationComplete?: () => void;
   stepDuration?: number;
+  tag?: React.ElementType;
 }
 
 const buildKeyframes = (
@@ -43,10 +44,11 @@ const BlurText = ({
   easing = (t) => t,
   onAnimationComplete,
   stepDuration = 0.35,
+  tag: Tag = 'p',
 }: BlurTextProps) => {
   const elements = animateBy === 'words' ? text.split(' ') : text.split('');
   const [inView, setInView] = useState(false);
-  const ref = useRef<HTMLParagraphElement>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -88,34 +90,35 @@ const BlurText = ({
     stepCount === 1 ? 0 : i / (stepCount - 1)
   );
 
-  return (
-    <p ref={ref} className={`blur-text ${className} flex flex-wrap`}>
-      {elements.map((segment, index) => {
-        const animateKeyframes = buildKeyframes(fromSnapshot, toSnapshots);
-        const spanTransition: any = {
-          duration: totalDuration,
-          times,
-          delay: (index * delay) / 1000,
-          ease: easing,
-        };
+  const spans = elements.map((segment, index) => {
+    const animateKeyframes = buildKeyframes(fromSnapshot, toSnapshots);
+    const spanTransition: any = {
+      duration: totalDuration,
+      times,
+      delay: (index * delay) / 1000,
+      ease: easing,
+    };
+    return (
+      <motion.span
+        className="inline-block will-change-[transform,filter,opacity]"
+        key={index}
+        initial={fromSnapshot as any}
+        animate={inView ? (animateKeyframes as any) : (fromSnapshot as any)}
+        transition={spanTransition}
+        onAnimationComplete={
+          index === elements.length - 1 ? onAnimationComplete : undefined
+        }
+      >
+        {segment === ' ' ? ' ' : segment}
+        {animateBy === 'words' && index < elements.length - 1 && ' '}
+      </motion.span>
+    );
+  });
 
-        return (
-          <motion.span
-            className="inline-block will-change-[transform,filter,opacity]"
-            key={index}
-            initial={fromSnapshot as any}
-            animate={inView ? (animateKeyframes as any) : (fromSnapshot as any)}
-            transition={spanTransition}
-            onAnimationComplete={
-              index === elements.length - 1 ? onAnimationComplete : undefined
-            }
-          >
-            {segment === ' ' ? ' ' : segment}
-            {animateBy === 'words' && index < elements.length - 1 && ' '}
-          </motion.span>
-        );
-      })}
-    </p>
+  return React.createElement(
+    Tag as string,
+    { ref, className: `blur-text ${className} flex flex-wrap` },
+    ...spans
   );
 };
 
