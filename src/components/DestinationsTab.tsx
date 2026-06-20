@@ -721,20 +721,36 @@ export default function DestinationsTab({
       )}
 
       {/* Brand Value Quote / Editorial Section */}
-      <section className="py-20 bg-[#efe4d9]/25 dark:bg-slate-950/40 relative">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+      <section className="relative py-24 overflow-hidden bg-[#001a52] dark:bg-[#000d2e]">
+        {/* Ambient glow layers */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(251,191,36,0.08),transparent)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,rgba(14,47,118,0.5),transparent)] pointer-events-none" />
+        {/* Top & bottom amber dividers */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+
+        <div className="relative max-w-4xl mx-auto px-6 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
           >
-            <Quote className="w-10 h-10 text-slate-300 dark:text-slate-800 mx-auto mb-6 opacity-80" />
-            <h3 className="font-headline-lg text-2xl md:text-3xl italic text-[#001a52] mb-6">
-              "A peaceful stay with stunning views. Cool Spot Cottages offers warm hospitality, comfortable rooms, and an
-              unforgettable Ooty experience surrounded by the beautiful Nilgiris."
+            {/* Decorative quote mark */}
+            <div className="text-amber-400/60 text-[96px] leading-none font-serif select-none mb-2 -mt-4">"</div>
+
+            <h3
+              className="text-2xl sm:text-3xl md:text-4xl text-white leading-relaxed md:leading-loose mb-8"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontStyle: 'italic' }}
+            >
+              A peaceful stay with stunning views. Cool Spot Cottages offers warm hospitality, comfortable rooms, and an
+              unforgettable Ooty experience surrounded by the beautiful Nilgiris.
             </h3>
-            <span className="font-sans text-xs uppercase tracking-widest text-[#4a607c] font-black block">
+
+            {/* Amber divider line */}
+            <div className="w-12 h-px bg-amber-400/60 mx-auto mb-5" />
+
+            <span className="font-sans text-[11px] uppercase tracking-[0.25em] text-amber-400/80 font-bold block">
               — Guest Review, 2026
             </span>
           </motion.div>

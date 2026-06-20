@@ -50,10 +50,16 @@ const BlurText = ({
 }: BlurTextProps) => {
   const elements = animateBy === 'words' ? text.split(' ') : text.split('');
   const [inView, setInView] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
   const ref = useRef<HTMLElement>(null);
 
+  // Wait for custom fonts (Playfair Display) to load before animating
   useEffect(() => {
-    if (!ref.current) return;
+    document.fonts.ready.then(() => setFontsReady(true));
+  }, []);
+
+  useEffect(() => {
+    if (!ref.current || !fontsReady) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -65,7 +71,7 @@ const BlurText = ({
     );
     observer.observe(ref.current);
     return () => observer.disconnect();
-  }, [threshold, rootMargin]);
+  }, [threshold, rootMargin, fontsReady]);
 
   const defaultFrom = useMemo(
     () =>

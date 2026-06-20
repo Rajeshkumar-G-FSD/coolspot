@@ -124,15 +124,21 @@
 }
 
 @layer components {
-  /* Hero heading — bold double-line stroke effect */
+  /* Hero heading — Playfair Display luxury serif */
   .hero-title {
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
-    paint-order: stroke fill;
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: -0.01em;
     text-shadow:
-      0 0 40px rgba(251, 191, 36, 0.25),
-      0 4px 12px rgba(0, 0, 0, 0.6);
+      0 2px 24px rgba(0, 0, 0, 0.55),
+      0 0 60px rgba(251, 191, 36, 0.18);
+  }
+
+  /* Keep hero text invisible until Playfair Display loads — prevents fallback font flash */
+  @font-face {
+    font-family: 'Playfair Display';
+    font-display: block;
   }
 
   /* Apple-style button base — pill shape, smooth press, clean weight */
