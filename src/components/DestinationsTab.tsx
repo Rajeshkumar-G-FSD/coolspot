@@ -309,13 +309,13 @@ export default function DestinationsTab({
           <div className="w-px h-8 bg-gradient-to-b from-white/20 to-transparent" />
         </div>
 
-        <div className="relative z-10 text-center px-6 md:px-16 max-w-5xl mx-auto flex flex-col items-center mt-12 md:mt-0">
+        <div className="relative z-10 w-full px-5 sm:px-10 md:px-16 max-w-6xl mx-auto flex flex-col items-center mt-10 md:mt-0">
           {/* Logo in hero */}
           <motion.div
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-6"
+            className="mb-5 md:mb-6"
           >
             <img
               src={coolspotLogo}
@@ -326,10 +326,10 @@ export default function DestinationsTab({
 
           <BlurText
             text="Escape Into Luxury, Where Nature Meets Comfort"
-            className="font-headline-lg text-4xl md:text-7xl text-white mb-6 text-glow leading-normal md:leading-tight justify-center"
-            delay={120}
+            className="hero-title text-[2.4rem] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl text-white mb-5 md:mb-6 text-center w-full justify-center"
+            delay={110}
             direction="top"
-            stepDuration={0.4}
+            stepDuration={0.38}
           />
           <BlurText
             text="Discover a sanctuary of unparalleled elegance. Experience the perfect harmony of pristine mountain beauty and refined modern architecture."

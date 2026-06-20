@@ -124,6 +124,17 @@
 }
 
 @layer components {
+  /* Hero heading — bold double-line stroke effect */
+  .hero-title {
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
+    paint-order: stroke fill;
+    text-shadow:
+      0 0 40px rgba(251, 191, 36, 0.25),
+      0 4px 12px rgba(0, 0, 0, 0.6);
+  }
+
   /* Apple-style button base — pill shape, smooth press, clean weight */
   .btn-apple {
     @apply rounded-full font-semibold transition-all duration-200 active:scale-95 cursor-pointer select-none;

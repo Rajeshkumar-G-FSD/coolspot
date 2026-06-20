@@ -17,6 +17,7 @@ interface BlurTextProps {
   onAnimationComplete?: () => void;
   stepDuration?: number;
   tag?: React.ElementType;
+  vertical?: boolean;
 }
 
 const buildKeyframes = (
@@ -45,6 +46,7 @@ const BlurText = ({
   onAnimationComplete,
   stepDuration = 0.35,
   tag: Tag = 'p',
+  vertical = false,
 }: BlurTextProps) => {
   const elements = animateBy === 'words' ? text.split(' ') : text.split('');
   const [inView, setInView] = useState(false);
@@ -100,7 +102,7 @@ const BlurText = ({
     };
     return (
       <motion.span
-        className="inline-block will-change-[transform,filter,opacity]"
+        className={`${vertical ? 'block w-full' : 'inline-block'} will-change-[transform,filter,opacity]`}
         key={index}
         initial={fromSnapshot as any}
         animate={inView ? (animateKeyframes as any) : (fromSnapshot as any)}
@@ -110,14 +112,14 @@ const BlurText = ({
         }
       >
         {segment === ' ' ? ' ' : segment}
-        {animateBy === 'words' && index < elements.length - 1 && ' '}
+        {!vertical && animateBy === 'words' && index < elements.length - 1 && ' '}
       </motion.span>
     );
   });
 
   return React.createElement(
     Tag as string,
-    { ref, className: `blur-text ${className} flex flex-wrap` },
+    { ref, className: `blur-text ${className} ${vertical ? 'flex flex-col' : 'flex flex-wrap'}` },
     ...spans
   );
 };
