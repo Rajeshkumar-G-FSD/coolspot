@@ -237,7 +237,7 @@ export default function BookingFlowTab({
 
         bookingSnap.forEach(d => {
           const b = d.data();
-          if (b.status !== "Cancelled" && b.checkIn && b.checkOut && Array.isArray(b.assignedRooms) && b.assignedRooms.length) {
+          if (b.status === "Confirmed" && b.checkIn && b.checkOut && Array.isArray(b.assignedRooms) && b.assignedRooms.length) {
             markRange(new Date(b.checkIn + "T00:00:00"), new Date(b.checkOut + "T00:00:00"), b.assignedRooms);
           }
         });
@@ -281,10 +281,10 @@ export default function BookingFlowTab({
       ]);
       const taken: string[] = [];
 
-      // Confirmed/pending bookings that overlap the requested dates
+      // Only confirmed bookings block room availability
       bookingSnap.forEach((d) => {
         const b = d.data();
-        if (b.status !== "Cancelled" && b.checkIn < coDate && b.checkOut > ciDate && Array.isArray(b.assignedRooms)) {
+        if (b.status === "Confirmed" && b.checkIn < coDate && b.checkOut > ciDate && Array.isArray(b.assignedRooms)) {
           taken.push(...b.assignedRooms);
         }
       });
@@ -2185,10 +2185,11 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
 
               <div className="pb-4">
                 <button
-                  onClick={() => window.location.reload()}
-                  className="w-full text-center py-3 btn-apple border border-slate-200 hover:border-[#001a52] text-[#001a52] text-xs font-semibold uppercase tracking-wider font-sans"
+                  onClick={() => setStep(2)}
+                  className="w-full text-center py-3 btn-apple border border-slate-200 hover:border-[#001a52] text-[#001a52] text-xs font-semibold uppercase tracking-wider font-sans flex items-center justify-center gap-2"
                 >
-                  Return to Landing Page
+                  <span>←</span>
+                  <span>Back to Guest Details</span>
                 </button>
               </div>
             </motion.div>

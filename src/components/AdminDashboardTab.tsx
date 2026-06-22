@@ -462,7 +462,7 @@ function ModuleRooms() {
   const [showBlockedCal, setShowBlockedCal] = useState(false);
   const [blockedCalYear, setBlockedCalYear] = useState(() => new Date().getFullYear());
   const [blockedCalMonth, setBlockedCalMonth] = useState(() => new Date().getMonth());
-  const [selectedBlockCell, setSelectedBlockCell] = useState<{ roomId: string; roomName: string; date: string } | null>(null);
+  const [selectedUnblockCells, setSelectedUnblockCells] = useState<{ roomId: string; roomName: string; date: string }[]>([]);
   const [removingBlock, setRemovingBlock] = useState(false);
 
   // Per-date price overrides
@@ -1168,24 +1168,41 @@ function ModuleRooms() {
 
         const handleCellClick = (room: any, dateStr: string, isBlocked: boolean) => {
           if (!isBlocked) return;
-          setSelectedBlockCell(prev =>
-            prev?.roomId === room.id && prev?.date === dateStr ? null
-              : { roomId: room.id, roomName: room.name, date: dateStr }
-          );
+          setSelectedUnblockCells(prev => {
+            const exists = prev.some(c => c.roomId === room.id && c.date === dateStr);
+            return exists
+              ? prev.filter(c => !(c.roomId === room.id && c.date === dateStr))
+              : [...prev, { roomId: room.id, roomName: room.name, date: dateStr }];
+          });
+        };
+
+        const handleSelectAllBlocked = () => {
+          const allBlocked: { roomId: string; roomName: string; date: string }[] = [];
+          blockRooms.forEach((room: any) => {
+            const roomBlocked = blockedByRoom[room.id] || new Set<string>();
+            [...roomBlocked].forEach(dateStr => {
+              if (dateStr >= todayStr && dateStr.startsWith(`${blockedCalYear}-${String(blockedCalMonth + 1).padStart(2, "0")}`)) {
+                allBlocked.push({ roomId: room.id, roomName: room.name, date: dateStr });
+              }
+            });
+          });
+          setSelectedUnblockCells(allBlocked);
         };
 
         const handleUnblock = async () => {
-          if (!selectedBlockCell) return;
+          if (selectedUnblockCells.length === 0) return;
           setRemovingBlock(true);
           const toRemove = blocks.filter((b: any) =>
-            b.roomId === selectedBlockCell.roomId &&
-            b.startDate <= selectedBlockCell.date &&
-            b.endDate >= selectedBlockCell.date
+            selectedUnblockCells.some(cell =>
+              b.roomId === cell.roomId &&
+              b.startDate <= cell.date &&
+              b.endDate >= cell.date
+            )
           );
           try {
             await Promise.all(toRemove.map((b: any) => deleteDoc(doc(db, "roomBlocks", b.docId))));
             setBlocks(prev => prev.filter((b: any) => !toRemove.find((r: any) => r.docId === b.docId)));
-            setSelectedBlockCell(null);
+            setSelectedUnblockCells([]);
           } catch (err) {
             alert("Failed to unblock. Please try again."); console.error(err);
           } finally {
@@ -1208,7 +1225,7 @@ function ModuleRooms() {
                   )}
                 </div>
                 <div className="text-[10px] mt-0.5 uppercase tracking-widest" style={{ color: C.muted }}>
-                  Tap a red date to unblock · Customers see Sold Out
+                  Tap red dates to select · tap again to deselect · then Unblock
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -1216,7 +1233,7 @@ function ModuleRooms() {
                   <RefreshCcw className={`w-3.5 h-3.5 transition-transform ${blocksLoading ? "animate-spin" : ""}`} style={{ color: C.muted }} />
                 </button>
                 <button
-                  onClick={() => { setShowAddBlock(v => !v); setSelectedBlockCell(null); }}
+                  onClick={() => { setShowAddBlock(v => !v); setSelectedUnblockCells([]); }}
                   className="btn-apple flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border"
                   style={{ borderColor: showAddBlock ? "#f87171" : C.border, color: showAddBlock ? "#f87171" : C.gold, borderRadius: "9999px" }}
                 >
@@ -1277,7 +1294,7 @@ function ModuleRooms() {
                     </label>
                     <div className="admin-block-datepicker">
                       <DatePicker inline selectsMultiple selectedDates={blockDates}
-                        onChange={(dates: Date[]) => setBlockDates(dates ?? [])} minDate={new Date()} />
+                        onChange={(dates: Date[] | null) => setBlockDates(dates ?? [])} minDate={new Date()} />
                     </div>
                     {blockDates.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
@@ -1325,7 +1342,7 @@ function ModuleRooms() {
                 </div>
 
                 {/* Legend */}
-                <div className="px-5 py-2 flex items-center gap-4 border-t" style={{ borderColor: C.border }}>
+                <div className="px-5 py-2 flex items-center flex-wrap gap-x-4 gap-y-1.5 border-t" style={{ borderColor: C.border }}>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(74,222,128,0.35)", border: "1px solid rgba(74,222,128,0.5)" }} />
                     <span className="text-[10px]" style={{ color: C.muted }}>Available</span>
@@ -1335,29 +1352,46 @@ function ModuleRooms() {
                     <span className="text-[10px]" style={{ color: C.muted }}>Blocked · tap to unblock</span>
                   </div>
                   <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(120,60,60,0.55)", border: "1px solid rgba(180,80,80,0.4)" }} />
+                    <span className="text-[10px]" style={{ color: C.muted }}>Past blocked · expired</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(212,168,67,0.3)", border: `1px solid ${C.gold}` }} />
                     <span className="text-[10px]" style={{ color: C.muted }}>Today</span>
                   </div>
                 </div>
 
-                {/* Unblock action panel */}
-                {selectedBlockCell && (
-                  <div className="mx-4 mb-3 mt-1 border rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                {/* Multi-day unblock action panel */}
+                {selectedUnblockCells.length > 0 && (
+                  <div className="mx-4 mb-3 mt-1 border rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
                     style={{ borderColor: "rgba(248,113,113,0.4)", background: "rgba(248,113,113,0.06)" }}>
-                    <div>
-                      <div className="text-xs font-bold" style={{ color: "#f87171" }}>{selectedBlockCell.roomName}</div>
-                      <div className="text-[10px] mt-0.5" style={{ color: C.muted }}>
-                        {new Date(selectedBlockCell.date + "T12:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold" style={{ color: "#f87171" }}>
+                          {selectedUnblockCells.length} date{selectedUnblockCells.length > 1 ? "s" : ""} selected
+                        </span>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold"
+                          style={{ background: "rgba(248,113,113,0.18)", color: "#f87171" }}>
+                          across {new Set(selectedUnblockCells.map(c => c.roomId)).size} room{new Set(selectedUnblockCells.map(c => c.roomId)).size > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="text-[10px] mt-1 truncate" style={{ color: C.muted }}>
+                        {[...new Set(selectedUnblockCells.map(c => c.roomName))].join(" · ")}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={handleSelectAllBlocked}
+                        className="btn-apple px-3 py-1.5 text-[10px] font-bold border"
+                        style={{ borderColor: "rgba(248,113,113,0.4)", color: "#f87171", borderRadius: "9999px" }}>
+                        Select All
+                      </button>
                       <button onClick={handleUnblock} disabled={removingBlock}
                         className="btn-apple flex items-center gap-1.5 px-3 py-2 text-xs font-bold"
                         style={{ background: "#f87171", color: "#fff", borderRadius: "9999px", opacity: removingBlock ? 0.6 : 1 }}>
                         <X className="w-3.5 h-3.5" />
-                        {removingBlock ? "Removing…" : "Unblock"}
+                        {removingBlock ? "Removing…" : `Unblock ${selectedUnblockCells.length}`}
                       </button>
-                      <button onClick={() => setSelectedBlockCell(null)}
+                      <button onClick={() => setSelectedUnblockCells([])}
                         className="btn-apple p-2 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
                         <X className="w-3 h-3" />
                       </button>
@@ -1386,7 +1420,7 @@ function ModuleRooms() {
                             const isBlocked = roomBlocked.has(dateStr);
                             const isPast = dateStr < todayStr;
                             const isToday = dateStr === todayStr;
-                            const isSelected = selectedBlockCell?.roomId === room.id && selectedBlockCell?.date === dateStr;
+                            const isSelected = selectedUnblockCells.some(c => c.roomId === room.id && c.date === dateStr);
                             return (
                               <button
                                 key={dateStr}
@@ -1395,11 +1429,38 @@ function ModuleRooms() {
                                 disabled={!isBlocked || isPast}
                                 className="aspect-square flex items-center justify-center rounded text-[8px] font-bold transition-all active:scale-90"
                                 style={{
-                                  background: isSelected ? "#f87171" : isBlocked ? "rgba(248,113,113,0.85)" : isPast ? "rgba(255,255,255,0.03)" : isToday ? "rgba(212,168,67,0.25)" : "rgba(74,222,128,0.18)",
-                                  color: isBlocked ? "#fff" : isPast ? "rgba(255,255,255,0.18)" : isToday ? C.gold : "rgba(74,222,128,0.9)",
-                                  border: isToday && !isBlocked ? `1px solid ${C.gold}` : isSelected ? "2px solid #fff" : "none",
+                                  background: isSelected
+                                    ? "#f87171"
+                                    : isBlocked && isPast
+                                    ? "rgba(120,55,55,0.55)"
+                                    : isBlocked
+                                    ? "rgba(248,113,113,0.85)"
+                                    : isPast
+                                    ? "rgba(255,255,255,0.03)"
+                                    : isToday
+                                    ? "rgba(212,168,67,0.25)"
+                                    : "rgba(74,222,128,0.18)",
+                                  color: isSelected
+                                    ? "#fff"
+                                    : isBlocked && isPast
+                                    ? "rgba(255,180,180,0.5)"
+                                    : isBlocked
+                                    ? "#fff"
+                                    : isPast
+                                    ? "rgba(255,255,255,0.18)"
+                                    : isToday
+                                    ? C.gold
+                                    : "rgba(74,222,128,0.9)",
+                                  border: isSelected
+                                    ? "2px solid #fff"
+                                    : isBlocked && isPast
+                                    ? "1px solid rgba(180,80,80,0.35)"
+                                    : isToday && !isBlocked
+                                    ? `1px solid ${C.gold}`
+                                    : "none",
                                   cursor: isBlocked && !isPast ? "pointer" : "default",
                                   transform: isSelected ? "scale(1.15)" : undefined,
+                                  opacity: isBlocked && isPast ? 0.7 : 1,
                                 }}
                               >
                                 {day}
