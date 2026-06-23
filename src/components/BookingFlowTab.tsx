@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import coolspotQrCode from "../public/images/coolspot_cotages_qrcode.jpeg";
+import coolspotQrCode from "../public/images/coolspot_cottages_qrcode.jpeg";
 import {
   Calendar as CalendarIcon,
   Users,
@@ -1945,50 +1945,64 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                     )}
                   </div>
 
-                  {/* QR Code — Premium Card */}
-                  <div className="relative overflow-hidden rounded-3xl shadow-xl border border-white/60"
-                    style={{ background: "linear-gradient(135deg, #001a52 0%, #0e2f76 55%, #1a4799 100%)" }}>
-                    {/* Decorative circles */}
-                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-10"
-                      style={{ background: "radial-gradient(circle, #ffffff 0%, transparent 70%)" }} />
-                    <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full opacity-10"
-                      style={{ background: "radial-gradient(circle, #fbbf24 0%, transparent 70%)" }} />
+                  {/* QR Code — Premium Full-Bleed Card */}
+                  <div className="relative -mx-6 overflow-hidden"
+                    style={{ background: "linear-gradient(160deg, #00174a 0%, #0b2a6b 50%, #0f3380 100%)" }}>
+                    {/* Subtle dot-grid texture */}
+                    <div className="absolute inset-0 opacity-[0.06]"
+                      style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+                    {/* Ambient glow top-right */}
+                    <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-3xl opacity-20"
+                      style={{ background: "radial-gradient(circle, #60a5fa, transparent)" }} />
+                    {/* Amber glow bottom-left */}
+                    <div className="absolute -bottom-12 -left-12 w-44 h-44 rounded-full blur-3xl opacity-15"
+                      style={{ background: "radial-gradient(circle, #fbbf24, transparent)" }} />
 
-                    {/* Header */}
-                    <div className="relative px-5 pt-5 pb-3 flex items-center justify-between">
+                    {/* Header row */}
+                    <div className="relative flex items-center justify-between px-6 pt-6 pb-4">
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-blue-200/80">Pay via UPI</p>
-                        <p className="text-sm font-bold text-white mt-0.5">Scan &amp; Pay Instantly</p>
+                        <p className="text-[9px] uppercase tracking-[0.25em] font-semibold text-blue-300/70 mb-0.5">Secure UPI Payment</p>
+                        <p className="text-base font-bold text-white leading-tight">Scan &amp; Pay Instantly</p>
                       </div>
-                      <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/20">
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-[10px] font-semibold text-white">Live</span>
-                      </div>
-                    </div>
-
-                    {/* QR image */}
-                    <div className="relative flex justify-center px-5 pb-4">
-                      <div className="bg-white rounded-2xl p-3 shadow-2xl ring-4 ring-white/20">
-                        <img
-                          src={coolspotQrCode}
-                          alt="Scan to pay — coolspotcottage@okhdfcbank"
-                          className="w-52 h-52 object-contain rounded-lg"
-                        />
+                      {/* UPI badge */}
+                      <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-center">
+                        <p className="text-[9px] font-black text-white tracking-widest">UPI</p>
+                        <p className="text-[7px] text-blue-200/70 font-medium leading-none mt-0.5">SECURED</p>
                       </div>
                     </div>
 
-                    {/* UPI ID pill */}
-                    <div className="relative mx-5 mb-5">
-                      <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 flex items-center justify-between">
-                        <div>
-                          <p className="text-[9px] uppercase tracking-widest text-blue-200/70 font-semibold">UPI ID</p>
-                          <p className="text-[13px] font-bold text-white mt-0.5">coolspotcottage@okhdfcbank</p>
+                    {/* QR frame — centered, no side padding */}
+                    <div className="relative flex flex-col items-center pb-5">
+                      {/* Outer glow ring */}
+                      <div className="p-[3px] rounded-[22px]"
+                        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.05) 100%)" }}>
+                        <div className="bg-white rounded-[20px] p-4 shadow-2xl">
+                          <img
+                            src={coolspotQrCode}
+                            alt="Scan to pay — coolspotcottage@okhdfcbank"
+                            className="w-56 h-56 object-contain block"
+                          />
                         </div>
-                        <div className="flex flex-col gap-1">
-                          {["GPay","PhonePe","Paytm"].map(app => (
-                            <span key={app} className="text-[8px] font-semibold bg-white/15 text-white/80 rounded-full px-2 py-0.5 text-center">{app}</span>
-                          ))}
-                        </div>
+                      </div>
+                      <p className="text-[10px] text-blue-200/60 font-medium mt-3 tracking-wide">Point your camera to scan</p>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="mx-6 h-px bg-white/10" />
+
+                    {/* UPI ID + app chips */}
+                    <div className="relative px-6 py-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[9px] uppercase tracking-[0.2em] font-semibold text-blue-300/60 mb-1">UPI ID</p>
+                        <p className="text-[13px] font-bold text-white truncate">coolspotcottage@okhdfcbank</p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        {["GPay", "PhonePe", "Paytm"].map(app => (
+                          <span key={app}
+                            className="text-[8px] font-semibold bg-white/10 border border-white/15 text-white/75 rounded-full px-2 py-1 whitespace-nowrap">
+                            {app}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </div>
