@@ -334,9 +334,9 @@ export default function DestinationsTab({
           <BlurText
             text="Discover a sanctuary of unparalleled elegance. Experience the perfect harmony of pristine mountain beauty and refined modern architecture."
             className="font-sans text-sm md:text-lg text-white/95 mb-10 max-w-2xl text-center leading-relaxed font-light justify-center"
-            delay={40}
-            direction="bottom"
-            stepDuration={0.3}
+            delay={200}
+            direction="top"
+            stepDuration={0.35}
           />
 
           {/* Floating Booking Widget — Tab-style Design */}
