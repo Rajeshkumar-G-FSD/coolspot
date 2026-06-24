@@ -804,7 +804,7 @@ export default function DestinationsTab({
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
               <a
-                href="https://www.google.com/maps/place//@11.4039116,76.7118485,20.75z"
+                href="https://g.page/r/CVUDMcIZa6ouEBM/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-6 py-3 bg-white text-[#001a52] rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 transition-all shadow-sm"
