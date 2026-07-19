@@ -42,6 +42,9 @@ const BOOKING_DISPLAY_ROOMS: Room[] = (() => {
   };
   return [merged, ...rest];
 })();
+
+const PET_COST = 599;
+const CAMPFIRE_COST = 1000;
 import { motion } from "motion/react";
 import DatePicker from "react-datepicker";
 import { db, handleFirestoreError, OperationType } from "../firebase";
@@ -370,7 +373,9 @@ export default function BookingFlowTab({
         : effectiveRate * nights);
   const expsCost = selectedExps.reduce((acc, curr) => acc + curr.cost, 0);
   const extraBedCost = extraBedRequested ? extraBedRate * extraBedCount * nights : 0;
-  const totalCost = roomBaseCost + expsCost + extraBedCost;
+  const petCost = petAllowed ? PET_COST : 0;
+  const campfireCost = campfireRequested ? CAMPFIRE_COST : 0;
+  const totalCost = roomBaseCost + expsCost + extraBedCost + petCost + campfireCost;
 
   const advanceAmount = Math.round(totalCost * 0.4);
   const remainingAmount = totalCost - advanceAmount;
@@ -449,7 +454,9 @@ export default function BookingFlowTab({
       extraBedTotal: extraBedCost,
       arrivalTime,
       petAllowed,
+      petCost,
       campfireRequested,
+      campfireCost,
       parkingRequired,
       guestChildAges,
       assignedRooms,
@@ -492,11 +499,14 @@ export default function BookingFlowTab({
       ? b.assignedRooms.map((n: string) => `#${n}`).join(" + ")
       : "TBD";
 
+    const petCostTotal = b.petCost ?? (b.petAllowed ? PET_COST : 0);
+    const campfireCostTotal = b.campfireCost ?? (b.campfireRequested ? CAMPFIRE_COST : 0);
+
     // Build inclusions list
     const inclusionLines: string[] = [];
-    if (b.campfireRequested) inclusionLines.push("• Campfire Evening");
-    if (b.petAllowed) inclusionLines.push("• Pet Friendly Arrangement");
-    if (b.parkingRequired) inclusionLines.push("• Parking Reserved");
+    if (b.campfireRequested) inclusionLines.push(`• Campfire Evening (₹${campfireCostTotal.toLocaleString()})`);
+    if (b.petAllowed) inclusionLines.push(`• Pet Friendly Arrangement (₹${petCostTotal.toLocaleString()})`);
+    if (b.parkingRequired) inclusionLines.push("• Parking Reserved (First Come, First Served)");
     if (b.cotRequested) inclusionLines.push("• Baby Cot (Complimentary)");
     if (b.extraBedRequested) inclusionLines.push(`• Extra Bed × ${b.extraBedCount} (₹${(b.extraBedTotal || 0).toLocaleString()} total)`);
     if ((b.selectedExps || b.selectedExperiences || []).length > 0) {
@@ -569,7 +579,7 @@ ${b.assignedRooms?.length > 1
       return `Room ${num} @ ₹${r.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} = ₹${(r * nightsCount).toLocaleString()}`;
     }).join("\n")
   : `${b.room?.name} @ ₹${roomRate.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} × ${roomsCount} room${roomsCount > 1 ? "s" : ""} = ₹${roomCostTotal.toLocaleString()}`
-}${expsCostTotal > 0 ? `\nActivities & Experiences = ₹${expsCostTotal.toLocaleString()}` : ""}${extraBedCostTotal > 0 ? `\nExtra Bed(s) = ₹${extraBedCostTotal.toLocaleString()}` : ""}
+}${expsCostTotal > 0 ? `\nActivities & Experiences = ₹${expsCostTotal.toLocaleString()}` : ""}${extraBedCostTotal > 0 ? `\nExtra Bed(s) = ₹${extraBedCostTotal.toLocaleString()}` : ""}${petCostTotal > 0 ? `\nPet Friendly Stay = ₹${petCostTotal.toLocaleString()}` : ""}${campfireCostTotal > 0 ? `\nCampfire Evening = ₹${campfireCostTotal.toLocaleString()}` : ""}
 
 ${line}
 💵 *Total Payable   : ₹${b.totalCost?.toLocaleString()} (Incl. taxes)*
@@ -583,9 +593,9 @@ ${sep}
 ${sep}
 
 ${b.specialRequests && b.specialRequests !== "None" ? b.specialRequests : "None"}
-🐾 Pet             : ${b.petAllowed ? "Yes — Pet-friendly setup arranged" : "No"}
-🔥 Campfire        : ${b.campfireRequested ? "Yes — Bonfire setup requested" : "No"}
-🚗 Parking         : ${b.parkingRequired ? "Yes — Parking spot reserved" : "No"}
+🐾 Pet             : ${b.petAllowed ? `₹${petCostTotal.toLocaleString()} — Pet-friendly setup arranged` : "₹0 — Not Included"}
+🔥 Campfire        : ${b.campfireRequested ? `₹${campfireCostTotal.toLocaleString()} — Bonfire setup requested` : "₹0 — Not Included"}
+🚗 Parking         : ${b.parkingRequired ? "First Come, First Served — spot reserved" : "Not Required"}
 
 ${sep}
 📜 *TERMS & CONDITIONS*
@@ -651,10 +661,13 @@ Have a wonderful stay! 🌿
       ? b.assignedRooms.map((n: string) => `#${n}`).join(" + ")
       : "TBD";
 
+    const petCostTotal = b.petCost ?? (b.petAllowed ? PET_COST : 0);
+    const campfireCostTotal = b.campfireCost ?? (b.campfireRequested ? CAMPFIRE_COST : 0);
+
     const inclusionLines: string[] = [];
-    if (b.campfireRequested) inclusionLines.push("• Campfire Evening");
-    if (b.petAllowed) inclusionLines.push("• Pet Friendly Arrangement");
-    if (b.parkingRequired) inclusionLines.push("• Parking Reserved");
+    if (b.campfireRequested) inclusionLines.push(`• Campfire Evening (₹${campfireCostTotal.toLocaleString()})`);
+    if (b.petAllowed) inclusionLines.push(`• Pet Friendly Arrangement (₹${petCostTotal.toLocaleString()})`);
+    if (b.parkingRequired) inclusionLines.push("• Parking Reserved (First Come, First Served)");
     if (b.cotRequested) inclusionLines.push("• Baby Cot (Complimentary)");
     if (b.extraBedRequested) inclusionLines.push(`• Extra Bed × ${b.extraBedCount}`);
     if ((b.selectedExps || b.selectedExperiences || []).length > 0) {
@@ -726,7 +739,7 @@ ${b.assignedRooms?.length > 1
       return `Room ${num} @ ₹${r.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} = ₹${(r * nightsCount).toLocaleString()}`;
     }).join("\n")
   : `${b.room?.name} @ ₹${roomRate.toLocaleString()} × ${nightsCount} night${nightsCount > 1 ? "s" : ""} × ${roomsCount} room${roomsCount > 1 ? "s" : ""} = ₹${roomCostTotal.toLocaleString()}`
-}${expsCostTotal > 0 ? `\nActivities & Experiences = ₹${expsCostTotal.toLocaleString()}` : ""}${extraBedCostTotal > 0 ? `\nExtra Bed(s) = ₹${extraBedCostTotal.toLocaleString()}` : ""}
+}${expsCostTotal > 0 ? `\nActivities & Experiences = ₹${expsCostTotal.toLocaleString()}` : ""}${extraBedCostTotal > 0 ? `\nExtra Bed(s) = ₹${extraBedCostTotal.toLocaleString()}` : ""}${petCostTotal > 0 ? `\nPet Friendly Stay = ₹${petCostTotal.toLocaleString()}` : ""}${campfireCostTotal > 0 ? `\nCampfire Evening = ₹${campfireCostTotal.toLocaleString()}` : ""}
 
 ${line}
 💵 *Total Payable   : ₹${b.totalCost?.toLocaleString()} (Incl. taxes)*
@@ -739,9 +752,9 @@ ${sep}
 ${sep}
 
 ${b.specialRequests && b.specialRequests !== "None" ? b.specialRequests : "None"}
-🐾 Pet             : ${b.petAllowed ? "Yes — Pet-friendly setup arranged" : "No"}
-🔥 Campfire        : ${b.campfireRequested ? "Yes — Bonfire setup requested" : "No"}
-🚗 Parking         : ${b.parkingRequired ? "Yes — Parking spot reserved" : "No"}
+🐾 Pet             : ${b.petAllowed ? `₹${petCostTotal.toLocaleString()} — Pet-friendly setup arranged` : "₹0 — Not Included"}
+🔥 Campfire        : ${b.campfireRequested ? `₹${campfireCostTotal.toLocaleString()} — Bonfire setup requested` : "₹0 — Not Included"}
+🚗 Parking         : ${b.parkingRequired ? "First Come, First Served — spot reserved" : "Not Required"}
 
 ${sep}
 📜 *TERMS & CONDITIONS*
@@ -1688,10 +1701,11 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                       onChange={(e) => setPetAllowed(e.target.checked)}
                       className="rounded accent-[#001a52]"
                     />
-                    <div>
+                    <div className="flex-1">
                       <span className="text-xs font-bold text-slate-700 block">🐾 Pet Friendly Stay</span>
                       <span className="text-[10px] text-slate-400">Bringing a pet? We'll arrange a pet-friendly setup.</span>
                     </div>
+                    <span className="text-xs font-bold text-[#001a52] shrink-0">₹{PET_COST.toLocaleString()}</span>
                   </label>
                   <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-[#001a52]/30 transition-all">
                     <input
@@ -1700,10 +1714,11 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                       onChange={(e) => setCampfireRequested(e.target.checked)}
                       className="rounded accent-[#001a52]"
                     />
-                    <div>
+                    <div className="flex-1">
                       <span className="text-xs font-bold text-slate-700 block">🔥 Campfire Evening</span>
                       <span className="text-[10px] text-slate-400">Request a cozy bonfire setup for your evening.</span>
                     </div>
+                    <span className="text-xs font-bold text-[#001a52] shrink-0">₹{CAMPFIRE_COST.toLocaleString()}</span>
                   </label>
                   <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-[#001a52]/30 transition-all">
                     <input
@@ -1712,10 +1727,15 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                       onChange={(e) => setParkingRequired(e.target.checked)}
                       className="rounded accent-[#001a52]"
                     />
-                    <div>
+                    <div className="flex-1">
                       <span className="text-xs font-bold text-slate-700 block">🚗 Parking Required</span>
-                      <span className="text-[10px] text-slate-400">A parking space will be reserved for your vehicle. Parking is available on a first-come, first-served basis.</span>
+                      {parkingRequired ? (
+                        <span className="text-[10px] font-semibold text-amber-600 block mt-0.5">⚠️ First come, first served — not guaranteed.</span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">A parking space will be reserved for your vehicle.</span>
+                      )}
                     </div>
+                    <span className="text-xs font-bold text-emerald-600 shrink-0">Free</span>
                   </label>
                 </div>
               </div>
@@ -2369,6 +2389,20 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                 <div className="flex justify-between text-xs text-slate-600">
                   <span>Extra Bed:</span>
                   <span className="font-mono font-bold">₹{extraBedCost.toLocaleString()}</span>
+                </div>
+              )}
+
+              {petAllowed && (
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Pet Friendly Stay:</span>
+                  <span className="font-mono font-bold">₹{petCost.toLocaleString()}</span>
+                </div>
+              )}
+
+              {campfireRequested && (
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Campfire Evening:</span>
+                  <span className="font-mono font-bold">₹{campfireCost.toLocaleString()}</span>
                 </div>
               )}
 

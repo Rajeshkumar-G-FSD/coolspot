@@ -86,4 +86,12 @@ export interface Booking {
   paymentProofDateTime?: string;
   paymentProofSubmitted?: boolean;
   paymentVerified?: boolean;
+  petAllowed?: boolean;
+  petCost?: number;
+  campfireRequested?: boolean;
+  campfireCost?: number;
+  parkingRequired?: boolean;
+  secondaryPhone?: string | null;
+  guestChildAges?: string[];
+  selectedExps?: Experience[];
 }
