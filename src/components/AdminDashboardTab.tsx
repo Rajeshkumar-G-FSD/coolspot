@@ -20,17 +20,18 @@ import { motion, AnimatePresence } from "motion/react";
 import DatePicker from "react-datepicker";
 
 // ─── THEME TOKENS ──────────────────────────────────────────────────────────────
+// Palette derived from the Coolspot Cottage logo: deep forest green + warm cream
 const C = {
   bg: "#060e08",
   sidebar: "#0a1810",
   card: "rgba(255,255,255,0.04)",
   border: "rgba(255,255,255,0.07)",
-  gold: "#d4a843",
-  goldLight: "#f0c860",
-  green: "#1e5c35",
-  greenLight: "#2a7a4b",
-  text: "#ede9e1",
-  muted: "rgba(237,233,225,0.5)",
+  gold: "#34b273",
+  goldLight: "#61d199",
+  green: "#0a4d28",
+  greenLight: "#2f9e5c",
+  text: "#f2e8d8",
+  muted: "rgba(242,232,216,0.5)",
 };
 
 // ─── MOCK DATA ─────────────────────────────────────────────────────────────────
@@ -311,7 +312,7 @@ function ModuleOverview({ bookings, onNavigate, onCreateBooking }: {
                       height: `${Math.max(heightPct, 2)}%`,
                       background: isNow
                         ? `linear-gradient(to top, ${C.gold}, ${C.goldLight})`
-                        : "rgba(212,168,67,0.25)",
+                        : "rgba(52,178,115,0.25)",
                     }}
                   />
                   <span className="text-[8px] font-bold" style={{ color: isNow ? C.gold : C.muted }}>{MONTHS[i]}</span>
@@ -829,7 +830,7 @@ function ModuleRooms() {
                           value={editWeekendRate}
                           onChange={e => setEditWeekendRate(e.target.value)}
                           className="w-full px-3 py-2.5 rounded-xl text-sm font-bold border outline-none"
-                          style={{ background: "rgba(212,168,67,0.07)", borderColor: C.gold, color: C.text }}
+                          style={{ background: "rgba(52,178,115,0.07)", borderColor: C.gold, color: C.text }}
                           placeholder="e.g. 4500"
                         />
                       </div>
@@ -1033,7 +1034,7 @@ function ModuleRooms() {
                       onClick={() => !past && handleDateClick(dateStr, baseRate)}
                       className="relative flex flex-col items-center justify-center h-14 transition-colors"
                       style={{
-                        background: isEditing ? "rgba(212,168,67,0.18)" : past ? "rgba(0,0,0,0.2)" : hasOverride ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.02)",
+                        background: isEditing ? "rgba(52,178,115,0.18)" : past ? "rgba(0,0,0,0.2)" : hasOverride ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.02)",
                         cursor: past ? "default" : "pointer",
                       }}
                     >
@@ -1063,7 +1064,7 @@ function ModuleRooms() {
                 const editDateObj = new Date(editingPriceDate + "T12:00:00");
                 const hasExisting = !!(activeRoom && priceOverrides[activeRoom.id]?.[editingPriceDate]);
                 return (
-                  <div className="border rounded-xl p-4 space-y-3" style={{ borderColor: C.gold + "60", background: "rgba(212,168,67,0.05)" }}>
+                  <div className="border rounded-xl p-4 space-y-3" style={{ borderColor: C.gold + "60", background: "rgba(52,178,115,0.05)" }}>
                     <div className="flex items-center gap-2">
                       <Pencil className="w-3.5 h-3.5 shrink-0" style={{ color: C.gold }} />
                       <span className="text-xs font-bold" style={{ color: C.text }}>
@@ -1088,7 +1089,7 @@ function ModuleRooms() {
                           autoFocus
                           placeholder="Enter price…"
                           className="w-36 pl-7 pr-3 py-2.5 rounded-xl text-sm font-bold border outline-none"
-                          style={{ background: "rgba(212,168,67,0.08)", borderColor: C.gold, color: C.text }}
+                          style={{ background: "rgba(52,178,115,0.08)", borderColor: C.gold, color: C.text }}
                         />
                       </div>
                       <span className="text-[10px]" style={{ color: C.muted }}>/night</span>
@@ -1359,7 +1360,7 @@ function ModuleRooms() {
                     <span className="text-[10px]" style={{ color: C.muted }}>Past blocked · expired</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(212,168,67,0.3)", border: `1px solid ${C.gold}` }} />
+                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(52,178,115,0.3)", border: `1px solid ${C.gold}` }} />
                     <span className="text-[10px]" style={{ color: C.muted }}>Today</span>
                   </div>
                 </div>
@@ -1441,7 +1442,7 @@ function ModuleRooms() {
                                     : isPast
                                     ? "rgba(255,255,255,0.03)"
                                     : isToday
-                                    ? "rgba(212,168,67,0.25)"
+                                    ? "rgba(52,178,115,0.25)"
                                     : "rgba(74,222,128,0.18)",
                                   color: isSelected
                                     ? "#fff"
@@ -2349,7 +2350,7 @@ function ModuleAnalytics({ bookings }: { bookings: any[] }) {
               <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                 <span className="text-[9px] font-bold" style={{ color: isActive ? C.gold : C.muted }}>₹{v}L</span>
                 <div className="w-full rounded-t-lg transition-all relative overflow-hidden"
-                  style={{ height: `${(v / max) * 130}px`, background: isActive ? `linear-gradient(to top, ${C.gold}, ${C.goldLight})` : "rgba(212,168,67,0.2)" }}>
+                  style={{ height: `${(v / max) * 130}px`, background: isActive ? `linear-gradient(to top, ${C.gold}, ${C.goldLight})` : "rgba(52,178,115,0.2)" }}>
                   {isActive && <div className="absolute inset-0 bg-white/10 animate-pulse" />}
                 </div>
                 <span className="text-[9px]" style={{ color: isActive ? C.gold : C.muted }}>{MONTHS[i]}</span>
@@ -3028,7 +3029,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
       <motion.div initial={{ opacity: 0, y: 24, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="relative w-full max-w-md rounded-3xl border overflow-hidden"
-        style={{ background: "rgba(255,255,255,0.035)", borderColor: "rgba(212,168,67,0.18)", backdropFilter: "blur(32px)" }}>
+        style={{ background: "rgba(255,255,255,0.035)", borderColor: "rgba(52,178,115,0.18)", backdropFilter: "blur(32px)" }}>
 
         {/* Gold top accent bar */}
         <div className="h-0.5 w-full" style={{ background: `linear-gradient(90deg, transparent, ${C.gold}, transparent)` }} />
@@ -3078,7 +3079,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                   className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm outline-none transition-all duration-200"
                   style={{
                     background: "rgba(255,255,255,0.05)",
-                    border: `1.5px solid ${userError ? "rgba(248,113,113,0.5)" : touched.user && user.trim() ? "rgba(212,168,67,0.4)" : C.border}`,
+                    border: `1.5px solid ${userError ? "rgba(248,113,113,0.5)" : touched.user && user.trim() ? "rgba(52,178,115,0.4)" : C.border}`,
                     color: C.text,
                   }}
                 />
@@ -3106,7 +3107,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                   className="w-full pl-11 pr-12 py-3.5 rounded-2xl text-sm outline-none transition-all duration-200"
                   style={{
                     background: "rgba(255,255,255,0.05)",
-                    border: `1.5px solid ${passError ? "rgba(248,113,113,0.5)" : touched.pass && pass.length >= 4 ? "rgba(212,168,67,0.4)" : C.border}`,
+                    border: `1.5px solid ${passError ? "rgba(248,113,113,0.5)" : touched.pass && pass.length >= 4 ? "rgba(52,178,115,0.4)" : C.border}`,
                     color: C.text,
                   }}
                 />
@@ -3135,7 +3136,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
               whileTap={{ scale: loading ? 1 : 0.97 }}
               className="btn-apple w-full py-4 text-sm font-bold uppercase tracking-widest mt-2 relative overflow-hidden"
               style={{
-                background: loading ? "rgba(212,168,67,0.5)" : `linear-gradient(135deg, ${C.gold} 0%, ${C.goldLight} 100%)`,
+                background: loading ? "rgba(52,178,115,0.5)" : `linear-gradient(135deg, ${C.gold} 0%, ${C.goldLight} 100%)`,
                 color: "#0a0a0a",
                 boxShadow: loading ? "none" : `0 8px 32px ${C.gold}40`,
               }}>
