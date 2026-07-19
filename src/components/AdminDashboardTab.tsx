@@ -575,7 +575,7 @@ function ModuleRooms() {
       for (const roomId of blockRoomIds) {
         const room = blockRooms.find((r: any) => r.id === roomId);
         for (const date of blockDates) {
-          const dateStr = date.toISOString().split("T")[0];
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
           const payload = {
             roomId,
             roomName: room?.name || roomId,
