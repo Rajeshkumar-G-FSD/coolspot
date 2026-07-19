@@ -371,7 +371,10 @@ function ModuleOverview({ bookings, onNavigate, onCreateBooking }: {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold truncate" style={{ color: C.text }}>{bk.billingName || "Guest"}</div>
-                    <div className="text-[10px] truncate" style={{ color: C.muted }}>{bk.room?.name} · {bk.checkIn}</div>
+                    <div className="text-[10px] truncate" style={{ color: C.muted }}>
+                      {bk.room?.name}
+                      {bk.assignedRooms && bk.assignedRooms.length > 0 ? ` (Room ${bk.assignedRooms.join(", ")})` : ""} · {bk.checkIn}
+                    </div>
                   </div>
                   <div className="text-xs font-bold font-mono" style={{ color: C.gold }}>₹{(bk.totalCost||0).toLocaleString()}</div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -1630,6 +1633,9 @@ function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange,
               <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
                 <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: C.muted }}>Room</div>
                 <div className="text-xs font-semibold truncate" style={{ color: C.text }}>{bk.room?.name || "Suite"}</div>
+                {bk.assignedRooms && bk.assignedRooms.length > 0 && (
+                  <div className="text-[10px] font-bold" style={{ color: C.gold }}>Room {bk.assignedRooms.join(", ")}</div>
+                )}
                 <div className="text-[10px]" style={{ color: C.muted }}>{bk.guestsText || "2 Guests"}</div>
               </div>
               <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
@@ -1643,6 +1649,11 @@ function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange,
               <div>
                 <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: C.muted }}>Total</div>
                 <div className="text-sm font-bold font-mono" style={{ color: C.gold }}>₹{(bk.totalCost||0).toLocaleString()}</div>
+                {bk.paymentProofRef ? (
+                  <div className="text-[9px] font-semibold" style={{ color: "#4ade80" }}>Paid ₹{(bk.paymentProofAmount||0).toLocaleString()} · Txn {bk.paymentProofRef}</div>
+                ) : (
+                  <div className="text-[9px] font-semibold" style={{ color: "#f87171" }}>Paid ₹0</div>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <select value={bk.status} onChange={e => onStatusChange(bk.id, e.target.value)}
@@ -1703,13 +1714,23 @@ function ModuleBookings({ bookings, onRefresh, onDelete, onEdit, onStatusChange,
                     </td>
                     <td className="px-5 py-4">
                       <div className="font-semibold" style={{ color: C.text }}>{bk.room?.name || "Suite"}</div>
+                      {bk.assignedRooms && bk.assignedRooms.length > 0 && (
+                        <div className="font-bold" style={{ color: C.gold }}>Room {bk.assignedRooms.join(", ")}</div>
+                      )}
                       <div style={{ color: C.muted }}>{bk.guestsText || "2 Guests"}</div>
                     </td>
                     <td className="px-5 py-4">
                       <div style={{ color: C.text }}>{bk.checkIn} → {bk.checkOut}</div>
                       <div style={{ color: C.gold }} className="font-bold">{bk.nightsNum || 1} nights</div>
                     </td>
-                    <td className="px-5 py-4 font-mono font-bold" style={{ color: C.text }}>₹{(bk.totalCost||0).toLocaleString()}</td>
+                    <td className="px-5 py-4">
+                      <div className="font-mono font-bold" style={{ color: C.text }}>₹{(bk.totalCost||0).toLocaleString()}</div>
+                      {bk.paymentProofRef ? (
+                        <div className="text-[10px] font-semibold" style={{ color: "#4ade80" }}>Paid ₹{(bk.paymentProofAmount||0).toLocaleString()} · Txn {bk.paymentProofRef}</div>
+                      ) : (
+                        <div className="text-[10px] font-semibold" style={{ color: "#f87171" }}>Paid ₹0</div>
+                      )}
+                    </td>
                     <td className="px-5 py-4">
                       <select value={bk.status} onChange={e => onStatusChange(bk.id, e.target.value)}
                         className="px-2 py-1 rounded-lg text-[10px] font-bold border-0 outline-none cursor-pointer"
@@ -2770,6 +2791,7 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
   const [formPhone, setFormPhone] = useState(editBooking?.phoneNumber || "");
   const [formCity, setFormCity] = useState(editBooking?.city || "");
   const [formRoomId, setFormRoomId] = useState(editBooking?.room?.id || VILLAS_DATA[0].id);
+  const [formAssignedRooms, setFormAssignedRooms] = useState<string[]>(editBooking?.assignedRooms || []);
   const [formCheckIn, setFormCheckIn] = useState(editBooking?.checkIn || "");
   const [formCheckOut, setFormCheckOut] = useState(editBooking?.checkOut || "");
   const [formGuestsText, setFormGuestsText] = useState(editBooking?.guestsText || "2 Adults, 0 Children");
@@ -2791,6 +2813,7 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
     const payload: any = {
       id: bookingId,
       room: { id: matchedRoom.id, name: matchedRoom.name, ratePerNight: matchedRoom.ratePerNight },
+      assignedRooms: formAssignedRooms,
       checkIn: formCheckIn, checkOut: formCheckOut,
       guestsText: formGuestsText, nightsNum, totalCost, status: formStatus,
       specialRequests: formRequests.trim() || "None",
@@ -2861,11 +2884,41 @@ function BookingFormModal({ editBooking, onClose, onSaved }: any) {
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Select Room</label>
-            <select value={formRoomId} onChange={e=>setFormRoomId(e.target.value)}
+            <select value={formRoomId} onChange={e=>{
+                setFormRoomId(e.target.value);
+                const nextRoom = VILLAS_DATA.find(r => r.id === e.target.value);
+                const nextNumbers = nextRoom?.roomNumbers || [];
+                setFormAssignedRooms(prev => prev.filter(n => nextNumbers.includes(n)));
+              }}
               className="w-full py-2 text-sm outline-none border-b" style={{ background:"transparent", borderColor: C.border, color: C.text }}>
               {VILLAS_DATA.map(r => <option key={r.id} value={r.id} style={{ background:"#0d1a10" }}>{r.name} — ₹{r.ratePerNight.toLocaleString()}/night</option>)}
             </select>
           </div>
+          {(VILLAS_DATA.find(r => r.id === formRoomId)?.roomNumbers?.length || 0) > 0 && (
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Room Number</label>
+              <div className="flex flex-wrap gap-2">
+                {(VILLAS_DATA.find(r => r.id === formRoomId)?.roomNumbers || []).map(num => {
+                  const active = formAssignedRooms.includes(num);
+                  return (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setFormAssignedRooms(prev => active ? prev.filter(n => n !== num) : [...prev, num])}
+                      className="px-3 py-1.5 rounded-full text-xs font-bold border transition-colors"
+                      style={{
+                        background: active ? C.gold : "transparent",
+                        color: active ? "#0a0a0a" : C.text,
+                        borderColor: active ? C.gold : C.border,
+                      }}
+                    >
+                      Room {num}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] uppercase tracking-widest font-bold block mb-1" style={{ color: C.muted }}>Check-In</label>
@@ -3128,6 +3181,7 @@ export default function AdminDashboardTab() {
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editBooking, setEditBooking] = useState<any>(null);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const fetchBookings = async () => {
     setLoadingBookings(true);
@@ -3212,7 +3266,7 @@ export default function AdminDashboardTab() {
       <Sidebar
         active={activeModule}
         setActive={setActiveModule}
-        onLogout={() => setIsLoggedIn(false)}
+        onLogout={() => setShowSignOutConfirm(true)}
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
       />
@@ -3289,7 +3343,7 @@ export default function AdminDashboardTab() {
               {activeModule === "staff"      && <ModuleStaff />}
               {activeModule === "reviews"    && <ModuleReviews />}
               {activeModule === "analytics"  && <ModuleAnalytics bookings={bookings} />}
-              {activeModule === "settings"   && <ModuleSettings onLogout={() => setIsLoggedIn(false)} />}
+              {activeModule === "settings"   && <ModuleSettings onLogout={() => setShowSignOutConfirm(true)} />}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -3308,7 +3362,7 @@ export default function AdminDashboardTab() {
           <MobileDrawer
             active={activeModule}
             setActive={(id: string) => { setActiveModule(id); setMobileDrawerOpen(false); }}
-            onLogout={() => { setIsLoggedIn(false); setMobileDrawerOpen(false); }}
+            onLogout={() => { setShowSignOutConfirm(true); setMobileDrawerOpen(false); }}
             onClose={() => setMobileDrawerOpen(false)}
           />
         )}
@@ -3322,6 +3376,35 @@ export default function AdminDashboardTab() {
           onSaved={fetchBookings}
         />
       )}
+
+      {/* Sign Out Confirmation */}
+      <AnimatePresence>
+        {showSignOutConfirm && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="rounded-3xl w-full max-w-sm p-6 border text-center"
+              style={{ background: "#0d1a10", borderColor: C.border }}>
+              <img src={coolspotLogo} alt="Cool Cottages" className="w-16 h-16 object-contain mx-auto mb-4 drop-shadow-xl" />
+              <div className="text-lg font-bold" style={{ color: C.text }}>Sign Out of Admin Console?</div>
+              <p className="text-xs mt-2" style={{ color: C.muted }}>You'll be taken back to the site dashboard.</p>
+              <div className="flex items-center gap-3 mt-6">
+                <button
+                  onClick={() => setShowSignOutConfirm(false)}
+                  className="btn-apple btn-apple-ghost flex-1 py-2.5 text-xs uppercase tracking-widest"
+                >
+                  No, Stay
+                </button>
+                <button
+                  onClick={() => { window.location.reload(); }}
+                  className="btn-apple btn-apple-danger flex-1 py-2.5 text-xs uppercase tracking-widest"
+                >
+                  Yes, Sign Out
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

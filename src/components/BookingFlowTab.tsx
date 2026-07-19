@@ -136,6 +136,8 @@ export default function BookingFlowTab({
   const [proofScreenshot, setProofScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState("");
   const [proofScreenshotUrl, setProofScreenshotUrl] = useState("");
+  // Optional transaction ID for the Enquiry (no-payment) path — if filled, message adds an Amount Paid line
+  const [enquiryTxnId, setEnquiryTxnId] = useState("");
 
   // Room image gallery lightbox
   const [bookingGallery, setBookingGallery] = useState<{ roomId: string; idx: number } | null>(null);
@@ -729,6 +731,8 @@ ${b.assignedRooms?.length > 1
 ${line}
 💵 *Total Payable   : ₹${b.totalCost?.toLocaleString()} (Incl. taxes)*
 ${line}
+🧾 Transaction Ref  : ${enquiryTxnId.trim() || "—"}
+💰 Amount Paid      : ₹${(enquiryTxnId.trim() ? (b.paymentMode === "advance" ? b.advanceAmount : b.totalCost) || 0 : 0).toLocaleString()}
 
 ${sep}
 📋 *SPECIAL REQUESTS*
@@ -818,9 +822,18 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
   const handleEnquiry = async () => {
     if (!generatedBooking) return;
     try {
+      const paidAmt = generatedBooking.paymentMode === "advance"
+        ? (generatedBooking.advanceAmount || 0)
+        : (generatedBooking.totalCost || 0);
       await updateDoc(doc(db, "bookings", generatedBooking.id), {
         status: "Enquiry",
         enquiryOnly: true,
+        ...(enquiryTxnId.trim() ? {
+          paymentProofRef: enquiryTxnId.trim(),
+          paymentProofAmount: paidAmt,
+          paymentProofDateTime: new Date().toISOString(),
+          paymentProofSubmitted: true,
+        } : {}),
       });
     } catch (err) {
       console.error("Enquiry status update error:", err);
@@ -2035,6 +2048,18 @@ Please scan the UPI QR code on the booking page or contact us directly to comple
                     <div>
                       <span className="text-xs font-bold text-amber-800 block">Option 2 — Enquiry (No Payment Now)</span>
                       <span className="text-[10px] text-amber-700/80 mt-0.5 block">Send your complete booking details to WhatsApp. Our team will reach out to confirm your reservation manually.</span>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest font-bold text-amber-700/80 block mb-1.5">
+                        Transaction ID <span className="normal-case font-normal">(optional — only if you've already paid)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={enquiryTxnId}
+                        onChange={e => setEnquiryTxnId(e.target.value)}
+                        placeholder="e.g. 426789123456"
+                        className="w-full px-3 py-2.5 text-sm border border-amber-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-amber-400/40 font-mono"
+                      />
                     </div>
                     <button
                       type="button"
