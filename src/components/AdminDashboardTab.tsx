@@ -17,7 +17,6 @@ import {
 } from "firebase/firestore";
 import { VILLAS_DATA } from "../data";
 import { motion, AnimatePresence } from "motion/react";
-import DatePicker from "react-datepicker";
 
 // ─── THEME TOKENS ──────────────────────────────────────────────────────────────
 // Palette derived from the Coolspot Cottage logo: deep forest green + warm cream
@@ -448,26 +447,24 @@ function ModuleRooms() {
   const [editExtraBedRate, setEditExtraBedRate] = useState("");
   const [savingExtraBed, setSavingExtraBed] = useState(false);
 
-  // Date blocking state
+  // Room blocking state — single calendar, date → rooms flow
   const [blocks, setBlocks] = useState<any[]>([]);
   const [blocksLoading, setBlocksLoading] = useState(false);
-  const [showAddBlock, setShowAddBlock] = useState(false);
-  const [blockRoomIds, setBlockRoomIds] = useState<string[]>([]);
-  const [blockDates, setBlockDates] = useState<Date[]>([]);
   const [blockReason, setBlockReason] = useState("");
-  const [savingBlock, setSavingBlock] = useState(false);
 
   // Price calendar state
   const [priceCalRoomId, setPriceCalRoomId] = useState<string>("");
   const [priceCalYear, setPriceCalYear] = useState(() => new Date().getFullYear());
   const [priceCalMonth, setPriceCalMonth] = useState(() => new Date().getMonth());
 
-  // Blocked dates calendar view
-  const [showBlockedCal, setShowBlockedCal] = useState(false);
+  // Room blocking calendar + selection state
   const [blockedCalYear, setBlockedCalYear] = useState(() => new Date().getFullYear());
   const [blockedCalMonth, setBlockedCalMonth] = useState(() => new Date().getMonth());
-  const [selectedUnblockCells, setSelectedUnblockCells] = useState<{ roomId: string; roomName: string; date: string }[]>([]);
-  const [removingBlock, setRemovingBlock] = useState(false);
+  const [selectedBlockDate, setSelectedBlockDate] = useState<string | null>(null);
+  const [roomSelection, setRoomSelection] = useState<string[]>([]);
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock"; roomIds: string[] } | null>(null);
+  const [processingBlock, setProcessingBlock] = useState(false);
+  const [blockToast, setBlockToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Per-date price overrides
   const [priceOverrides, setPriceOverrides] = useState<Record<string, Record<string, number>>>({});
@@ -476,8 +473,8 @@ function ModuleRooms() {
   const [editingPriceValue, setEditingPriceValue] = useState("");
   const [savingPriceOverride, setSavingPriceOverride] = useState(false);
 
-  const toggleBlockRoom = (id: string) =>
-    setBlockRoomIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleRoomSelection = (id: string) =>
+    setRoomSelection(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const loadRooms = async () => {
     setLoading(true);
@@ -566,17 +563,26 @@ function ModuleRooms() {
     return [r];
   });
 
-  const saveBlock = async () => {
-    if (blockRoomIds.length === 0 || blockDates.length === 0) {
-      alert("Select at least one room and at least one date."); return;
-    }
-    setSavingBlock(true);
+  // Format a list of room-number badges into "101, 102 and 105"
+  const formatRoomNumberList = (roomIds: string[]) => {
+    const nums = roomIds.map(id => blockRooms.find((r: any) => r.id === id)?.roomNumbers?.[0] || id);
+    if (nums.length === 1) return nums[0];
+    return `${nums.slice(0, -1).join(", ")} and ${nums[nums.length - 1]}`;
+  };
+
+  const formatDisplayDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  };
+
+  // Block or unblock a set of rooms for a single date, then surface a toast
+  const applyBlockAction = async (type: "block" | "unblock", roomIds: string[], dateStr: string) => {
+    setProcessingBlock(true);
     try {
-      const newBlocks: any[] = [];
-      for (const roomId of blockRoomIds) {
-        const room = blockRooms.find((r: any) => r.id === roomId);
-        for (const date of blockDates) {
-          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      if (type === "block") {
+        const newBlocks: any[] = [];
+        for (const roomId of roomIds) {
+          const room = blockRooms.find((r: any) => r.id === roomId);
           const payload = {
             roomId,
             roomName: room?.name || roomId,
@@ -589,29 +595,38 @@ function ModuleRooms() {
           const ref = await addDoc(collection(db, "roomBlocks"), payload);
           newBlocks.push({ docId: ref.id, ...payload });
         }
+        setBlocks(prev => [...newBlocks, ...prev]);
+      } else {
+        const toRemove = blocks.filter((b: any) =>
+          roomIds.includes(b.roomId) && b.startDate <= dateStr && b.endDate >= dateStr
+        );
+        await Promise.all(toRemove.map((b: any) => deleteDoc(doc(db, "roomBlocks", b.docId))));
+        setBlocks(prev => prev.filter((b: any) => !toRemove.find((r: any) => r.docId === b.docId)));
       }
-      setBlocks(prev => [...newBlocks, ...prev]);
-      setShowAddBlock(false);
-      setBlockRoomIds([]); setBlockDates([]); setBlockReason("");
+      setBlockToast({
+        type: "success",
+        message: `Room${roomIds.length > 1 ? "s" : ""} ${formatRoomNumberList(roomIds)} ${type === "block" ? "blocked" : "unblocked"} for ${formatDisplayDate(dateStr)}.`,
+      });
+      setRoomSelection([]);
+      setBlockReason("");
+      setConfirmAction(null);
     } catch (err) {
-      alert("Failed to save block. Please try again.");
       console.error(err);
+      setBlockToast({ type: "error", message: `Failed to ${type} room${roomIds.length > 1 ? "s" : ""}. Please try again.` });
     } finally {
-      setSavingBlock(false);
-    }
-  };
-
-  const removeBlock = async (docId: string) => {
-    try {
-      await deleteDoc(doc(db, "roomBlocks", docId));
-      setBlocks(prev => prev.filter(b => b.docId !== docId));
-    } catch (err) {
-      alert("Failed to remove block."); console.error(err);
+      setProcessingBlock(false);
     }
   };
 
   useEffect(() => { loadBlocks(); }, []);
   useEffect(() => { loadPriceOverrides(); }, []);
+
+  // Auto-dismiss the block/unblock toast
+  useEffect(() => {
+    if (!blockToast) return;
+    const t = setTimeout(() => setBlockToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [blockToast]);
 
   const startEdit = (room: any) => {
     setEditingId(room.id);
@@ -1146,18 +1161,18 @@ function ModuleRooms() {
         );
       })()}
 
-      {/* ── Date Blocking ─────────────────────────────────── */}
+      {/* ── Room Blocking ─────────────────────────────────── */}
       {(() => {
         const FULL_MONTHS_BC = ["January","February","March","April","May","June","July","August","September","October","November","December"];
         const bt = new Date();
         const todayStr = `${bt.getFullYear()}-${String(bt.getMonth()+1).padStart(2,"0")}-${String(bt.getDate()).padStart(2,"0")}`;
         const calFirstDay = new Date(blockedCalYear, blockedCalMonth, 1).getDay();
         const calDaysInMonth = new Date(blockedCalYear, blockedCalMonth + 1, 0).getDate();
+        const totalRooms = blockRooms.length;
 
-        // Build blocked date sets per room
-        const blockedByRoom: Record<string, Set<string>> = {};
+        // Build a set of blocked room ids for every date
+        const blockedByDate: Record<string, Set<string>> = {};
         blocks.forEach((block: any) => {
-          if (!blockedByRoom[block.roomId]) blockedByRoom[block.roomId] = new Set<string>();
           const sp = block.startDate.split("-");
           const ep = block.endDate.split("-");
           const start = new Date(parseInt(sp[0]), parseInt(sp[1]) - 1, parseInt(sp[2]));
@@ -1165,172 +1180,61 @@ function ModuleRooms() {
           const curr = new Date(start);
           while (curr <= end) {
             const ds = `${curr.getFullYear()}-${String(curr.getMonth()+1).padStart(2,"0")}-${String(curr.getDate()).padStart(2,"0")}`;
-            blockedByRoom[block.roomId].add(ds);
+            if (!blockedByDate[ds]) blockedByDate[ds] = new Set<string>();
+            blockedByDate[ds].add(block.roomId);
             curr.setDate(curr.getDate() + 1);
           }
         });
 
-        const handleCellClick = (room: any, dateStr: string, isBlocked: boolean) => {
-          if (!isBlocked) return;
-          setSelectedUnblockCells(prev => {
-            const exists = prev.some(c => c.roomId === room.id && c.date === dateStr);
-            return exists
-              ? prev.filter(c => !(c.roomId === room.id && c.date === dateStr))
-              : [...prev, { roomId: room.id, roomName: room.name, date: dateStr }];
-          });
+        const selectedDateBlocked = selectedBlockDate ? (blockedByDate[selectedBlockDate] || new Set<string>()) : new Set<string>();
+        const availableSelected = roomSelection.filter(id => !selectedDateBlocked.has(id));
+        const blockedSelected = roomSelection.filter(id => selectedDateBlocked.has(id));
+
+        const handleDateClick = (dateStr: string, isPast: boolean) => {
+          if (isPast) return;
+          setSelectedBlockDate(dateStr);
+          setRoomSelection([]);
         };
 
-        const handleSelectAllBlocked = () => {
-          const allBlocked: { roomId: string; roomName: string; date: string }[] = [];
-          blockRooms.forEach((room: any) => {
-            const roomBlocked = blockedByRoom[room.id] || new Set<string>();
-            [...roomBlocked].forEach(dateStr => {
-              if (dateStr >= todayStr && dateStr.startsWith(`${blockedCalYear}-${String(blockedCalMonth + 1).padStart(2, "0")}`)) {
-                allBlocked.push({ roomId: room.id, roomName: room.name, date: dateStr });
-              }
-            });
-          });
-          setSelectedUnblockCells(allBlocked);
-        };
-
-        const handleUnblock = async () => {
-          if (selectedUnblockCells.length === 0) return;
-          setRemovingBlock(true);
-          const toRemove = blocks.filter((b: any) =>
-            selectedUnblockCells.some(cell =>
-              b.roomId === cell.roomId &&
-              b.startDate <= cell.date &&
-              b.endDate >= cell.date
-            )
-          );
-          try {
-            await Promise.all(toRemove.map((b: any) => deleteDoc(doc(db, "roomBlocks", b.docId))));
-            setBlocks(prev => prev.filter((b: any) => !toRemove.find((r: any) => r.docId === b.docId)));
-            setSelectedUnblockCells([]);
-          } catch (err) {
-            alert("Failed to unblock. Please try again."); console.error(err);
-          } finally {
-            setRemovingBlock(false);
-          }
+        const jumpToToday = () => {
+          setBlockedCalYear(bt.getFullYear());
+          setBlockedCalMonth(bt.getMonth());
+          setSelectedBlockDate(todayStr);
+          setRoomSelection([]);
         };
 
         return (
           <div className="rounded-2xl border overflow-hidden" style={{ borderColor: C.border }}>
             {/* Header */}
-            <div className="px-5 py-4 flex items-center justify-between" style={{ background: C.card }}>
+            <div className="px-5 py-4 flex items-center justify-between flex-wrap gap-3" style={{ background: C.card }}>
               <div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" style={{ color: "#f87171" }} />
-                  <span className="text-sm font-bold" style={{ color: C.text }}>Date Blocking</span>
-                  {blocks.length > 0 && (
-                    <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(248,113,113,0.15)", color: "#f87171" }}>
-                      {blocks.length} blocked
-                    </span>
-                  )}
+                  <span className="text-sm font-bold" style={{ color: C.text }}>Room Blocking</span>
                 </div>
-                <div className="text-[10px] mt-0.5 uppercase tracking-widest" style={{ color: C.muted }}>
-                  Tap red dates to select · tap again to deselect · then Unblock
+                <div className="text-[10px] mt-0.5" style={{ color: C.muted }}>
+                  Select a date, then choose one or more rooms to block.
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={loadBlocks} className="p-2 rounded-full border hover:bg-white/10 transition-all active:scale-95" style={{ borderColor: C.border }}>
+                <button onClick={loadBlocks} className="btn-apple p-2 border" style={{ borderColor: C.border, borderRadius: "9999px" }}>
                   <RefreshCcw className={`w-3.5 h-3.5 transition-transform ${blocksLoading ? "animate-spin" : ""}`} style={{ color: C.muted }} />
                 </button>
                 <button
-                  onClick={() => { setShowAddBlock(v => !v); setSelectedUnblockCells([]); }}
+                  onClick={jumpToToday}
                   className="btn-apple flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider border"
-                  style={{ borderColor: showAddBlock ? "#f87171" : C.border, color: showAddBlock ? "#f87171" : C.gold, borderRadius: "9999px" }}
+                  style={{ borderColor: "rgba(248,113,113,0.4)", color: "#f87171", borderRadius: "9999px" }}
                 >
-                  {showAddBlock ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                  {showAddBlock ? "Cancel" : "Block Dates"}
+                  <Plus className="w-3.5 h-3.5" />
+                  Block Rooms
                 </button>
               </div>
             </div>
 
-            {/* Add Block Form */}
-            {showAddBlock && (
-              <div className="px-5 py-4 border-t space-y-4" style={{ borderColor: C.border, background: "rgba(248,113,113,0.04)" }}>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.muted }}>
-                      Rooms to Block
-                      {blockRoomIds.length > 0 && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[9px]" style={{ background: "rgba(248,113,113,0.2)", color: "#f87171" }}>
-                          {blockRoomIds.length} selected
-                        </span>
-                      )}
-                    </label>
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setBlockRoomIds(blockRooms.map((r: any) => r.id))}
-                        className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-white/10" style={{ color: C.gold }}>All</button>
-                      <button type="button" onClick={() => setBlockRoomIds([])}
-                        className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-white/10" style={{ color: C.muted }}>Clear</button>
-                    </div>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-2">
-                    {blockRooms.map((r: any) => {
-                      const checked = blockRoomIds.includes(r.id);
-                      return (
-                        <label key={r.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-all select-none"
-                          style={{ borderColor: checked ? "rgba(248,113,113,0.5)" : C.border, background: checked ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.03)" }}>
-                          <input type="checkbox" checked={checked} onChange={() => toggleBlockRoom(r.id)} className="accent-[#f87171] shrink-0" />
-                          <div className="min-w-0">
-                            <div className="text-xs font-semibold truncate" style={{ color: checked ? "#f87171" : C.text }}>{r.name}</div>
-                            {r.roomNumbers?.length > 0 && <div className="text-[9px] font-mono" style={{ color: C.muted }}>Room {r.roomNumbers.join(", ")}</div>}
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Reason (optional)</label>
-                    <input type="text" value={blockReason} onChange={e => setBlockReason(e.target.value)}
-                      placeholder="e.g. Maintenance, Owner stay…"
-                      className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
-                      style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text }} />
-                  </div>
-                  <div />
-                  <div className="sm:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold block mb-2" style={{ color: C.muted }}>
-                      Block Dates{blockDates.length > 0 && <span className="ml-2 font-normal normal-case" style={{ color: "#f87171" }}>— {blockDates.length} selected</span>}
-                    </label>
-                    <div className="admin-block-datepicker">
-                      <DatePicker inline selectsMultiple selectedDates={blockDates}
-                        onChange={(dates: Date[] | null) => setBlockDates(dates ?? [])} minDate={new Date()} />
-                    </div>
-                    {blockDates.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {blockDates.map((d, i) => (
-                          <span key={i} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold"
-                            style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }}>
-                            {d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                            <button type="button" onClick={() => setBlockDates(prev => prev.filter((_, j) => j !== i))}
-                              className="hover:opacity-70 cursor-pointer ml-0.5">×</button>
-                          </span>
-                        ))}
-                        <button type="button" onClick={() => setBlockDates([])}
-                          className="px-2.5 py-1 rounded-full text-[10px] font-bold hover:opacity-70 cursor-pointer"
-                          style={{ background: "rgba(255,255,255,0.06)", color: C.muted, border: `1px solid ${C.border}` }}>Clear all</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <button onClick={saveBlock} disabled={savingBlock}
-                  className="btn-apple w-full py-2.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
-                  style={{ background: "#f87171", color: "#fff", borderRadius: "9999px", opacity: savingBlock ? 0.6 : 1 }}>
-                  <Calendar className="w-3.5 h-3.5" />
-                  {savingBlock ? "Saving…" : "Confirm Block"}
-                </button>
-              </div>
-            )}
-
-            {/* Calendar View — always visible */}
             {blocksLoading ? (
-              <div className="flex items-center justify-center gap-2 py-10">
+              <div className="flex items-center justify-center gap-2 py-14 border-t" style={{ borderColor: C.border }}>
                 <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: C.border, borderTopColor: "#f87171" }} />
-                <span className="text-xs" style={{ color: C.muted }}>Loading…</span>
+                <span className="text-xs" style={{ color: C.muted }}>Loading room availability…</span>
               </div>
             ) : (
               <>
@@ -1339,152 +1243,247 @@ function ModuleRooms() {
                   <button onClick={prevBlockedCalMonth} className="btn-apple p-1.5 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
-                  <span className="text-sm font-bold" style={{ color: C.text }}>{FULL_MONTHS_BC[blockedCalMonth]} {blockedCalYear}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-sm font-bold" style={{ color: C.text }}>{FULL_MONTHS_BC[blockedCalMonth]} {blockedCalYear}</span>
+                    <button onClick={jumpToToday}
+                      className="btn-apple px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider border" style={{ borderColor: C.border, color: C.gold, borderRadius: "9999px" }}>
+                      Today
+                    </button>
+                  </div>
                   <button onClick={nextBlockedCalMonth} className="btn-apple p-1.5 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 {/* Legend */}
-                <div className="px-5 py-2 flex items-center flex-wrap gap-x-4 gap-y-1.5 border-t" style={{ borderColor: C.border }}>
+                <div className="px-5 py-2.5 flex items-center flex-wrap gap-x-4 gap-y-1.5 border-t" style={{ borderColor: C.border }}>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(74,222,128,0.35)", border: "1px solid rgba(74,222,128,0.5)" }} />
-                    <span className="text-[10px]" style={{ color: C.muted }}>Available</span>
+                    <span className="text-[10px]" style={{ color: C.muted }}>All available</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="relative w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(248,113,113,0.22)", border: "1px solid rgba(248,113,113,0.4)" }}>
+                      <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full" style={{ background: "#f87171" }} />
+                    </span>
+                    <span className="text-[10px]" style={{ color: C.muted }}>Some rooms blocked</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(248,113,113,0.85)" }} />
-                    <span className="text-[10px]" style={{ color: C.muted }}>Blocked · tap to unblock</span>
+                    <span className="text-[10px]" style={{ color: C.muted }}>All rooms blocked</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(120,60,60,0.55)", border: "1px solid rgba(180,80,80,0.4)" }} />
-                    <span className="text-[10px]" style={{ color: C.muted }}>Past blocked · expired</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "rgba(52,178,115,0.3)", border: `1px solid ${C.gold}` }} />
-                    <span className="text-[10px]" style={{ color: C.muted }}>Today</span>
+                    <span className="w-2.5 h-2.5 rounded inline-block" style={{ background: "transparent", border: `1.5px solid ${C.gold}` }} />
+                    <span className="text-[10px]" style={{ color: C.muted }}>Selected date</span>
                   </div>
                 </div>
 
-                {/* Multi-day unblock action panel */}
-                {selectedUnblockCells.length > 0 && (
-                  <div className="mx-4 mb-3 mt-1 border rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
-                    style={{ borderColor: "rgba(248,113,113,0.4)", background: "rgba(248,113,113,0.06)" }}>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold" style={{ color: "#f87171" }}>
-                          {selectedUnblockCells.length} date{selectedUnblockCells.length > 1 ? "s" : ""} selected
-                        </span>
-                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold"
-                          style={{ background: "rgba(248,113,113,0.18)", color: "#f87171" }}>
-                          across {new Set(selectedUnblockCells.map(c => c.roomId)).size} room{new Set(selectedUnblockCells.map(c => c.roomId)).size > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="text-[10px] mt-1 truncate" style={{ color: C.muted }}>
-                        {[...new Set(selectedUnblockCells.map(c => c.roomName))].join(" · ")}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={handleSelectAllBlocked}
-                        className="btn-apple px-3 py-1.5 text-[10px] font-bold border"
-                        style={{ borderColor: "rgba(248,113,113,0.4)", color: "#f87171", borderRadius: "9999px" }}>
-                        Select All
-                      </button>
-                      <button onClick={handleUnblock} disabled={removingBlock}
-                        className="btn-apple flex items-center gap-1.5 px-3 py-2 text-xs font-bold"
-                        style={{ background: "#f87171", color: "#fff", borderRadius: "9999px", opacity: removingBlock ? 0.6 : 1 }}>
-                        <X className="w-3.5 h-3.5" />
-                        {removingBlock ? "Removing…" : `Unblock ${selectedUnblockCells.length}`}
-                      </button>
-                      <button onClick={() => setSelectedUnblockCells([])}
-                        className="btn-apple p-2 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
+                {/* Single monthly calendar */}
+                <div className="px-4 sm:px-5 py-4 border-t" style={{ borderColor: C.border }}>
+                  <div className="grid grid-cols-7 mb-1.5">
+                    {["S","M","T","W","T","F","S"].map((d, i) => (
+                      <div key={i} className="text-center text-[10px] font-bold py-1" style={{ color: C.muted }}>{d}</div>
+                    ))}
                   </div>
-                )}
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {Array.from({ length: calFirstDay }, (_, i) => <div key={`e-${i}`} />)}
+                    {Array.from({ length: calDaysInMonth }, (_, i) => {
+                      const day = i + 1;
+                      const dateStr = `${blockedCalYear}-${String(blockedCalMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+                      const isPast = dateStr < todayStr;
+                      const isToday = dateStr === todayStr;
+                      const isSelected = dateStr === selectedBlockDate;
+                      const blockedCount = blockedByDate[dateStr]?.size || 0;
+                      const isFullyBlocked = totalRooms > 0 && blockedCount >= totalRooms;
+                      const isPartial = blockedCount > 0 && !isFullyBlocked;
 
-                {/* Mini room calendars grid */}
-                <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {blockRooms.map((room: any) => {
-                    const roomBlocked = blockedByRoom[room.id] || new Set<string>();
-                    return (
-                      <div key={room.id} className="rounded-xl p-2.5 border" style={{ borderColor: C.border, background: "rgba(255,255,255,0.02)" }}>
-                        {/* Day headers */}
-                        <div className="grid grid-cols-7 mb-1">
-                          {["S","M","T","W","T","F","S"].map((d, i) => (
-                            <div key={i} className="text-center text-[7px] font-bold py-0.5" style={{ color: C.muted }}>{d}</div>
-                          ))}
+                      return (
+                        <button
+                          key={dateStr}
+                          type="button"
+                          disabled={isPast}
+                          onClick={() => handleDateClick(dateStr, isPast)}
+                          className="relative aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-90"
+                          style={{
+                            background: isPast
+                              ? "rgba(255,255,255,0.02)"
+                              : isFullyBlocked
+                              ? "rgba(248,113,113,0.85)"
+                              : isPartial
+                              ? "rgba(248,113,113,0.2)"
+                              : "rgba(74,222,128,0.16)",
+                            color: isPast ? "rgba(255,255,255,0.15)" : isFullyBlocked ? "#fff" : "rgba(255,255,255,0.92)",
+                            border: isSelected ? `2px solid ${C.gold}` : isToday && !isPast ? `1px solid ${C.gold}` : "1px solid transparent",
+                            cursor: isPast ? "default" : "pointer",
+                            opacity: isPast ? 0.55 : 1,
+                          }}
+                        >
+                          {day}
+                          {isPartial && !isPast && (
+                            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full" style={{ background: "#f87171" }} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Room selection panel */}
+                <div className="border-t px-4 sm:px-5 py-5" style={{ borderColor: C.border, background: "rgba(255,255,255,0.015)" }}>
+                  {!selectedBlockDate ? (
+                    <div className="flex flex-col items-center justify-center text-center py-10 gap-2">
+                      <Calendar className="w-8 h-8" style={{ color: C.muted }} />
+                      <div className="text-sm font-semibold" style={{ color: C.text }}>No date selected</div>
+                      <div className="text-xs max-w-xs" style={{ color: C.muted }}>Tap a date on the calendar above to view and manage room availability.</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.muted }}>Selected Date</div>
+                          <div className="text-base font-bold" style={{ color: C.text }}>{formatDisplayDate(selectedBlockDate)}</div>
                         </div>
-                        {/* Date cells */}
-                        <div className="grid grid-cols-7 gap-[2px]">
-                          {Array.from({ length: calFirstDay }, (_, i) => <div key={`e-${i}`} className="aspect-square" />)}
-                          {Array.from({ length: calDaysInMonth }, (_, i) => {
-                            const day = i + 1;
-                            const dateStr = `${blockedCalYear}-${String(blockedCalMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-                            const isBlocked = roomBlocked.has(dateStr);
-                            const isPast = dateStr < todayStr;
-                            const isToday = dateStr === todayStr;
-                            const isSelected = selectedUnblockCells.some(c => c.roomId === room.id && c.date === dateStr);
-                            return (
-                              <button
-                                key={dateStr}
-                                type="button"
-                                onClick={() => handleCellClick(room, dateStr, isBlocked)}
-                                disabled={!isBlocked || isPast}
-                                className="aspect-square flex items-center justify-center rounded text-[8px] font-bold transition-all active:scale-90"
-                                style={{
-                                  background: isSelected
-                                    ? "#f87171"
-                                    : isBlocked && isPast
-                                    ? "rgba(120,55,55,0.55)"
-                                    : isBlocked
-                                    ? "rgba(248,113,113,0.85)"
-                                    : isPast
-                                    ? "rgba(255,255,255,0.03)"
-                                    : isToday
-                                    ? "rgba(52,178,115,0.25)"
-                                    : "rgba(74,222,128,0.18)",
-                                  color: isSelected
-                                    ? "#fff"
-                                    : isBlocked && isPast
-                                    ? "rgba(255,180,180,0.5)"
-                                    : isBlocked
-                                    ? "#fff"
-                                    : isPast
-                                    ? "rgba(255,255,255,0.18)"
-                                    : isToday
-                                    ? C.gold
-                                    : "rgba(74,222,128,0.9)",
-                                  border: isSelected
-                                    ? "2px solid #fff"
-                                    : isBlocked && isPast
-                                    ? "1px solid rgba(180,80,80,0.35)"
-                                    : isToday && !isBlocked
-                                    ? `1px solid ${C.gold}`
-                                    : "none",
-                                  cursor: isBlocked && !isPast ? "pointer" : "default",
-                                  transform: isSelected ? "scale(1.15)" : undefined,
-                                  opacity: isBlocked && isPast ? 0.7 : 1,
-                                }}
-                              >
-                                {day}
-                              </button>
-                            );
-                          })}
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setRoomSelection(blockRooms.map((r: any) => r.id))}
+                            className="btn-apple text-[9px] font-bold uppercase tracking-wider px-2.5 py-1.5 border" style={{ borderColor: C.border, color: C.gold, borderRadius: "9999px" }}>
+                            Select All
+                          </button>
+                          <button onClick={() => setRoomSelection([])}
+                            className="btn-apple text-[9px] font-bold uppercase tracking-wider px-2.5 py-1.5 border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
+                            Clear All
+                          </button>
                         </div>
-                        {/* Room name */}
-                        <div className="mt-2 text-[9px] font-bold truncate" style={{ color: C.text }}>{room.name}</div>
-                        {roomBlocked.size > 0 && (
-                          <div className="text-[8px] mt-0.5" style={{ color: "#f87171" }}>
-                            {[...roomBlocked].filter(d => d >= todayStr && d.startsWith(`${blockedCalYear}-${String(blockedCalMonth+1).padStart(2,"0")}`)).length} blocked this month
-                          </div>
-                        )}
                       </div>
-                    );
-                  })}
+
+                      <div className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: C.muted }}>Select Rooms to Block</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                        {blockRooms.map((room: any) => {
+                          const isBlocked = selectedDateBlocked.has(room.id);
+                          const checked = roomSelection.includes(room.id);
+                          const roomNum = room.roomNumbers?.[0] || room.id;
+                          const roomLabel = String(room.name || "").replace(/\s*—\s*Room\s*\d+$/i, "");
+                          return (
+                            <label key={room.id}
+                              className="flex items-start gap-2.5 px-3 py-3 rounded-xl border cursor-pointer transition-all select-none"
+                              style={{
+                                borderColor: checked ? (isBlocked ? "rgba(74,222,128,0.5)" : "rgba(248,113,113,0.5)") : C.border,
+                                background: checked ? (isBlocked ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)") : "rgba(255,255,255,0.03)",
+                              }}>
+                              <input type="checkbox" checked={checked} onChange={() => toggleRoomSelection(room.id)}
+                                className={`shrink-0 mt-0.5 ${isBlocked ? "accent-[#4ade80]" : "accent-[#f87171]"}`} />
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-bold" style={{ color: C.text }}>{roomNum}</span>
+                                <div className="text-[10px] truncate mt-0.5" style={{ color: C.muted }}>{roomLabel}</div>
+                                <div className="text-[9px] font-bold uppercase tracking-wider mt-1.5 px-1.5 py-0.5 rounded-full inline-block"
+                                  style={{ background: isBlocked ? "rgba(248,113,113,0.15)" : "rgba(74,222,128,0.15)", color: isBlocked ? "#f87171" : "#4ade80" }}>
+                                  {isBlocked ? "Blocked" : "Available"}
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+
+                      {roomSelection.length > 0 && (
+                        <div className="mt-3">
+                          <label className="text-[10px] uppercase tracking-widest font-bold block mb-1.5" style={{ color: C.muted }}>Reason (optional)</label>
+                          <input type="text" value={blockReason} onChange={e => setBlockReason(e.target.value)}
+                            placeholder="e.g. Maintenance, Owner stay…"
+                            className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none"
+                            style={{ background: "rgba(255,255,255,0.06)", borderColor: C.border, color: C.text }} />
+                        </div>
+                      )}
+
+                      {/* Selection summary + actions */}
+                      <div className="mt-4 flex items-center justify-between flex-wrap gap-3">
+                        <span className="text-xs font-semibold" style={{ color: C.muted }}>
+                          {roomSelection.length === 0 ? "No rooms selected" : `${roomSelection.length} Room${roomSelection.length > 1 ? "s" : ""} Selected`}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {availableSelected.length > 0 && (
+                            <button onClick={() => setConfirmAction({ type: "block", roomIds: availableSelected })}
+                              className="btn-apple flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold"
+                              style={{ background: "#f87171", color: "#fff", borderRadius: "9999px" }}>
+                              <Lock className="w-3.5 h-3.5" />
+                              {blockedSelected.length === 0 ? "Block Selected Rooms" : `Block ${availableSelected.length}`}
+                            </button>
+                          )}
+                          {blockedSelected.length > 0 && (
+                            <button onClick={() => setConfirmAction({ type: "unblock", roomIds: blockedSelected })}
+                              className="btn-apple flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold"
+                              style={{ background: "#4ade80", color: "#052e13", borderRadius: "9999px" }}>
+                              <Check className="w-3.5 h-3.5" />
+                              {availableSelected.length === 0 ? "Unblock Selected Rooms" : `Unblock ${blockedSelected.length}`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             )}
+
+            {/* Confirmation modal */}
+            <AnimatePresence>
+              {confirmAction && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)" }}
+                  onClick={() => !processingBlock && setConfirmAction(null)}>
+                  <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    className="w-full max-w-sm rounded-2xl border p-5" style={{ background: C.sidebar, borderColor: C.border }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      {confirmAction.type === "block"
+                        ? <Lock className="w-4 h-4" style={{ color: "#f87171" }} />
+                        : <Check className="w-4 h-4" style={{ color: "#4ade80" }} />}
+                      <span className="text-sm font-bold" style={{ color: C.text }}>
+                        {confirmAction.type === "block" ? "Confirm Block" : "Confirm Unblock"}
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed" style={{ color: C.muted }}>
+                      {confirmAction.type === "block" ? "Block" : "Unblock"} room{confirmAction.roomIds.length > 1 ? "s" : ""}{" "}
+                      <span className="font-bold" style={{ color: C.text }}>{formatRoomNumberList(confirmAction.roomIds)}</span>{" "}
+                      for <span className="font-bold" style={{ color: C.text }}>{selectedBlockDate ? formatDisplayDate(selectedBlockDate) : ""}</span>?
+                    </p>
+                    <div className="flex items-center gap-2 mt-5">
+                      <button onClick={() => setConfirmAction(null)} disabled={processingBlock}
+                        className="btn-apple flex-1 py-2.5 text-xs font-bold border" style={{ borderColor: C.border, color: C.muted, borderRadius: "9999px" }}>
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => confirmAction && selectedBlockDate && applyBlockAction(confirmAction.type, confirmAction.roomIds, selectedBlockDate)}
+                        disabled={processingBlock}
+                        className="btn-apple flex-1 py-2.5 text-xs font-bold"
+                        style={{
+                          background: confirmAction.type === "block" ? "#f87171" : "#4ade80",
+                          color: confirmAction.type === "block" ? "#fff" : "#052e13",
+                          borderRadius: "9999px",
+                          opacity: processingBlock ? 0.6 : 1,
+                        }}>
+                        {processingBlock ? "Processing…" : confirmAction.type === "block" ? "Block Rooms" : "Unblock Rooms"}
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Toast */}
+            <AnimatePresence>
+              {blockToast && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                  className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl border shadow-lg max-w-sm"
+                  style={{
+                    background: blockToast.type === "success" ? "rgba(10,24,16,0.98)" : "rgba(40,10,10,0.98)",
+                    borderColor: blockToast.type === "success" ? "rgba(74,222,128,0.4)" : "rgba(248,113,113,0.4)",
+                  }}>
+                  {blockToast.type === "success"
+                    ? <Check className="w-4 h-4 shrink-0" style={{ color: "#4ade80" }} />
+                    : <X className="w-4 h-4 shrink-0" style={{ color: "#f87171" }} />}
+                  <span className="text-xs font-semibold" style={{ color: C.text }}>{blockToast.message}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         );
       })()}
